@@ -11,10 +11,14 @@ var client = new GoSquared({
 
 function gosquared() {}
 
+gosquared.prototype.info = function() {
+  return "*gosquared* - _GoSquared module_";
+}
+
 gosquared.prototype.help = function() {
   var help = '';
 
-  help += '*!who*\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t(List Feedeo online users)'
+  help += '*!who* - _List online users_'
 
   return help;
 }

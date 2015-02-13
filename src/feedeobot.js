@@ -3,10 +3,13 @@
  */
 
 var Slack = require('slack-client');
+var CronJob = require('cron').CronJob;
+var Path = require('path');
 
 var feedeobot = {
   modules: [],
-  client: undefined,
+  crontabs: [],
+  slack: undefined,
 
   start: function(callback) {
     this._loadModules();
@@ -14,15 +17,15 @@ var feedeobot = {
     var token = 'xoxb-3691534247-A6d2bMOL1WSf8iu7OeGxDH9y',
       autoReconnect = true,
       autoMark = true;
-    client = new Slack(token, autoReconnect, autoMark);
+    this.slack = new Slack(token, autoReconnect, autoMark);
 
-    client.on('open', function() {});
+    this.slack.on('open', function() {});
 
     var that = this;
-    client.on('message', function(message) {
+    this.slack.on('message', function(message) {
       var type = message.type,
-        channel = client.getChannelGroupOrDMByID(message.channel),
-        user = client.getUserByID(message.user),
+        channel = that.slack.getChannelGroupOrDMByID(message.channel),
+        user = that.slack.getUserByID(message.user),
         time = message.ts,
         text = message.text;
 
@@ -30,6 +33,16 @@ var feedeobot = {
         var help = 'Available commands:\n';
         that.modules.forEach(function(module) {
           help += module.help();
+          help += '\n';
+        });
+        help += '\nAvailable modules:\n';
+        that.modules.forEach(function(module) {
+          help += module.info();
+          help += '\n';
+        });
+        help += '\nAvailable crontabs:\n';
+        that.crontabs.forEach(function(crontab) {
+          help += crontab.info();
           help += '\n';
         });
         channel.send(help);
@@ -45,11 +58,13 @@ var feedeobot = {
 
     });
 
-    client.on('error', function(error) {
+    this.slack.on('error', function(error) {
       console.error('Error: %s', error);
     });
 
-    client.login();
+    this.slack.login();
+
+    this._loadCrontabs();
 
     callback();
   },
@@ -60,11 +75,23 @@ var feedeobot = {
   },
 
   _loadModules: function() {
-    var path = require("path").join(__dirname, "modules"),
+    var path = Path.join(__dirname, "modules"),
       i = 0,
       that = this;
-    require("fs").readdirSync(path).forEach(function(module) {
-      that.modules[i++] = require("./modules/" + module);
+    require("fs").readdirSync(path).forEach(function(file) {
+      that.modules[i++] = require("./modules/" + file);
+    });
+  },
+
+  _loadCrontabs: function() {
+    var path = Path.join(__dirname, "crontabs"),
+      i = 0,
+      that = this;
+    require("fs").readdirSync(path).forEach(function(file) {
+      var crontab = that.crontabs[i] = require("./crontabs/" + file);
+      var _that = that;
+      new CronJob(crontab.time, function() {crontab.function(_that.modules, _that.slack);}, null, true, "Europe/Stockholm");
+      i++;
     });
   }
 }

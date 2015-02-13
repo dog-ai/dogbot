@@ -16,10 +16,14 @@ var options = {
 
 function products() {}
 
+products.prototype.info = function() {
+  return "*products* - _Feedeo Product Service module_";
+}
+
 products.prototype.help = function() {
   var help = '';
 
-  help += '*!products get random*\t\t\t\t\t\t(Retrieve a random product from Feedeo)'
+  help += '*!products get random* - _Retrieve a random product_'
 
   return help;
 }
