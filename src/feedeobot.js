@@ -32,23 +32,36 @@ var feedeobot = {
       if (text === '!help') {
         var help = 'Available commands:\n';
         that.modules.forEach(function(module) {
-          help += module.help();
-          help += '\n';
+          try {
+            help += module.help();
+            help += '\n';
+          } catch (exception) {
+          }
         });
         help += '\nAvailable modules:\n';
         that.modules.forEach(function(module) {
-          help += module.info();
-          help += '\n';
+          try {
+            help += module.info();
+            help += '\n';
+          } catch (exception) {
+          }
         });
         help += '\nAvailable crontabs:\n';
         that.crontabs.forEach(function(crontab) {
-          help += crontab.info();
-          help += '\n';
+          try {
+            help += crontab.info();
+            help += '\n';
+          } catch (exception) {
+          }
         });
         channel.send(help);
       } else {
         that.modules.forEach(function(module) {
-          module.process(type, channel, user, time, text, that.slack);
+          try {
+            module.process(type, channel, user, time, text, that.slack);
+          } catch (exception) {
+            channel.send("Oops! Something went wrong...please call the maintenance team!");
+          }
         });
       }
     });
@@ -74,7 +87,11 @@ var feedeobot = {
       i = 0,
       that = this;
     require("fs").readdirSync(path).forEach(function(file) {
-      that.modules[i++] = require("./modules/" + file);
+      try {
+        that.modules[i++] = require("./modules/" + file);
+      } catch (exception) {
+        console.log('Unable to load module file: ' + file);
+      }
     });
   },
 
@@ -85,8 +102,18 @@ var feedeobot = {
     require("fs").readdirSync(path).forEach(function(file) {
       var crontab = that.crontabs[i] = require("./crontabs/" + file);
       var _that = that;
-      new CronJob(crontab.time, function() {crontab.function(_that.modules, _that.slack);}, null, true, "Europe/Stockholm");
-      i++;
+      try {
+        new CronJob(crontab.time, function() {
+          try {
+            crontab.function(_that.modules, _that.slack);
+          } catch (exception) {
+            console.log('Unable to run crontab file');
+          }
+        }, null, true, "Europe/Stockholm");
+        i++;
+      } catch (exception) {
+        console.log('Unable to load crontab file: ' + file);
+      }
     });
   }
 }
