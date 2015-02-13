@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2015, Feedeo AB. All rights reserved.
+ */
+
 var GoSquared = require('gosquared');
 
 var client = new GoSquared({
@@ -6,6 +10,14 @@ var client = new GoSquared({
 });
 
 function gosquared() {}
+
+gosquared.prototype.help = function() {
+  var help = '';
+
+  help += '*!who*\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t(List Feedeo online users)'
+
+  return help;
+}
 
 gosquared.prototype.process = function(type, channel, user, time, text, callback) {
   if (text === "!who") {
@@ -18,10 +30,10 @@ gosquared.prototype.process = function(type, channel, user, time, text, callback
       var response = '';
       data.list.forEach(function(user) {
         response +=
-          user.params.properties.name + '\t' +
-          user.params.properties.company + '\t' +
-          user.params.browserName + '/' + user.params.browserVersion + '\t' +
-          user.params.landTime + '\t' +
+          user.params.properties.name + '\t\t\t\t' +
+          user.params.properties.company + '\t\t\t' +
+          user.params.browserName + ' (' + user.params.browserVersion + ') \t\t' +
+          user.params.landTime + '\t\t' +
           user.params.country;
         response += '\n';
       });

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2015, Feedeo AB. All rights reserved.
+ */
+
 var Slack = require('slack-client');
 
 var feedeobot = {
@@ -22,13 +26,23 @@ var feedeobot = {
         time = message.ts,
         text = message.text;
 
-      that.modules.forEach(function(module) {
-        module.process(type, channel, user, time, text, function(response) {
-          if (response != '') {
-            channel.send(response);
-          }
+      if (text === '!help') {
+        var help = 'Available commands:\n';
+        that.modules.forEach(function(module) {
+          help += module.help();
+          help += '\n';
         });
-      });
+        channel.send(help);
+      } else {
+        that.modules.forEach(function(module) {
+          module.process(type, channel, user, time, text, function(text) {
+            if (text != '') {
+              channel.send(text);
+            }
+          });
+        });
+      }
+
     });
 
     client.on('error', function(error) {
@@ -41,7 +55,6 @@ var feedeobot = {
   },
 
   stop: function(callback) {
-    client.stop();
 
     callback();
   },
