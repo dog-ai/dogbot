@@ -2,7 +2,7 @@
  * Copyright (C) 2015, Feedeo AB. All rights reserved.
  */
 
-var client = require('https');
+var https = require('https');
 
 var options = {
   host: 'products.feedeo.io',
@@ -28,10 +28,10 @@ products.prototype.help = function() {
   return help;
 }
 
-products.prototype.process = function(type, channel, user, time, text, callback) {
+products.prototype.process = function(type, channel, user, time, text, slack) {
 
   if (text === "!products get random") {
-    client.request(options, function(response) {
+    https.request(options, function(response) {
         var str = '';
         response.on('data', function(chunk) {
           str += chunk;
@@ -45,7 +45,7 @@ products.prototype.process = function(type, channel, user, time, text, callback)
             '*' + product.properties.priceWithTax / 100 + ' SEK*' + '\n' +
             '```' + product.properties.productUrl + '```';
 
-          callback(response);
+          channel.send(response);
         });
       })
       .end();

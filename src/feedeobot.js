@@ -48,14 +48,9 @@ var feedeobot = {
         channel.send(help);
       } else {
         that.modules.forEach(function(module) {
-          module.process(type, channel, user, time, text, function(text) {
-            if (text != '') {
-              channel.send(text);
-            }
-          });
+          module.process(type, channel, user, time, text, that.slack);
         });
       }
-
     });
 
     this.slack.on('error', function(error) {

@@ -4,7 +4,7 @@
 
 var GoSquared = require('gosquared');
 
-var client = new GoSquared({
+var api = new GoSquared({
   api_key: 'F6A6FO243DR5TG0J',
   site_token: 'GSN-547853-H'
 });
@@ -23,10 +23,10 @@ gosquared.prototype.help = function() {
   return help;
 }
 
-gosquared.prototype.process = function(type, channel, user, time, text, callback) {
+gosquared.prototype.process = function(type, channel, user, time, text, slack) {
   if (text === "!who") {
 
-    client.now.v3.visitors(function(e, data) {
+    api.now.v3.visitors(function(e, data) {
       if (e) {
         return console.log(e);
       }
@@ -44,7 +44,7 @@ gosquared.prototype.process = function(type, channel, user, time, text, callback
 
       response += data.list.length + ' user(s) online';
 
-      callback(response);
+      channel.send(response);
     });
   }
 }
