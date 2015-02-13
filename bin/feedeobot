@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+process.on('SIGINT', function () {
+    feedeobot.stop(function () {
+            process.exit(0);
+    });
+});
+
+process.on('exit', function (code) {
+});
+
+process.on('uncaughtException', function (exception) {
+    console.error(exception.message);
+    process.exit(1);
+})
+
+var feedeobot = require('../src/feedeobot');
+
+try {
+    feedeobot.start(function () {
+    });
+} catch (exception) {
+    console.error(exception.message);
+    process.exit(1);
+}
