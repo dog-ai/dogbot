@@ -57,16 +57,13 @@ do_start()
     --test > /dev/null \
         || return 1
 
-    node = `which node`
-    nodemon = `which nodemon`
-
     start-stop-daemon \
     --start \
     --quiet \
     −−chdir $FEEDEOBOT_HOME \
     --make-pidfile --pidfile $PIDFILE \
     --background \
-    --startas "$node $nodemon $FEEDEOBOT_HOME/bin/feedeobot" -- $DAEMON_ARGS 2>&1\
+    --startas $DAEMON -- $DAEMON_ARGS 2>&1\
         || return 2
     # Add code here, if necessary, that waits for the process to be ready
     # to handle requests from services started subsequently which depend
