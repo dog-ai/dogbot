@@ -1,1 +1,1 @@
-*/5 * * * * /root/feedeobot/cron/reload 2>&1 >/dev/null
+*/1 * * * * /etc/init.d/feedeobot reload
