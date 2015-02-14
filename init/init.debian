@@ -42,8 +42,8 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
-    mkdir $FEEDEOBOT_HOME/tmp > /dev/null 2>&1
-    cd $FEEDEOBOT_HOME/nodemon
+    cd $FEEDEOBOT_HOME
+    mkdir tmp > /dev/null 2>&1
 
     # Return
     #   0 if daemon has been started
@@ -82,7 +82,6 @@ do_stop()
     [ "$?" = 2 ] && return 2
 
     killall node
-    killall find
 
     # Many daemons don't delete their pidfiles when they exit.
     rm -f $PIDFILE
