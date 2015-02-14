@@ -42,7 +42,8 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
-    mkdir $FEEDEOBOT_HOME/tmp > /dev/null 2>&1 &
+    mkdir $FEEDEOBOT_HOME/tmp > /dev/null 2>&1
+    cd $FEEDEOBOT_HOME/nodemon
 
     # Return
     #   0 if daemon has been started
