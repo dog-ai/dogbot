@@ -44,7 +44,7 @@ do_start()
 {
     cd $FEEDEOBOT_HOME
     mkdir tmp > /dev/null 2>&1
-
+    export PWD=$FEEDEOBOT_HOME
     # Return
     #   0 if daemon has been started
     #   1 if daemon was already running
