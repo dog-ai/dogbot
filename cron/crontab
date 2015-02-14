@@ -1,1 +1,1 @@
-*/1 * * * * /root/feedeobot/cron/reload
+*/5 * * * * /root/feedeobot/cron/reload 2>&1 >/dev/null
