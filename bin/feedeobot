@@ -1,15 +1,20 @@
 #!/usr/bin/env nodemon
 
-process.on('SIGINT', function () {
-    feedeobot.stop(function () {
-            process.exit(0);
+process.on('SIGINT', function() {
+    feedeobot.stop(function() {
+        process.exit(0);
     });
 });
 
-process.on('exit', function (code) {
+process.once('SIGUSR2', function() {
+    feedeobot.reload(function() {
+        process.kill(process.pid, 'SIGUSR2');
+    });
 });
 
-process.on('uncaughtException', function (exception) {
+process.on('exit', function(code) {});
+
+process.on('uncaughtException', function(exception) {
     console.error(exception.message);
     process.exit(1);
 })
@@ -17,8 +22,7 @@ process.on('uncaughtException', function (exception) {
 var feedeobot = require('../lib/feedeobot');
 
 try {
-    feedeobot.start(function () {
-    });
+    feedeobot.start(function() {});
 } catch (exception) {
     console.error(exception.message);
     process.exit(1);
