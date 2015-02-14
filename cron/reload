@@ -1,6 +1,8 @@
 #!/bin/sh
 
-/usr/bin/git remote update && \
-/usr/bin/git status -uno | \
+git=`which git`
+
+$git remote update && \
+$git status -uno | \
 grep -q "Your branch is behind" && \
-/usr/bin/git reset --hard origin/master
+$git reset --hard origin/master
