@@ -22,10 +22,5 @@ process.on('uncaughtException', function(exception) {
 
 var feedeobot = require('../lib/feedeobot');
 
-try {
-    feedeobot.start(function() {
-
-    });
-} catch (exception) {
-    throw exception;
-}
+feedeobot.start(function() {
+});
