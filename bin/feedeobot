@@ -1,6 +1,5 @@
 #!/usr/bin/env nodemon
 
-
 process.on('SIGINT', function() {
     feedeobot.stop(function() {
         process.exit(0);
