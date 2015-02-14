@@ -12,7 +12,8 @@ process.once('SIGUSR2', function() {
     });
 });
 
-process.on('exit', function(code) {});
+process.on('exit', function() {
+});
 
 process.on('uncaughtException', function(exception) {
     console.error(exception.message);
