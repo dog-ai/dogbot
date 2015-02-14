@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env nodemon
 
 process.on('SIGINT', function () {
     feedeobot.stop(function () {
