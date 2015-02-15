@@ -42,7 +42,8 @@ nodemon=`which nodemon`
 
 do_start()
 {
-    cd /root/feedeobot
+    cd $FEEDEOBOT_HOME
+
     mkdir log > /dev/null 2>&1
     mkdir tmp > /dev/null 2>&1
 
