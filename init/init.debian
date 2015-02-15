@@ -50,6 +50,7 @@ do_start()
     $forever start \
     --append -l $FEEDEOBOT_HOME/log/feedeobot.log \
     --pidFile $PIDFILE \
+    --workingDir $FEEDEOBOT_HOME \
     -c $nodemon $FEEDEOBOT_HOME/bin/feedeobot
     RETVAL="$?"
 
