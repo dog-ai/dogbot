@@ -1,8 +1,10 @@
 #!/bin/sh
 
+FEEDEOBOT_HOME=/root/feedeobot
+
 git=`which git`
 
-cd /root/feedeobot
+cd $FEEDEOBOT_HOME
 
 $git remote update && \
 $git status -uno | \
