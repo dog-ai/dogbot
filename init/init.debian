@@ -40,30 +40,30 @@ SCRIPTNAME=/etc/init.d/$NAME
 forever=`which forever`
 nodemon=`which nodemon`
 
-#
-# Function that starts the daemon/service
-#
 do_start()
 {
     cd /root/feedeobot
+    mkdir log > /dev/null 2>&1
     mkdir tmp > /dev/null 2>&1
 
     $forever start \
     --append -l $FEEDEOBOT_HOME/log/feedeobot.log \
     --pidFile $PIDFILE \
     -c $nodemon $FEEDEOBOT_HOME/bin/feedeobot
+    RETVAL="$?"
+
+    return "$RETVAL"
 }
 
-#
-# Function that stops the daemon/service
-#
 do_stop()
 {
-   $forever stopall
+    $forever stopall
+    RETVAL="$?"
 
     killall node > /dev/null 2>&1
 
     rm -f $PIDFILE
+
     return "$RETVAL"
 }
 
