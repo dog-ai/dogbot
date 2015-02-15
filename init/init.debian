@@ -42,6 +42,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
+    cd /root/feedeobot
     mkdir tmp > /dev/null 2>&1
     # Return
     #   0 if daemon has been started
@@ -50,9 +51,7 @@ do_start()
     start-stop-daemon \
     --start \
     --quiet \
-    −−chdir $FEEDEOBOT_HOME \
     --pidfile $PIDFILE  \
-    --background \
     --startas $DAEMON \
     --test > /dev/null \
         || return 1
@@ -60,10 +59,9 @@ do_start()
     start-stop-daemon \
     --start \
     --quiet \
-    −−chdir $FEEDEOBOT_HOME \
     --make-pidfile --pidfile $PIDFILE \
     --background \
-    --startas $DAEMON -- $DAEMON_ARGS 2>&1\
+    --startas $DAEMON -- $DAEMON_ARGS \
         || return 2
     # Add code here, if necessary, that waits for the process to be ready
     # to handle requests from services started subsequently which depend
@@ -133,10 +131,12 @@ case "$1" in
   reload)
     [ "$VERBOSE" != no ] && log_daemon_msg "Reloading $DESC" "$NAME"
     do_reload
-    case "$?" in
+    RETVAL="$?"
+    case $RETVAL in
         0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
         2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
     esac
+    return $RETVAL
     ;;
   status)
     status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?

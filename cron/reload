@@ -10,3 +10,5 @@ $git remote update && \
 $git status -uno | \
 grep -q "Your branch is behind" && \
 $git reset --hard origin/master
+
+return "$?"
