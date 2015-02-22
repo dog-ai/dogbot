@@ -45,6 +45,7 @@ do_start()
     cd $FEEDEOBOT_HOME
 
     mkdir log > /dev/null 2>&1
+    mkdir db > /dev/null 2>&1
     mkdir tmp > /dev/null 2>&1
 
     $forever start \
