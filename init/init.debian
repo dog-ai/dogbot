@@ -51,7 +51,7 @@ do_start()
     --append -l $FEEDEOBOT_HOME/log/feedeobot.log \
     --pidFile $PIDFILE \
     --workingDir $FEEDEOBOT_HOME \
-    -c '$nodemon --exitcrash' $FEEDEOBOT_HOME/bin/feedeobot
+    -c "$nodemon --exitcrash" $FEEDEOBOT_HOME/bin/feedeobot
     RETVAL="$?"
 
     return "$RETVAL"
