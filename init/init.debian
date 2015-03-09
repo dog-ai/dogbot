@@ -37,6 +37,9 @@ SCRIPTNAME=/etc/init.d/$NAME
 # and status_of_proc is working.
 . /lib/lsb/init-functions
 
+export AUDIODEV=hw:1,0
+export AUDIODRIVER=alsa
+
 forever=`which forever`
 nodemon=`which nodemon`
 
