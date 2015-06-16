@@ -1,0 +1,88 @@
+/*
+ * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ */
+
+var events = require('events');
+var nconf = require('nconf');
+
+function slack() {
+    var client = {};
+
+    events.EventEmitter.call(this);
+}
+
+slack.prototype.__proto__ = events.EventEmitter.prototype;
+
+slack.prototype.type = "IO";
+
+slack.prototype.name = "slack";
+
+slack.prototype.info = function() {
+    return "*" + this.name + "* - _Slack I/O module_";
+}
+
+slack.prototype.load = function(moduleManager) {
+    this.moduleManager = moduleManager;
+
+    var that = this;
+    this.on('message:received', function(message, callback) {
+        that.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function(module) {
+            try {
+                module.process(message, callback);
+            } catch (exception) {
+                callback("Oops! Something went wrong...please call the maintenance team!");
+                console.log(exception);
+            }
+        });
+    });
+}
+
+slack.prototype.unload = function() {}
+
+slack.prototype.send = function(recipient, message) {
+
+    if (recipient.charAt(0) === '#') {
+        var channel = this.client.getChannelByName(recipient.substring(1));
+        channel.send(message);
+    } else {
+        var id = this.client.getChannelGroupOrDMByID(recipient);
+        id.send(message);
+    }
+}
+
+nconf.env().argv();
+nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/slack.json'});
+
+var instance = new slack();
+
+var Slack = require('slack-client');
+
+var token = nconf.get('auth:token'),
+    autoReconnect = true,
+    autoMark = true;
+
+instance.client = new Slack(token, autoReconnect, autoMark);
+
+instance.client.on('open', function() {});
+
+instance.client.on('message', function(message) {
+    var type = message.type,
+        channel = instance.client.getChannelGroupOrDMByID(message.channel),
+        user = instance.client.getUserByID(message.user),
+        time = message.ts,
+        text = message.text;
+
+    if (text !== undefined && text.charAt(0) === '!') {
+        instance.emit('message:received', text, function(response) {
+            channel.send(response);
+        });
+    }
+});
+
+instance.client.on('error', function(error) {
+    console.error('Error: %s', error);
+});
+
+instance.client.login();
+
+module.exports = instance;
