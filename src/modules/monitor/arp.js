@@ -83,8 +83,8 @@ arp.prototype._listen = function(query, parameters, callback) {
                 self._resolve(parameter, function(error, mac) {
                     if (error !== undefined && error !== null) {
                         console.error(error);
-                    } else {
-                        console.log("Resolve IP address " + parameter + " to mac address " + mac);
+                    } else if (mac !== null) {
+                        console.log("Resolve IP address " + parameter + " to MAC address " + mac);
                     }
                 });
             }
@@ -101,7 +101,7 @@ arp.prototype._clean = function() {
 
 arp.prototype._resolve = function(ip, callback) {
     require('child_process')
-        .exec('ping -c 1 ' + ip + '; arp -an ' + ip,
+        .exec('ping -c 1 ' + ip + ' | arp -an ' + ip,
             function(error, stdout, stderr) {
                 if (error !== undefined && error !== null) {
                     callback(error);
@@ -110,7 +110,7 @@ arp.prototype._resolve = function(ip, callback) {
                         var values = stdout.split(' ');
                         var mac = values[3];
 
-                        if (!/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/.test(mac)) {
+                        if (!/^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/.test(mac)) {
                             mac = null;
                         }
 
@@ -118,6 +118,43 @@ arp.prototype._resolve = function(ip, callback) {
                     }
                 }
             });
+}
+
+arp.prototype._add = function(type, name, address, hostname, port, txt) {
+    this.moduleManager.emit('database:monitor:create', sqlInsertEntryIntoTable, [
+            type,
+            name,
+            address,
+            hostname,
+            port,
+            txt
+        ],
+        function(error) {
+            if (error !== undefined && error !== null) {
+                console.error(error);
+            } else {
+
+            }
+        });
+}
+
+arp.prototype._update = function(type, name, address, hostname, port, txt) {
+    var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
+    this.moduleManager.emit('database:monitor:update', sqlUpdateTableEntryByName, [
+            updatedDate,
+            type,
+            address,
+            hostname,
+            port,
+            txt,
+            name
+        ],
+        function(error, lastId, changes) {
+            if (error !== undefined && error !== null) {
+                console.error(error);
+            } else {}
+        });
 }
 
 arp.prototype._delete = function(oldestDate) {
