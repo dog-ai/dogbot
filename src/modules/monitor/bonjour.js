@@ -176,7 +176,7 @@ bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
 }
 
 bonjour.prototype._delete = function(oldestDate) {
-   var updatedDate = new Date(new Date().setDate(oldestDate)).toISOString().replace(/T/, ' ').replace(/\..+/, '');
+   var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
    this.moduleManager.emit('database:monitor:delete', sqlDeleteFromTableOldEntries, [updatedDate],
         function(error, lastId, changes) {
