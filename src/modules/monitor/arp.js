@@ -84,7 +84,7 @@ arp.prototype._listen = function(query, parameters, callback) {
                     if (error !== undefined && error !== null) {
                         console.error(error);
                     } else {
-                        console.log("Resolve ip address " + ip + " to mac address " + mac);
+                        console.log("Resolve IP address " + parameter + " to mac address " + mac);
                     }
                 });
             }
@@ -101,7 +101,7 @@ arp.prototype._clean = function() {
 
 arp.prototype._resolve = function(ip, callback) {
     require('child_process')
-        .exec('arp -an ' + ip,
+        .exec('ping -c 1 ' + ip + '; arp -an ' + ip,
             function(error, stdout, stderr) {
                 if (error !== undefined && error !== null) {
                     callback(error);
@@ -109,6 +109,11 @@ arp.prototype._resolve = function(ip, callback) {
                     if (callback !== undefined) {
                         var values = stdout.split(' ');
                         var mac = values[3];
+
+                        if (!/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/.test(mac)) {
+                            mac = null;
+                        }
+
                         callback(null, mac);
                     }
                 }

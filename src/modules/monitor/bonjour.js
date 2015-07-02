@@ -134,10 +134,8 @@ bonjour.prototype._discover = function() {
 bonjour.prototype._clean = function() {
     console.log("Cleaning old bonjour services");
 
-    var date = new Date();
-    date.setMinutes(date.getMinutes() - 5);
-
-    this._delete(date);
+    var currentDate = new Date();
+    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)));
 }
 
 bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
