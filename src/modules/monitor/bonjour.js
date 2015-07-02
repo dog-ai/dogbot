@@ -77,7 +77,7 @@ bonjour.prototype.start = function() {
         } catch (error) {
             console.error(error);
         }
-    }, 10 * 60 * 1000)
+    }, 5 * 60 * 1000)
 }
 
 bonjour.prototype.stop = function() {
@@ -118,11 +118,10 @@ bonjour.prototype._discover = function() {
                     console.error(error);
                 } else {
                     if (row === undefined) {
-                        console.log("Adding bonjour service: " + name + " (" + type + ") at " + address + ":" + port);
-
+                        //console.log("Adding bonjour service: " + name + " (" + type + ") at " + address + ":" + port);
                         self._add(type, name, address, hostname, port, txt);
                     } else {
-                        console.log("Updating bonjour service: " + name + " (" + type + ") at " + address + ":" + port);
+                        //console.log("Updating bonjour service: " + name + " (" + type + ") at " + address + ":" + port);
                         self._update(type, name, address, hostname, port, txt);
                     }
                 }
