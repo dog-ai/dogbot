@@ -20,6 +20,7 @@ var sqlDeleteFromTableOldEntries = "DELETE FROM arp WHERE updated_date < Datetim
 
 function arp() {
     var moduleManager = {};
+    var discoverInterval = undefined;
     var cleanInterval = undefined;
     var listener = undefined;
 }
@@ -58,6 +59,14 @@ arp.prototype.start = function() {
     this.moduleManager.on('database:monitor:create', this.listener);
     this.moduleManager.on('database:monitor:update', this.listener);
 
+    this.discoverInterval = setInterval(function() {
+        try {
+            self._discover();
+        } catch (error) {
+            console.error(error);
+        }
+    }, 60 * 1000);
+
     this.cleanInterval = setInterval(function() {
         try {
             self._clean();
@@ -71,7 +80,33 @@ arp.prototype.stop = function() {
     this.moduleManager.removeListener('database:monitor:create', this.listener);
     this.moduleManager.removeListener('database:monitor:update', this.listener);
 
+    clearInterval(this.discoverInterval);
     clearInterval(this.cleanInterval);
+}
+
+arp.prototype._discover = function() {
+    console.log("Discovering ARP entries");
+
+    var self = this;
+
+    var spawn = require('child_process').spawn,
+        process = spawn('arp-scan', ['--interface=wlan0', '-lqN']);
+
+    process.stdout.setEncoding('utf8');
+    process.stdout.pipe(require('split')()).on('data', function(line) {
+        if (line.indexOf('\t') === -1) {
+            return;
+        }
+
+        var values = line.split('\t');
+
+        var ipAddress = values[0];
+        var macAddress = values[1];
+
+        self._process(ipAddress, macAddress);
+    });
+
+    process.stderr.on('data', function(data) {});
 }
 
 arp.prototype._listen = function(query, parameters, callback) {
@@ -85,26 +120,31 @@ arp.prototype._listen = function(query, parameters, callback) {
                     if (error !== undefined && error !== null) {
                         console.error(error);
                     } else if (macAddress !== null) {
-
-                        self.moduleManager.emit('database:monitor:retrieve', sqlSelectFromTableByIpAddress, [ipAddress],
-                            function(error, row) {
-                                if (error !== null) {
-                                    console.error(error);
-                                } else {
-                                    if (row === undefined) {
-                                        console.log("Adding ARP entry: " + ipAddress + " at " + macAddress);
-                                        self._add(ipAddress, macAddress);
-                                    } else {
-                                        console.log("Updating ARP entry: " + ipAddress + " at " + macAddress);
-                                        self._update(ipAddress, macAddress);
-                                    }
-                                }
-                            });
+                        self._process(ipAddress, macAddress);
                     }
                 });
             }
         });
     }
+}
+
+arp.prototype._process = function(ipAddress, macAddress) {
+    var self = this;
+
+    self.moduleManager.emit('database:monitor:retrieve', sqlSelectFromTableByIpAddress, [ipAddress],
+        function(error, row) {
+            if (error !== null) {
+                console.error(error);
+            } else {
+                if (row === undefined) {
+                    //console.log("Adding ARP entry: " + ipAddress + " at " + macAddress);
+                    self._add(ipAddress, macAddress);
+                } else {
+                    //console.log("Updating ARP entry: " + ipAddress + " at " + macAddress);
+                    self._update(ipAddress, macAddress);
+                }
+            }
+        });
 }
 
 arp.prototype._clean = function() {

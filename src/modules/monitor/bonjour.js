@@ -91,10 +91,10 @@ bonjour.prototype._discover = function() {
     var self = this;
 
     var spawn = require('child_process').spawn,
-        avahi = spawn('avahi-browse', ['-alrpc']);
+        process = spawn('avahi-browse', ['-alrpc']);
 
-    avahi.stdout.setEncoding('utf8');
-    avahi.stdout.pipe(require('split')()).on('data', function(line) {
+    process.stdout.setEncoding('utf8');
+    process.stdout.pipe(require('split')()).on('data', function(line) {
         if (line.charAt(0) !== '=') {
             return;
         }
@@ -128,7 +128,7 @@ bonjour.prototype._discover = function() {
             });
     });
 
-    avahi.stderr.on('data', function(data) {});
+    process.stderr.on('data', function(data) {});
 }
 
 bonjour.prototype._clean = function() {
