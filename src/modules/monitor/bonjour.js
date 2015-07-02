@@ -24,10 +24,8 @@ var sqlDeleteFromTableOldEntries = "DELETE FROM bonjour WHERE updated_date < ?";
 
 function bonjour() {
     var moduleManager = {};
-    var intervals = {
-        discover: undefined,
-        clean: undefined
-    };
+    var discoverInterval = undefined;
+    var cleanInterval = undefined;
 }
 
 bonjour.prototype.type = "MONITOR";
@@ -65,7 +63,7 @@ bonjour.prototype.unload = function() {
 bonjour.prototype.start = function() {
     var self = this;
 
-    this.intervals.discover = setInterval(function() {
+    this.discoverInterval = setInterval(function() {
         try {
             self._discover();
         } catch (error) {
@@ -73,7 +71,7 @@ bonjour.prototype.start = function() {
         }
     }, 60 * 1000);
 
-    this.intervals.clean = setInterval(function() {
+    this.cleanInterval = setInterval(function() {
         try {
             self._clean();
         } catch (error) {
@@ -83,8 +81,8 @@ bonjour.prototype.start = function() {
 }
 
 bonjour.prototype.stop = function() {
-    clearInterval(this.intervals.discover);
-    clearInterval(this.intervals.clean);
+    clearInterval(this.discoverInterval);
+    clearInterval(this.cleanInterval);
 }
 
 bonjour.prototype._discover = function() {
