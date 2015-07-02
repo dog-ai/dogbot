@@ -104,6 +104,6 @@ var instance = new modules();
 
 instance.loaded = [];
 instance.available = [];
-instance.types = ['DATABASE', 'SCHEDULE', 'PROCESS', 'MONITOR', 'IO', 'AUTH']
+instance.types = ['DATABASE', 'SCHEDULE', 'PROCESS', 'MONITOR', 'IO', 'AUTH', 'PERSON']
 
 module.exports = instance;
