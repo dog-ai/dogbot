@@ -47,7 +47,7 @@ bonjour.prototype.load = function(moduleManager) {
         throw new Error(process.platform + ' platform is not supported');
     }
 
-    this.moduleManager.emit('database:network:setup', sqlCreateTable, [], function(error) {
+    this.moduleManager.emit('database:monitor:setup', sqlCreateTable, [], function(error) {
         if (error !== undefined && error !== null) {
             throw new Error(error);
         } else {
@@ -112,7 +112,7 @@ bonjour.prototype._discover = function() {
             return;
         }
 
-        self.moduleManager.emit('database:network:retrieve', sqlSelectFromTableByName, [name],
+        self.moduleManager.emit('database:monitor:retrieve', sqlSelectFromTableByName, [name],
             function(error, row) {
                 if (error !== null) {
                     console.error(error);
@@ -140,7 +140,7 @@ bonjour.prototype._clean = function() {
 }
 
 bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
-    this.moduleManager.emit('database:network:create', sqlInsertEntryIntoTable, [
+    this.moduleManager.emit('database:monitor:create', sqlInsertEntryIntoTable, [
             type,
             name,
             address,
@@ -160,7 +160,7 @@ bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
 bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:network:update', sqlUpdateTableEntryByName, [
+    this.moduleManager.emit('database:monitor:update', sqlUpdateTableEntryByName, [
             updatedDate,
             type,
             address,
@@ -179,7 +179,7 @@ bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
 bonjour.prototype._delete = function(oldestDate) {
    var updatedDate = new Date(new Date().setDate(oldestDate)).toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-   this.moduleManager.emit('database:network:delete', sqlDeleteFromTableOldEntries, [updatedDate],
+   this.moduleManager.emit('database:monitor:delete', sqlDeleteFromTableOldEntries, [updatedDate],
         function(error, lastId, changes) {
             if (error !== undefined && error !== null) {
                 console.error(error);
