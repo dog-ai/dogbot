@@ -2,6 +2,8 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var nconf = require('nconf');
+
 var sqlCreateTable = "CREATE TABLE IF NOT EXISTS google (" +
   "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
   "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -29,6 +31,8 @@ var refresh = require('passport-oauth2-refresh');
 
 function google() {
   var moduleManager = {};
+  var authClientId = undefined;
+  var authClientSecret = undefined;
 }
 
 google.prototype.type = "AUTH";
@@ -45,6 +49,19 @@ google.prototype.load = function(moduleManager) {
   var self = this;
 
   this.moduleManager = moduleManager;
+
+  nconf.env().argv();
+  nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/google.json'});
+
+  this.authClientId = nconf.get('auth:client_id');
+  if (this.authClientId === undefined || this.authClientId === null || this.authClientId.trim() === '') {
+    throw new Error('invalid configuration: no client id available');
+  }
+
+  this.authClientSecret = nconf.get('auth:client_secret');
+  if (this.authClientSecret === undefined || this.authClientSecret === null || this.authClientSecret.trim() === '') {
+    throw new Error('invalid configuration: no client secret available');
+  }
 
   this.moduleManager.emit('database:auth:setup', sqlCreateTable, [], function(error) {
     if (error !== undefined && error !== null) {
@@ -63,8 +80,8 @@ google.prototype.start = function() {
   var web = this.moduleManager.findLoadedModuleByName('web');
 
   var strategy = new GoogleStrategy({
-      clientID: '426704701102-im8l4oaf1au7gn0msvsupek91frqlr0p.apps.googleusercontent.com',
-      clientSecret: 'W6DbtssQ4VJTX0f6JpLQdwOA',
+      clientID: this.authClientId,
+      clientSecret: this.authClientSecret,
       scope: ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/calendar'],
       callbackURL: "http://localhost:8082/auth/google/callback"
     },
