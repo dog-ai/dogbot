@@ -20,7 +20,7 @@ var sqlUpdateTableEntryByName = "UPDATE bonjour SET updated_date = ?, type = ?, 
 
 var sqlSelectFromTableByName = "SELECT * FROM bonjour WHERE name = ?;";
 
-var sqlDeleteFromTableOldEntries = "DELETE FROM bonjour WHERE updated_date < ?";
+var sqlDeleteFromTableOldEntries = "DELETE FROM bonjour WHERE updated_date < Datetime(?)";
 
 function bonjour() {
     var moduleManager = {};
