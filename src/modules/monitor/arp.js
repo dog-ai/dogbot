@@ -21,6 +21,12 @@ var sqlDeleteFromTableOldEntries = "DELETE FROM arp WHERE updated_date < Datetim
 function arp() {
     var moduleManager = {};
     var cleanInterval = undefined;
+
+    var listener = function(query, parameters, callback, ignore) {
+        if (ignore === undefined) {
+            self._listen(query, parameters, callback);
+        }
+    });
 }
 
 arp.prototype.type = "MONITOR";
@@ -54,12 +60,8 @@ arp.prototype.unload = function() {
 arp.prototype.start = function() {
     var self = this;
 
-    this.moduleManager.on('database:monitor:create', function(query, parameters, callback) {
-        self._listen(query, parameters, callback);
-    });
-    this.moduleManager.on('database:monitor:update', function(query, parameters, callback) {
-        self._listen(query, parameters, callback);
-    });
+    this.moduleManager.on('database:monitor:create', listener);
+    this.moduleManager.on('database:monitor:update', listener);
 
     this.cleanInterval = setInterval(function() {
         try {
@@ -67,10 +69,13 @@ arp.prototype.start = function() {
         } catch (error) {
             console.error(error);
         }
-    }, 60 * 1000);
+    }, 2 * 60 * 1000);
 }
 
 arp.prototype.stop = function() {
+    this.moduleManager.removeListener('database:monitor:create', listener);
+    this.moduleManager.removeListener('database:monitor:update', listener);
+
     clearInterval(this.cleanInterval);
 }
 

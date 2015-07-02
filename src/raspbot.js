@@ -26,13 +26,13 @@ var feedeobot = {
       if (error !== undefined) {
         console.error(error);
       } else {
-        if (changed) {
+        /*if (changed) {
           console.log('Detected new code revision: ' + revision);
 
           modules.findAllLoadedModulesByType('IO').forEach(function(module) {
             module.send(null, 'Refreshing my brains with code revision ' + revision);
           });
-        }
+        }*/
       }
 
       self.stop(callback);
