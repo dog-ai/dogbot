@@ -37,7 +37,7 @@ arp.prototype.load = function(moduleManager) {
 
     this.moduleManager = moduleManager;
 
-    this.moduleManager.emit('database:network:setup', sqlCreateTable, [], function(error) {
+    this.moduleManager.emit('database:monitor:setup', sqlCreateTable, [], function(error) {
         if (error !== undefined && error !== null) {
             throw new Error(error);
         } else {
@@ -51,8 +51,8 @@ arp.prototype.unload = function() {
 }
 
 arp.prototype.start = function() {
-    this.moduleManager.on('database:network:create', this._listen);
-    this.moduleManager.on('database:network:update', this._listen);
+    this.moduleManager.on('database:monitor:create', this._listen);
+    this.moduleManager.on('database:monitor:update', this._listen);
 }
 
 arp.prototype.stop = function() {}
@@ -63,6 +63,7 @@ arp.prototype._listen = function(query, parameters, callback) {
     if (parameters !== undefined) {
         parameters.forEach(function(parameter) {
             if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(parameter)) {
+                console.log("arping " + parameter);
                 /*self._resolve(parameter, function(error, mac) {
                     if (error !== undefined && error !== null) {
                         console.error(error);
