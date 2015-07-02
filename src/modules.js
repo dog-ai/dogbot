@@ -45,7 +45,8 @@ modules.prototype._load = function(type, file) {
         console.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
     } catch (error) {
         console.log('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
-        if (!(error.message.indexOf('platform is not supported') > -1)) {
+        if (!(error.message.indexOf('platform is not supported') > -1 ||
+            error.message.indexOf('invalid configuration') > -1)) {
             console.error(error.stack);
         }
         this.available.push(module);

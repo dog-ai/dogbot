@@ -24,7 +24,10 @@ var sqlDeleteFromTableOldEntries = "DELETE FROM bonjour WHERE updated_date < ?";
 
 function bonjour() {
     var moduleManager = {};
-    var interval = {};
+    var intervals = {
+        discover: undefined,
+        clean: undefined
+    };
 }
 
 bonjour.prototype.type = "MONITOR";
@@ -62,7 +65,7 @@ bonjour.prototype.unload = function() {
 bonjour.prototype.start = function() {
     var self = this;
 
-    this.interval = setInterval(function() {
+    this.intervals.discover = setInterval(function() {
         try {
             self._discover();
         } catch (error) {
@@ -70,7 +73,7 @@ bonjour.prototype.start = function() {
         }
     }, 60 * 1000);
 
-    this.interval = setInterval(function() {
+    this.intervals.clean = setInterval(function() {
         try {
             self._clean();
         } catch (error) {
@@ -80,11 +83,12 @@ bonjour.prototype.start = function() {
 }
 
 bonjour.prototype.stop = function() {
-    clearInterval(this.interval);
+    clearInterval(this.intervals.discover);
+    clearInterval(this.intervals.clean);
 }
 
 bonjour.prototype._discover = function() {
-    //console.log("Discovering bonjour services");
+    console.log("Discovering bonjour services");
 
     var self = this;
 
@@ -116,8 +120,11 @@ bonjour.prototype._discover = function() {
                     console.error(error);
                 } else {
                     if (row === undefined) {
+                        console.log("Adding bonjour service: " + name + " (" + type + ") at " + address + ":" + port);
+
                         self._add(type, name, address, hostname, port, txt);
                     } else {
+                        console.log("Updating bonjour service: " + name + " (" + type + ") at " + address + ":" + port);
                         self._update(type, name, address, hostname, port, txt);
                     }
                 }
@@ -128,13 +135,13 @@ bonjour.prototype._discover = function() {
 }
 
 bonjour.prototype._clean = function() {
-    //console.log("Cleaning old bonjour services");
-    this._delete();
+    console.log("Cleaning old bonjour services");
+
+    var yesterday = new Date().getDate()-1;
+    this._delete(yesterday);
 }
 
 bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
-    //console.log("Adding bonjour service to database: " + name + " (" + type + ") at " + address + ":" + port);
-
     this.moduleManager.emit('database:network:create', sqlInsertEntryIntoTable, [
             type,
             name,
@@ -153,8 +160,6 @@ bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
 }
 
 bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
-    //console.log("Updating bonjour service in database: " + name + " (" + type + ") at " + address + ":" + port);
-
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     this.moduleManager.emit('database:network:update', sqlUpdateTableEntryByName, [
@@ -173,8 +178,8 @@ bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
         });
 }
 
-bonjour.prototype._delete = function() {
-   var updatedDate = new Date(new Date().setDate(new Date().getDate()-1)).toISOString().replace(/T/, ' ').replace(/\..+/, '');
+bonjour.prototype._delete = function(oldestDate) {
+   var updatedDate = new Date(new Date().setDate(oldestDate)).toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
    this.moduleManager.emit('database:network:delete', sqlDeleteFromTableOldEntries, [updatedDate],
         function(error, lastId, changes) {
