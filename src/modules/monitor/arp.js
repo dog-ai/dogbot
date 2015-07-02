@@ -12,21 +12,16 @@ var sqlCreateTable = "CREATE TABLE IF NOT EXISTS arp (" +
 
 var sqlInsertEntryIntoTable = "INSERT INTO arp (ip_address, mac_address) VALUES (?, ?);";
 
-var sqlUpdateTableEntryByName = "UPDATE arp SET updated_date = ?, mac_address = ? WHERE ip_address = ? ;";
+var sqlUpdateTableEntryByIpAddress = "UPDATE arp SET updated_date = ?, mac_address = ? WHERE ip_address = ? ;";
 
-var sqlSelectFromTableByName = "SELECT * FROM arp WHERE ip_address = ?;";
+var sqlSelectFromTableByIpAddress = "SELECT * FROM arp WHERE ip_address = ?;";
 
 var sqlDeleteFromTableOldEntries = "DELETE FROM arp WHERE updated_date < Datetime(?)";
 
 function arp() {
     var moduleManager = {};
     var cleanInterval = undefined;
-
-    var listener = function(query, parameters, callback, ignore) {
-        if (ignore === undefined) {
-            self._listen(query, parameters, callback);
-        }
-    };
+    var listener = undefined;
 }
 
 arp.prototype.type = "MONITOR";
@@ -60,8 +55,8 @@ arp.prototype.unload = function() {
 arp.prototype.start = function() {
     var self = this;
 
-    this.moduleManager.on('database:monitor:create', listener);
-    this.moduleManager.on('database:monitor:update', listener);
+    this.moduleManager.on('database:monitor:create', this.listener);
+    this.moduleManager.on('database:monitor:update', this.listener);
 
     this.cleanInterval = setInterval(function() {
         try {
@@ -73,8 +68,8 @@ arp.prototype.start = function() {
 }
 
 arp.prototype.stop = function() {
-    this.moduleManager.removeListener('database:monitor:create', listener);
-    this.moduleManager.removeListener('database:monitor:update', listener);
+    this.moduleManager.removeListener('database:monitor:create', this.listener);
+    this.moduleManager.removeListener('database:monitor:update', this.listener);
 
     clearInterval(this.cleanInterval);
 }
@@ -85,11 +80,26 @@ arp.prototype._listen = function(query, parameters, callback) {
     if (parameters !== undefined) {
         parameters.forEach(function(parameter) {
             if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(parameter)) {
-                self._resolve(parameter, function(error, mac) {
+                var ipAddress = parameter;
+                self._resolve(parameter, function(error, macAddress) {
                     if (error !== undefined && error !== null) {
                         console.error(error);
-                    } else if (mac !== null) {
-                        console.log("Resolve IP address " + parameter + " to MAC address " + mac);
+                    } else if (macAddress !== null) {
+
+                        self.moduleManager.emit('database:monitor:retrieve', sqlSelectFromTableByIpAddress, [ipAddress],
+                            function(error, row) {
+                                if (error !== null) {
+                                    console.error(error);
+                                } else {
+                                    if (row === undefined) {
+                                        console.log("Adding ARP entry: " + ipAddress + " at " + macAddress);
+                                        self._add(ipAddress, macAddress);
+                                    } else {
+                                        console.log("Updating ARP entry: " + ipAddress + " at " + macAddress);
+                                        self._update(ipAddress, macAddress);
+                                    }
+                                }
+                            });
                     }
                 });
             }
@@ -125,14 +135,10 @@ arp.prototype._resolve = function(ip, callback) {
             });
 }
 
-arp.prototype._add = function(type, name, address, hostname, port, txt) {
+arp.prototype._add = function(ipAddress, macAddress) {
     this.moduleManager.emit('database:monitor:create', sqlInsertEntryIntoTable, [
-            type,
-            name,
-            address,
-            hostname,
-            port,
-            txt
+            ipAddress,
+            macAddress
         ],
         function(error) {
             if (error !== undefined && error !== null) {
@@ -140,32 +146,28 @@ arp.prototype._add = function(type, name, address, hostname, port, txt) {
             } else {
 
             }
-        });
+        }, true);
 }
 
-arp.prototype._update = function(type, name, address, hostname, port, txt) {
+arp.prototype._update = function(ipAddress, macAddress) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:update', sqlUpdateTableEntryByName, [
+    this.moduleManager.emit('database:monitor:update', sqlUpdateTableEntryByIpAddress, [
             updatedDate,
-            type,
-            address,
-            hostname,
-            port,
-            txt,
-            name
+            macAddress,
+            ipAddress
         ],
         function(error, lastId, changes) {
             if (error !== undefined && error !== null) {
                 console.error(error);
             } else {}
-        });
+        }, true);
 }
 
 arp.prototype._delete = function(oldestDate) {
-   var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-   this.moduleManager.emit('database:monitor:delete', sqlDeleteFromTableOldEntries, [updatedDate],
+    this.moduleManager.emit('database:monitor:delete', sqlDeleteFromTableOldEntries, [updatedDate],
         function(error, lastId, changes) {
             if (error !== undefined && error !== null) {
                 console.error(error);
@@ -173,4 +175,14 @@ arp.prototype._delete = function(oldestDate) {
         });
 }
 
-module.exports = new arp();
+var instance = new arp();
+
+function eventListener(query, parameters, callback, ignore) {
+    if (ignore === undefined || ignore !== null && !ignore) {
+        instance._listen(query, parameters, callback);
+    }
+};
+
+instance.listener = eventListener;
+
+module.exports = instance;

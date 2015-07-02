@@ -2,21 +2,21 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-function network() {
+function ip() {
     var moduleManager = {};
 }
 
-network.prototype.type = "MONITOR";
+ip.prototype.type = "MONITOR";
 
-network.prototype.name = "network";
+ip.prototype.name = "ip";
 
-network.prototype.info = function() {
+ip.prototype.info = function() {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
 }
 
-network.prototype.load = function(moduleManager) {
+ip.prototype.load = function(moduleManager) {
     var self = this;
     this.moduleManager = moduleManager;
 
@@ -26,10 +26,10 @@ network.prototype.load = function(moduleManager) {
     }, 10000);
 }
 
-network.prototype.unload = function() {}
+ip.prototype.unload = function() {}
 
-network.prototype.start = function() {
+ip.prototype.start = function() {
 
 }
 
-module.exports = new network();
+module.exports = new ip();
