@@ -1,6 +1,6 @@
 {
-    "default_channel": "#feedeo",
+    "default_channel": "",
     "auth": {
-        "token": "xoxb-3691534247-A6d2bMOL1WSf8iu7OeGxDH9y"
+        "token": ""
     }
 }

@@ -16,7 +16,7 @@
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 DESC="Raspberry Pi Bot"
-NAME=feedeobot
+NAME=raspbot
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -51,7 +51,7 @@ do_start()
     mkdir tmp > /dev/null 2>&1
 
     $forever start \
-    --append -l $RASPBOT_HOME/log/feedeobot.log \
+    --append -l $RASPBOT_HOME/log/raspbot.log \
     --pidFile $PIDFILE \
     --workingDir $RASPBOT_HOME \
     -c "$nodemon --exitcrash" $RASPBOT_HOME/src/app
