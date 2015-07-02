@@ -77,7 +77,7 @@ bonjour.prototype.start = function() {
         } catch (error) {
             console.error(error);
         }
-    }, 24 * 60 * 60 * 1000)
+    }, 10 * 60 * 1000)
 }
 
 bonjour.prototype.stop = function() {
