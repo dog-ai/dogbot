@@ -26,7 +26,7 @@ function arp() {
         if (ignore === undefined) {
             self._listen(query, parameters, callback);
         }
-    });
+    };
 }
 
 arp.prototype.type = "MONITOR";
