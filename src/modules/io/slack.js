@@ -52,15 +52,16 @@ slack.prototype.load = function(moduleManager) {
 
     this.client.on('open', function() {});
 
+		var that = this;
     this.client.on('message', function(message) {
         var type = message.type,
-            channel = instance.client.getChannelGroupOrDMByID(message.channel),
-            user = instance.client.getUserByID(message.user),
+            channel = that.client.getChannelGroupOrDMByID(message.channel),
+            user = that.client.getUserByID(message.user),
             time = message.ts,
             text = message.text;
 
         if (text !== undefined && text.charAt(0) === '!') {
-            instance.emit('message:received', text, function(response) {
+            that.emit('message:received', text, function(response) {
                 channel.send(response);
             });
         }
