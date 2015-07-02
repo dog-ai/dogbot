@@ -52,8 +52,14 @@ arp.prototype.unload = function() {
 }
 
 arp.prototype.start = function() {
-    this.moduleManager.on('database:monitor:create', this._listen);
-    this.moduleManager.on('database:monitor:update', this._listen);
+    var self = this;
+
+    this.moduleManager.on('database:monitor:create', function(query, parameters, callback) {
+        self._listen(query, parameters, callback);
+    });
+    this.moduleManager.on('database:monitor:update', function(query, parameters, callback) {
+        self._listen(query, parameters, callback);
+    });
 
     this.cleanInterval = setInterval(function() {
         try {
@@ -103,7 +109,7 @@ arp.prototype._resolve = function(ip, callback) {
                     if (callback !== undefined) {
                         var values = stdout.split(' ');
                         var mac = values[3];
-                        callback(mac);
+                        callback(null, mac);
                     }
                 }
             });
