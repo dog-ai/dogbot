@@ -77,7 +77,7 @@ bonjour.prototype.start = function() {
         } catch (error) {
             console.error(error);
         }
-    }, 5 * 60 * 1000)
+    }, 60 * 1000);
 }
 
 bonjour.prototype.stop = function() {
@@ -134,8 +134,10 @@ bonjour.prototype._discover = function() {
 bonjour.prototype._clean = function() {
     console.log("Cleaning old bonjour services");
 
-    var yesterday = new Date().getDate()-1;
-    this._delete(yesterday);
+    var date = new Date();
+    date.setMinutes(date.getMinutes() - 5);
+
+    this._delete(date);
 }
 
 bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
