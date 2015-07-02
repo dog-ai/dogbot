@@ -9,16 +9,14 @@ process.on('SIGINT', function() {
 process.once('SIGUSR2', function() {
     raspbot.reload(function() {
         process.kill(process.pid, 'SIGUSR2');
-        //process.exit(0);
     });
 });
 
 process.on('exit', function() {
 });
 
-process.on('uncaughtException', function(exception) {
-    console.error(exception.stack);
-    process.exit(1);
+process.on('uncaughtException', function(error) {
+    raspbot.error(error);
 })
 
 var raspbot = require('./raspbot.js');

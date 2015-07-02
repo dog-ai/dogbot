@@ -5,6 +5,7 @@
 var fs = require("fs");
 var sqlite3 = require("sqlite3").verbose();
 
+var path = __dirname + "/../../../db";
 var file = __dirname + "/../../../db/auth.db";
 var db = new sqlite3.Database(file);
 
@@ -34,7 +35,7 @@ auth.prototype.load = function(moduleManager) {
     this.moduleManager.on('database:auth:delete', this._run);
 
     if (!fs.existsSync(file)) {
-
+        fs.mkdirSync(path);
     }
 }
 

@@ -5,6 +5,7 @@
 var fs = require("fs");
 var sqlite3 = require("sqlite3").verbose();
 
+var path = __dirname + "/../../../db";
 var file = __dirname + "/../../../db/monitor.db";
 var db = new sqlite3.Database(file);
 
@@ -33,7 +34,7 @@ monitor.prototype.load = function(moduleManager) {
     this.moduleManager.on('database:monitor:delete', this._run);
 
     if (!fs.existsSync(file)) {
-
+        fs.mkdirSync(path);
     }
 }
 

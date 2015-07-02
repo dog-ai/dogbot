@@ -4,9 +4,13 @@
 
 var events = require('events');
 var nconf = require('nconf');
+var Slack = require('slack-client');
 
 function slack() {
     var client = {};
+    var authToken;
+    var autoReconnect = true;
+    var autoMark = true;
 
     events.EventEmitter.call(this);
 }
@@ -24,6 +28,14 @@ slack.prototype.info = function() {
 slack.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
 
+    nconf.env().argv();
+    nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/slack.json'});
+
+    this.authToken = nconf.get('auth:token');
+    if (this.authToken === undefined || this.authToken === null || this.authToken.trim() === '') {
+        throw new Error('invalid configuration: no authentication token available');
+    }
+
     var that = this;
     this.on('message:received', function(message, callback) {
         that.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function(module) {
@@ -35,13 +47,39 @@ slack.prototype.load = function(moduleManager) {
             }
         });
     });
+
+    this.client = new Slack(this.authToken, this.autoReconnect, this.autoMark);
+
+    this.client.on('open', function() {});
+
+    this.client.on('message', function(message) {
+        var type = message.type,
+            channel = instance.client.getChannelGroupOrDMByID(message.channel),
+            user = instance.client.getUserByID(message.user),
+            time = message.ts,
+            text = message.text;
+
+        if (text !== undefined && text.charAt(0) === '!') {
+            instance.emit('message:received', text, function(response) {
+                channel.send(response);
+            });
+        }
+    });
+
+    this.client.on('error', function(error) {
+        console.error('Error: %s', error);
+    });
+
+    this.client.login();
 }
 
 slack.prototype.unload = function() {}
 
 slack.prototype.send = function(recipient, message) {
 
-    if (recipient.charAt(0) === '#') {
+    if (recipient === null) {
+        return this.send(nconf.get('default_channel'), message);
+    } else if (recipient.charAt(0) === '#') {
         var channel = this.client.getChannelByName(recipient.substring(1));
         channel.send(message);
     } else {
@@ -50,39 +88,4 @@ slack.prototype.send = function(recipient, message) {
     }
 }
 
-nconf.env().argv();
-nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/slack.json'});
-
-var instance = new slack();
-
-var Slack = require('slack-client');
-
-var token = nconf.get('auth:token'),
-    autoReconnect = true,
-    autoMark = true;
-
-instance.client = new Slack(token, autoReconnect, autoMark);
-
-instance.client.on('open', function() {});
-
-instance.client.on('message', function(message) {
-    var type = message.type,
-        channel = instance.client.getChannelGroupOrDMByID(message.channel),
-        user = instance.client.getUserByID(message.user),
-        time = message.ts,
-        text = message.text;
-
-    if (text !== undefined && text.charAt(0) === '!') {
-        instance.emit('message:received', text, function(response) {
-            channel.send(response);
-        });
-    }
-});
-
-instance.client.on('error', function(error) {
-    console.error('Error: %s', error);
-});
-
-instance.client.login();
-
-module.exports = instance;
+module.exports = new slack();

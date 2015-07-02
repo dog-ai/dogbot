@@ -2,6 +2,8 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var stackTrace = require('stack-trace');
+
 var revision = require('./revision.js');
 var modules = require('./modules.js');
 
@@ -25,16 +27,33 @@ var feedeobot = {
         console.error(error);
       } else {
         if (changed) {
-          console.log("Detected new code revision: " + revision);
+          console.log('Detected new code revision: ' + revision);
 
           modules.findAllLoadedModulesByType('IO').forEach(function(module) {
-            module.send("#feedeo", 'Refreshing my brains with code revision ' + revision);
+            module.send(null, 'Refreshing my brains with code revision ' + revision);
           });
         }
       }
 
       self.stop(callback);
     });
+  },
+
+  error: function(error) {
+    var traces = stackTrace.parse(error);
+
+    console.log(error.stack);
+
+    if (traces !== undefined && traces !== null) {
+      traces.forEach(function(trace) {
+        var filename = trace.getFileName();
+        var name = filename.substring(filename.lastIndexOf("/") + 1, filename.lastIndexOf("."));
+        var module = modules.findLoadedModuleByName(name);
+        if (module !== undefined && module !== null) {
+          modules.unloadModule(module);
+        }
+      });
+    }
   }
 };
 
