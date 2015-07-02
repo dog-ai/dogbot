@@ -89,10 +89,8 @@ arp.prototype._listen = function(query, parameters, callback) {
 arp.prototype._clean = function() {
     console.log("Cleaning old ARP entries");
 
-    var date = new Date();
-    date.setMinutes(date.getMinutes() - 5);
-
-    this._delete(date);
+    var currentDate = new Date();
+    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)));
 }
 
 arp.prototype._resolve = function(ip, callback) {
@@ -111,8 +109,8 @@ arp.prototype._resolve = function(ip, callback) {
             });
 }
 
-bonjour.prototype._delete = function(oldestDate) {
-   var updatedDate = new Date(new Date().setDate(oldestDate)).toISOString().replace(/T/, ' ').replace(/\..+/, '');
+arp.prototype._delete = function(oldestDate) {
+   var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
    this.moduleManager.emit('database:monitor:delete', sqlDeleteFromTableOldEntries, [updatedDate],
         function(error, lastId, changes) {
