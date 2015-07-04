@@ -16,7 +16,7 @@ arp.prototype.info = function () {
     return "*" + this.name + "* - " +
         "_" + this.name.toUpperCase() + " " +
         this.type.toLowerCase() + " module_";
-}
+};
 
 arp.prototype.load = function (moduleManager) {
     var self = this;
@@ -42,11 +42,11 @@ arp.prototype.load = function (moduleManager) {
                 self.start();
             }
         });
-}
+};
 
 arp.prototype.unload = function () {
     this.stop();
-}
+};
 
 arp.prototype.start = function () {
     var self = this;
@@ -66,12 +66,12 @@ arp.prototype.start = function () {
             console.error(error);
         }
     }, 2 * 60 * 1000);
-}
+};
 
 arp.prototype.stop = function () {
     clearInterval(this.discoverInterval);
     clearInterval(this.cleanInterval);
-}
+};
 
 arp.prototype._discover = function () {
     //console.log("Discovering ARP entries");
@@ -111,14 +111,14 @@ arp.prototype._discover = function () {
 
     process.stderr.on('data', function (data) {
     });
-}
+};
 
 arp.prototype._clean = function () {
     //console.log("Cleaning old ARP entries");
 
     var currentDate = new Date();
     this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)));
-}
+};
 
 arp.prototype._add = function (ipAddress, macAddress) {
     var self = this;
@@ -132,10 +132,10 @@ arp.prototype._add = function (ipAddress, macAddress) {
             if (error !== undefined && error !== null) {
                 console.error(error);
             } else {
-                self.moduleManager.emit('monitor:macAddress:create', address);
+                self.moduleManager.emit('monitor:macAddress:create', macAddress);
             }
         });
-}
+};
 
 arp.prototype._update = function (ipAddress, macAddress) {
     var self = this;
@@ -152,10 +152,10 @@ arp.prototype._update = function (ipAddress, macAddress) {
             if (error !== undefined && error !== null) {
                 console.error(error);
             } else {
-                self.moduleManager.emit('monitor:macAddress:update', address);
+                self.moduleManager.emit('monitor:macAddress:update', macAddress);
             }
         });
-}
+};
 
 arp.prototype._delete = function (oldestDate) {
     var self = this;
@@ -179,6 +179,6 @@ arp.prototype._delete = function (oldestDate) {
                     });
             }
         });
-}
+};
 
 module.exports = new arp();

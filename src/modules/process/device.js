@@ -14,15 +14,15 @@ device.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 device.prototype.help = function() {
   var help = '';
 
-  help += '*!device* <add|rem|list> [<person name>] [<device address>] - _Associate a person with a device_'
+  help += '*!device* <add|rem|list> [<person name>] [<device address>] - _Associate a person with a device_';
 
   return help;
-}
+};
 
 device.prototype.load = function(moduleManager) {
   var self = this;
@@ -30,7 +30,7 @@ device.prototype.load = function(moduleManager) {
   this.moduleManager = moduleManager;
 
   this.moduleManager.emit('database:person:setup',
-    "CREATE TABLE IF NOT EXISTS identity (" +
+      "CREATE TABLE IF NOT EXISTS user (" +
     "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
     "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
     "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -47,18 +47,19 @@ device.prototype.load = function(moduleManager) {
     "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
     "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
     "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-    "identity INTEGER REFERENCES identity(id), " +
+    "user INTEGER REFERENCES user(id), " +
     "mac_address TEXT NOT NULL, " +
-    "UNIQUE(identity, mac_address)" +
+    "UNIQUE(user, mac_address)" +
     ");", [],
     function(error) {
       if (error !== undefined && error !== null) {
         throw new Error(error);
       }
     });
-}
+};
 
-device.prototype.unload = function() {}
+device.prototype.unload = function () {
+};
 
 device.prototype.process = function(message, callback) {
 
@@ -93,13 +94,13 @@ device.prototype.process = function(message, callback) {
       }
     }
   }
-}
+};
 
 device.prototype._add = function(name, macAddress, callback) {
   var self = this;
 
   this.moduleManager.emit('database:person:retrieve',
-    "SELECT * FROM identity WHERE name LIKE ?;", [name],
+      "SELECT * FROM user WHERE name LIKE ?;", [name],
     function(error, row) {
       if (error !== null) {
         throw error;
@@ -107,7 +108,7 @@ device.prototype._add = function(name, macAddress, callback) {
         if (row === undefined) {
 
           self.moduleManager.emit('database:person:create',
-            "INSERT INTO identity (name) VALUES (?);", [
+              "INSERT INTO user (name) VALUES (?);", [
               name
             ],
             function(error, rowId) {
@@ -115,7 +116,7 @@ device.prototype._add = function(name, macAddress, callback) {
                 throw error;
               } else {
                 self.moduleManager.emit('database:person:create',
-                  "INSERT INTO device (identity, mac_address) VALUES (?, ?);", [
+                    "INSERT INTO device (user, mac_address) VALUES (?, ?);", [
                     rowId,
                     macAddress
                   ],
@@ -132,7 +133,7 @@ device.prototype._add = function(name, macAddress, callback) {
         } else {
 
           self.moduleManager.emit('database:person:create',
-            "INSERT INTO device (identity, mac_address) VALUES (?, ?);", [
+              "INSERT INTO device (user, mac_address) VALUES (?, ?);", [
               row.id,
               macAddress
             ],
@@ -147,13 +148,13 @@ device.prototype._add = function(name, macAddress, callback) {
 
       }
     });
-}
+};
 
 device.prototype._rem = function(name, macAddress, callback) {
   var self = this;
 
   this.moduleManager.emit('database:person:retrieve',
-      "SELECT * FROM identity WHERE name LIKE ?;", [name],
+      "SELECT * FROM user WHERE name LIKE ?;", [name],
       function(error, row) {
         if (error !== null) {
           throw error;
@@ -163,7 +164,7 @@ device.prototype._rem = function(name, macAddress, callback) {
           } else {
 
             self.moduleManager.emit('database:person:delete',
-                "DELETE FROM device WHERE identity = ? AND mac_address = ?;", [
+                "DELETE FROM device WHERE user = ? AND mac_address = ?;", [
                   row.id,
                   macAddress
                 ],
@@ -182,11 +183,11 @@ device.prototype._rem = function(name, macAddress, callback) {
 
         }
       });
-}
+};
 
 device.prototype._retrieve = function (callback) {
   this.moduleManager.emit('database:person:retrieveAll',
-      "SELECT i.name, d.mac_address FROM identity i, device d WHERE i.id = d.identity ORDER BY i.id ASC, d.id ASC;", [],
+      "SELECT u.name, d.mac_address FROM user u, device d WHERE u.id = d.user ORDER BY u.id ASC, d.id ASC;", [],
       function(error, row) {
         if (error !== null) {
           throw error;
@@ -196,6 +197,6 @@ device.prototype._retrieve = function (callback) {
           }
         }
       });
-}
+};
 
 module.exports = new device();

@@ -21,7 +21,7 @@ monitor.prototype.info = function() {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
-}
+};
 
 monitor.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
@@ -30,14 +30,14 @@ monitor.prototype.load = function(moduleManager) {
 
     this.moduleManager.on('database:monitor:create', this._run);
     this.moduleManager.on('database:monitor:retrieve', this._get);
-    this.moduleManager.on('database:monitor:retrieveAll', this._get);
+    this.moduleManager.on('database:monitor:retrieveAll', this._all);
     this.moduleManager.on('database:monitor:update', this._run);
     this.moduleManager.on('database:monitor:delete', this._run);
 
     if (!fs.existsSync(file)) {
         fs.mkdirSync(path);
     }
-}
+};
 
 monitor.prototype._run = function(query, parameters, callback) {
     var handler = function(error) {
@@ -55,7 +55,7 @@ monitor.prototype._run = function(query, parameters, callback) {
     } else {
         db.run(query, handler);
     }
-}
+};
 
 monitor.prototype._get = function(query, parameters, callback) {
     var handler = function(error, row) {
@@ -71,7 +71,7 @@ monitor.prototype._get = function(query, parameters, callback) {
     } else {
         db.get(query, handler);
     }
-}
+};
 
 monitor.prototype._all = function(query, parameters, callback) {
     var handler = function(error, row) {
@@ -87,10 +87,10 @@ monitor.prototype._all = function(query, parameters, callback) {
     } else {
         db.each(query, handler);
     }
-}
+};
 
 monitor.prototype.unload = function() {
     db.close();
-}
+};
 
 module.exports = new monitor();
