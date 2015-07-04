@@ -34,18 +34,18 @@ device.prototype.start = function() {
 
         console.log(new Date() + ' ' + macAddress + ' just came online');
 
-        self._retrieve(macAddress, function (name) {
-            that.moduleManager.emit('person:device:online', name);
+        self._retrieve(macAddress, function (device) {
+            that.moduleManager.emit('person:device:online', device);
         });
     });
 
     this.moduleManager.on('monitor:macAddress:delete', function (macAddress) {
         var that = self;
 
-        console.log(new Date() + ' ' + macAddress + ' just came online');
+        console.log(new Date() + ' ' + macAddress + ' just went offline');
 
-        self._retrieve(macAddress, function (name) {
-            that.moduleManager.emit('person:device:online', name);
+        self._retrieve(macAddress, function (device) {
+            that.moduleManager.emit('person:device:offline', device);
         });
     });
 };
@@ -55,13 +55,13 @@ device.prototype.stop = function() {
 
 device.prototype._retrieve = function (macAddress, callback) {
     this.moduleManager.emit('database:person:retrieve',
-        "SELECT u.name FROM user u, device d WHERE u.id = d.user AND d.mac_address = ?;", [macAddress],
+        "SELECT * FROM device WHERE mac_address = ?;", [macAddress],
         function (error, row) {
             if (error !== null) {
                 throw error;
             } else {
                 if (row !== undefined) {
-                    callback(row.name);
+                    callback(row);
                 }
             }
         });
