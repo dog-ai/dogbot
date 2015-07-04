@@ -30,6 +30,7 @@ person.prototype.load = function(moduleManager) {
 
     this.moduleManager.on('database:person:create', this._run);
     this.moduleManager.on('database:person:retrieve', this._get);
+    this.moduleManager.on('database:person:retrieveAll', this._all);
     this.moduleManager.on('database:person:update', this._run);
     this.moduleManager.on('database:person:delete', this._run);
 
@@ -82,9 +83,9 @@ person.prototype._all = function(query, parameters, callback) {
     };
 
     if (parameters !== undefined) {
-        db.all(query, parameters, handler);
+        db.each(query, parameters, handler);
     } else {
-        db.all(query, handler);
+        db.each(query, handler);
     }
 }
 

@@ -83,6 +83,14 @@ core.prototype.process = function(message, callback) {
       }
     });
 
+    help += '\nLoaded person modules:\n';
+    this.moduleManager.findAllLoadedModulesByType('PERSON').forEach(function(module) {
+      try {
+        help += module.info() + '\n';
+      } catch (exception) {
+      }
+    });
+
     callback(help);
   } else if (message === "!info") {
     var os = require('os');

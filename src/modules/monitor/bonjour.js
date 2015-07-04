@@ -9,19 +9,17 @@ var sqlCreateTable = "CREATE TABLE IF NOT EXISTS bonjour (" +
     "type TEXT NOT NULL, " +
     "name TEXT NOT NULL, " +
     "hostname TEXT NOT NULL, " +
-    "address TEXT NOT NULL, " +
+    "ip_address TEXT NOT NULL, " +
     "port INTEGER, " +
     "txt TEXT NOT NULL, " +
     "UNIQUE(type, name)" +
     ");"
 
-var sqlInsertEntryIntoTable = "INSERT INTO bonjour (type, name, address, hostname, port, txt) VALUES (?, ?, ?, ?, ?, ?);";
+var sqlInsertEntryIntoTable = "INSERT INTO bonjour (type, name, ip_address, hostname, port, txt) VALUES (?, ?, ?, ?, ?, ?);";
 
-var sqlUpdateTableEntryByTypeAndName = "UPDATE bonjour SET updated_date = ?, address = ?, hostname = ?, port = ?, txt = ? WHERE type = ? AND name = ?;";
+var sqlUpdateTableEntryByTypeAndName = "UPDATE bonjour SET updated_date = ?, ip_address = ?, hostname = ?, port = ?, txt = ? WHERE type = ? AND name = ?;";
 
 var sqlSelectFromTableByTypeAndName = "SELECT * FROM bonjour WHERE type = ? AND name = ?;";
-
-var sqlDeleteFromTableOldEntries = "DELETE FROM bonjour WHERE updated_date < Datetime(?)";
 
 function bonjour() {
     var moduleManager = {};
@@ -133,13 +131,15 @@ bonjour.prototype._discover = function() {
 }
 
 bonjour.prototype._clean = function() {
-    console.log("Cleaning old bonjour services");
+    //console.log("Cleaning old bonjour services");
 
     var currentDate = new Date();
     this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)));
 }
 
 bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
+    var self = this;
+
     this.moduleManager.emit('database:monitor:create', sqlInsertEntryIntoTable, [
             type,
             name,
@@ -152,12 +152,15 @@ bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
             if (error !== undefined && error !== null) {
                 console.error(error);
             } else {
-
+                self.moduleManager.emit('monitor:ipAddress:create', address);
             }
         });
+
 }
 
 bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
+    var self = this;
+
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     this.moduleManager.emit('database:monitor:update', sqlUpdateTableEntryByTypeAndName, [
@@ -169,21 +172,36 @@ bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
             type,
             name
         ],
-        function(error, lastId, changes) {
+        function(error) {
             if (error !== undefined && error !== null) {
                 console.error(error);
-            } else {}
+            } else {
+                self.moduleManager.emit('monitor:ipAddress:update', address);
+            }
         });
 }
 
 bonjour.prototype._delete = function(oldestDate) {
+   var self = this;
+
    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-   this.moduleManager.emit('database:monitor:delete', sqlDeleteFromTableOldEntries, [updatedDate],
-        function(error, lastId, changes) {
+   this.moduleManager.emit('database:monitor:retrieveAll',
+       "SELECT * FROM bonjour WHERE updated_date < Datetime(?);", [updatedDate],
+        function(error, row) {
             if (error !== undefined && error !== null) {
                 console.error(error);
-            } else {}
+            } else {
+                self.moduleManager.emit('database:monitor:delete',
+                    "DELETE FROM bonjour WHERE id = ?;", [row.id],
+                    function(error) {
+                        if (error !== undefined && error !== null) {
+                            console.error(error);
+                        } else {
+                            self.emit('monitor:ipAddress:delete', row.ip_address);
+                        }
+                    });
+            }
         });
 }
 

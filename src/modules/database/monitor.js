@@ -30,6 +30,7 @@ monitor.prototype.load = function(moduleManager) {
 
     this.moduleManager.on('database:monitor:create', this._run);
     this.moduleManager.on('database:monitor:retrieve', this._get);
+    this.moduleManager.on('database:monitor:retrieveAll', this._get);
     this.moduleManager.on('database:monitor:update', this._run);
     this.moduleManager.on('database:monitor:delete', this._run);
 
@@ -82,9 +83,9 @@ monitor.prototype._all = function(query, parameters, callback) {
     };
 
     if (parameters !== undefined) {
-        db.all(query, parameters, handler);
+        db.each(query, parameters, handler);
     } else {
-        db.all(query, handler);
+        db.each(query, handler);
     }
 }
 

@@ -13,12 +13,15 @@ device.prototype.name = "device";
 
 device.prototype.info = function() {
     return "*" + this.name + "* - " +
-        "_" + this.name.toUpperCase() + " " +
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
 }
 
 device.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
+
+    this.moduleManager.on('monitor:macAddress:create', this._online);
+    this.moduleManager.on('monitor:macAddress:delete', this._offline);
 }
 
 device.prototype.unload = function() {
@@ -35,11 +38,12 @@ device.prototype.stop = function() {
     this.moduleManager.removeListener('database:monitor:update', this.listener);
 }
 
-var instance = new device();
+device.prototype._online = function(macAddress) {
+    console.log(macAddress + ' just came online');
+}
 
-function eventListener(query, parameters, callback, ignore) {
-};
+device.prototype._offline = function(macAddress) {
+    console.log(macAddress + ' just went offline');
+}
 
-instance.listener = eventListener;
-
-module.exports = instance;
+module.exports = new device();
