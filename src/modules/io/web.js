@@ -15,8 +15,8 @@ web.prototype.name = "web";
 web.prototype.info = function() {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-         "I/O module_";
-}
+        this.type.toLowerCase() + " module_";
+};
 
 web.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
@@ -38,11 +38,13 @@ web.prototype.load = function(moduleManager) {
     server.all('/', function(req, res) {
         return res.send();
     });
-}
+};
 
-web.prototype.unload = function() {}
+web.prototype.unload = function () {
+};
 
-web.prototype.send = function(recipient, message) {}
+web.prototype.send = function (recipient, message) {
+};
 
 web.prototype.registerAuthStrategy = function(name, authStrategy) {
     passport.use(authStrategy);
@@ -61,6 +63,6 @@ web.prototype.registerAuthStrategy = function(name, authStrategy) {
         function(req, res) {
             res.redirect('/');
         });
-}
+};
 
 module.exports = new web();

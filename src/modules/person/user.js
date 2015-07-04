@@ -17,9 +17,24 @@ user.prototype.info = function () {
 };
 
 user.prototype.load = function (moduleManager) {
+    var self = this;
+
     this.moduleManager = moduleManager;
 
-    this.start();
+    this.moduleManager.emit('database:person:setup',
+        "CREATE TABLE IF NOT EXISTS user (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+        "name TEXT NOT NULL UNIQUE" +
+        ");", [],
+        function (error) {
+            if (error !== undefined && error !== null) {
+                throw new Error(error);
+            } else {
+                self.start();
+            }
+        });
 };
 
 user.prototype.unload = function () {

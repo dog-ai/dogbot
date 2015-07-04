@@ -22,8 +22,10 @@ slack.prototype.type = "IO";
 slack.prototype.name = "slack";
 
 slack.prototype.info = function() {
-    return "*" + this.name + "* - _Slack I/O module_";
-}
+    return "*" + this.name + "* - " +
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
+        this.type.toLowerCase() + " module_";
+};
 
 slack.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
@@ -36,23 +38,19 @@ slack.prototype.load = function(moduleManager) {
         throw new Error('invalid configuration: no authentication token available');
     }
 
-    var that = this;
-    this.on('message:received', function(message, callback) {
-        that.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function(module) {
-            try {
-                module.process(message, callback);
-            } catch (exception) {
-                callback("Oops! Something went wrong...please call the maintenance team!");
-                console.log(exception);
-            }
-        });
-    });
-
     this.client = new Slack(this.authToken, this.autoReconnect, this.autoMark);
 
+    this.start();
+};
+
+slack.prototype.unload = function () {
+    this.stop();
+};
+
+slack.prototype.start = function () {
     this.client.on('open', function() {});
 
-		var that = this;
+    var that = this;
     this.client.on('message', function(message) {
         var type = message.type,
             channel = that.client.getChannelGroupOrDMByID(message.channel),
@@ -61,20 +59,29 @@ slack.prototype.load = function(moduleManager) {
             text = message.text;
 
         if (text !== undefined && text.charAt(0) === '!') {
-            that.emit('message:received', text, function(response) {
-                channel.send(response);
+            that.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function (module) {
+                try {
+                    module.process(message, function (response) {
+                        channel.send(response);
+                    });
+                } catch (exception) {
+                    channel.send("Oops! Something went wrong...please call the maintenance team!");
+                    console.log(exception);
+                }
             });
         }
     });
 
     this.client.on('error', function(error) {
-        console.error('Error: %s', error);
+        throw error;
     });
 
     this.client.login();
-}
+};
 
-slack.prototype.unload = function() {}
+slack.prototype.stop = function () {
+
+};
 
 slack.prototype.send = function(recipient, message) {
 
@@ -87,6 +94,6 @@ slack.prototype.send = function(recipient, message) {
         var id = this.client.getChannelGroupOrDMByID(recipient);
         id.send(message);
     }
-}
+};
 
 module.exports = new slack();

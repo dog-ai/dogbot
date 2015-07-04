@@ -13,7 +13,7 @@ var sqlCreateTable = "CREATE TABLE IF NOT EXISTS bonjour (" +
     "port INTEGER, " +
     "txt TEXT NOT NULL, " +
     "UNIQUE(type, name)" +
-    ");"
+    ");";
 
 var sqlInsertEntryIntoTable = "INSERT INTO bonjour (type, name, ip_address, hostname, port, txt) VALUES (?, ?, ?, ?, ?, ?);";
 
@@ -35,7 +35,7 @@ bonjour.prototype.info = function() {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
-}
+};
 
 bonjour.prototype.load = function(moduleManager) {
     var self = this;
@@ -53,11 +53,11 @@ bonjour.prototype.load = function(moduleManager) {
             self.start();
         }
     });
-}
+};
 
 bonjour.prototype.unload = function() {
     this.stop();
-}
+};
 
 bonjour.prototype.start = function() {
     var self = this;
@@ -77,12 +77,12 @@ bonjour.prototype.start = function() {
             console.error(error);
         }
     }, 2 * 60 * 1000);
-}
+};
 
 bonjour.prototype.stop = function() {
     clearInterval(this.discoverInterval);
     clearInterval(this.cleanInterval);
-}
+};
 
 bonjour.prototype._discover = function() {
     //console.log("Discovering bonjour services");
@@ -128,14 +128,14 @@ bonjour.prototype._discover = function() {
     });
 
     process.stderr.on('data', function(data) {});
-}
+};
 
 bonjour.prototype._clean = function() {
     //console.log("Cleaning old bonjour services");
 
     var currentDate = new Date();
     this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)));
-}
+};
 
 bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
     var self = this;
@@ -156,7 +156,7 @@ bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
             }
         });
 
-}
+};
 
 bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
     var self = this;
@@ -179,7 +179,7 @@ bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
                 self.moduleManager.emit('monitor:ipAddress:update', address);
             }
         });
-}
+};
 
 bonjour.prototype._delete = function(oldestDate) {
    var self = this;
@@ -192,17 +192,18 @@ bonjour.prototype._delete = function(oldestDate) {
             if (error !== undefined && error !== null) {
                 console.error(error);
             } else {
+                var that = self;
                 self.moduleManager.emit('database:monitor:delete',
                     "DELETE FROM bonjour WHERE id = ?;", [row.id],
                     function(error) {
                         if (error !== undefined && error !== null) {
                             console.error(error);
                         } else {
-                            self.emit('monitor:ipAddress:delete', row.ip_address);
+                            that.emit('monitor:ipAddress:delete', row.ip_address);
                         }
                     });
             }
         });
-}
+};
 
 module.exports = new bonjour();

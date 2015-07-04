@@ -17,9 +17,26 @@ device.prototype.info = function() {
 };
 
 device.prototype.load = function(moduleManager) {
+    var self = this;
+
     this.moduleManager = moduleManager;
 
-    this.start();
+    this.moduleManager.emit('database:person:setup',
+        "CREATE TABLE IF NOT EXISTS device (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+        "user INTEGER REFERENCES user(id), " +
+        "mac_address TEXT NOT NULL, " +
+        "UNIQUE(user, mac_address)" +
+        ");", [],
+        function (error) {
+            if (error !== undefined && error !== null) {
+                throw new Error(error);
+            } else {
+                self.start();
+            }
+        });
 };
 
 device.prototype.unload = function() {

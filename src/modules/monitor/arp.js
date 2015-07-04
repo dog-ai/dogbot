@@ -168,13 +168,14 @@ arp.prototype._delete = function (oldestDate) {
             if (error !== undefined && error !== null) {
                 console.error(error);
             } else {
+                var that = self;
                 self.moduleManager.emit('database:monitor:delete',
                     "DELETE FROM arp WHERE id = ?;", [row.id],
                     function (error) {
                         if (error !== undefined && error !== null) {
                             console.error(error);
                         } else {
-                            self.moduleManager.emit('monitor:macAddress:delete', row.mac_address);
+                            that.moduleManager.emit('monitor:macAddress:delete', row.mac_address);
                         }
                     });
             }
