@@ -11,14 +11,15 @@ var sqlCreateTable = "CREATE TABLE IF NOT EXISTS bonjour (" +
     "hostname TEXT NOT NULL, " +
     "address TEXT NOT NULL, " +
     "port INTEGER, " +
-    "txt TEXT NOT NULL" +
+    "txt TEXT NOT NULL, " +
+    "UNIQUE(type, name)" +
     ");"
 
 var sqlInsertEntryIntoTable = "INSERT INTO bonjour (type, name, address, hostname, port, txt) VALUES (?, ?, ?, ?, ?, ?);";
 
-var sqlUpdateTableEntryByName = "UPDATE bonjour SET updated_date = ?, type = ?, address = ?, hostname = ?, port = ?, txt = ? WHERE name = ? ;";
+var sqlUpdateTableEntryByTypeAndName = "UPDATE bonjour SET updated_date = ?, address = ?, hostname = ?, port = ?, txt = ? WHERE type = ? AND name = ?;";
 
-var sqlSelectFromTableByName = "SELECT * FROM bonjour WHERE name = ?;";
+var sqlSelectFromTableByTypeAndName = "SELECT * FROM bonjour WHERE type = ? AND name = ?;";
 
 var sqlDeleteFromTableOldEntries = "DELETE FROM bonjour WHERE updated_date < Datetime(?)";
 
@@ -86,7 +87,7 @@ bonjour.prototype.stop = function() {
 }
 
 bonjour.prototype._discover = function() {
-    console.log("Discovering bonjour services");
+    //console.log("Discovering bonjour services");
 
     var self = this;
 
@@ -112,7 +113,7 @@ bonjour.prototype._discover = function() {
             return;
         }
 
-        self.moduleManager.emit('database:monitor:retrieve', sqlSelectFromTableByName, [name],
+        self.moduleManager.emit('database:monitor:retrieve', sqlSelectFromTableByTypeAndName, [type, name],
             function(error, row) {
                 if (error !== null) {
                     console.error(error);
@@ -159,13 +160,13 @@ bonjour.prototype._add = function(type, name, address, hostname, port, txt) {
 bonjour.prototype._update = function(type, name, address, hostname, port, txt) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:update', sqlUpdateTableEntryByName, [
+    this.moduleManager.emit('database:monitor:update', sqlUpdateTableEntryByTypeAndName, [
             updatedDate,
-            type,
             address,
             hostname,
             port,
             txt,
+            type,
             name
         ],
         function(error, lastId, changes) {

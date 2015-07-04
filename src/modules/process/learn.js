@@ -2,25 +2,6 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-var sqlCreateTableIdentity = "CREATE TABLE IF NOT EXISTS identity (" +
-  "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-  "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-  "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-  "name TEXT NOT NULL" +
-  ");"
-
-var sqlCreateTableDevice = "CREATE TABLE IF NOT EXISTS device (" +
-  "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-  "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-  "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-  "identity INTEGER REFERENCES identity(id),"
-"mac_address TEXT NOT NULL" +
-");"
-
-var sqlSelectFromTableIdentityByName = "SELECT * FROM identity WHERE name LIKE ?;";
-
-var sqlInsertEntryIntoTableIdentity = "INSERT INTO identity (identity) VALUES (?);";
-
 function learn() {
   var moduleManager = {};
 }
@@ -48,21 +29,33 @@ learn.prototype.load = function(moduleManager) {
 
   this.moduleManager = moduleManager;
 
-  this.moduleManager.emit('database:person:setup', sqlCreateTableIdentity, [], function(error) {
-    if (error !== undefined && error !== null) {
-      throw new Error(error);
-    } else {
-      self.start();
-    }
-  });
+  this.moduleManager.emit('database:person:setup',
+    "CREATE TABLE IF NOT EXISTS identity (" +
+    "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+    "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+    "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+    "name TEXT NOT NULL UNIQUE" +
+    ");", [],
+    function(error) {
+      if (error !== undefined && error !== null) {
+        throw new Error(error);
+      }
+    });
 
-  this.moduleManager.emit('database:person:setup', sqlCreateTableDevice, [], function(error) {
-    if (error !== undefined && error !== null) {
-      throw new Error(error);
-    } else {
-      self.start();
-    }
-  });
+  this.moduleManager.emit('database:person:setup',
+    "CREATE TABLE IF NOT EXISTS device (" +
+    "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+    "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+    "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+    "identity INTEGER REFERENCES identity(id), " +
+    "mac_address TEXT NOT NULL, " +
+    "UNIQUE(identity, mac_address)" +
+    ");", [],
+    function(error) {
+      if (error !== undefined && error !== null) {
+        throw new Error(error);
+      }
+    });
 }
 
 learn.prototype.unload = function() {}
@@ -70,21 +63,75 @@ learn.prototype.unload = function() {}
 learn.prototype.process = function(message, callback) {
 
   if (message.substring(0, "!learn".length) === "!learn") {
+    var fields = message.replace(/(“|”)/g, '"').match(/(?:[^\s"]+|"[^"]*")+/g);
+    if (fields !== null && fields.length > 1) {
+      var operation = fields[1];
 
+      if (operation === 'add') {
+        var name = fields[2].replace(/"/g, '');
+        var macAddress = fields[3].replace(/"/g, '');
+        this._add(name, macAddress, callback);
+      } else if (operation === 'rem') {
+
+      } else if (operation === 'list') {
+
+      }
+    }
   }
 }
 
-learn.prototype._add = function(name, macAddress) {
-    this.moduleManager.emit('database:person:create', sqlInsertEntryIntoTableIdentity, [
-            name
-        ],
-        function(error) {
-            if (error !== undefined && error !== null) {
-                console.error(error);
-            } else {
+learn.prototype._add = function(name, macAddress, callback) {
+  var self = this;
 
-            }
-        }, true);
+  self.moduleManager.emit('database:person:retrieve',
+    "SELECT * FROM identity WHERE name LIKE ?;", [name],
+    function(error, row) {
+      if (error !== null) {
+        console.error(error);
+      } else {
+        if (row === undefined) {
+
+          self.moduleManager.emit('database:person:create',
+            "INSERT INTO identity (name) VALUES (?);", [
+              name
+            ],
+            function(error, rowId) {
+              if (error !== undefined && error !== null) {
+                console.error(error);
+              } else {
+                self.moduleManager.emit('database:person:create',
+                  "INSERT INTO device (identity, mac_address) VALUES (?, ?);", [
+                    rowId,
+                    macAddress
+                  ],
+                  function(error, rowId) {
+                    if (error !== undefined && error !== null) {
+                      console.error(error);
+                    } else {
+                      callback('Added device with address ' + macAddress + ' to ' + name);
+                    }
+                  });
+              }
+            });
+
+        } else {
+
+          self.moduleManager.emit('database:person:create',
+            "INSERT INTO device (identity, mac_address) VALUES (?, ?);", [
+              row.id,
+              macAddress
+            ],
+            function(error, rowId) {
+              if (error !== undefined && error !== null) {
+                console.error(error);
+              } else {
+                callback('Added device with address ' + macAddress + ' to ' + name);
+              }
+            });
+        }
+
+      }
+    });
 }
 
 module.exports = new learn();
