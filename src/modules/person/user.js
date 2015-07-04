@@ -4,7 +4,6 @@
 
 function user() {
     var moduleManager = {};
-    var listener = undefined;
 }
 
 user.prototype.type = "PERSON";
@@ -19,8 +18,6 @@ user.prototype.info = function () {
 
 user.prototype.load = function (moduleManager) {
     this.moduleManager = moduleManager;
-
-
 };
 
 user.prototype.unload = function () {
@@ -28,29 +25,18 @@ user.prototype.unload = function () {
 };
 
 user.prototype.start = function () {
-    this.moduleManager.on('person:device:online', this._online);
-    this.moduleManager.on('person:device:offline', this._offline);
+    var self = this;
+
+    this.moduleManager.on('person:device:online', function (name) {
+        console.log(name + ' is online');
+    });
+
+    this.moduleManager.on('person:device:offline', function (name) {
+        console.log(name + ' is offline');
+    });
 };
 
 user.prototype.stop = function () {
-};
-
-user.prototype._online = function (name) {
-    var self = this;
-
-    this._retrieve(name, function (name) {
-        self.emit('person:user:online', name);
-    });
-};
-
-user.prototype._offline = function (macAddress) {
-    var self = this;
-
-    console.log(new Date() + ' ' + macAddress + ' just went offline');
-
-    this._retrieve(macAddress, function (name) {
-        self.emit('person:user:offline', name);
-    });
 };
 
 module.exports = new user();

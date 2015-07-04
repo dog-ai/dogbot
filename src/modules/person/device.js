@@ -27,31 +27,30 @@ device.prototype.unload = function() {
 };
 
 device.prototype.start = function() {
-    this.moduleManager.on('monitor:macAddress:create', this._online);
-    this.moduleManager.on('monitor:macAddress:delete', this._offline);
+    var self = this;
+
+    this.moduleManager.on('monitor:macAddress:create', function (macAddress) {
+        var that = self;
+
+        console.log(new Date() + ' ' + macAddress + ' just came online');
+
+        self._retrieve(macAddress, function (name) {
+            that.moduleManager.emit('person:device:online', name);
+        });
+    });
+
+    this.moduleManager.on('monitor:macAddress:delete', function (macAddress) {
+        var that = self;
+
+        console.log(new Date() + ' ' + macAddress + ' just came online');
+
+        self._retrieve(macAddress, function (name) {
+            that.moduleManager.emit('person:device:online', name);
+        });
+    });
 };
 
 device.prototype.stop = function() {
-};
-
-device.prototype._online = function(macAddress) {
-    var self = this;
-
-    console.log(new Date() + ' ' + macAddress + ' just came online');
-
-    this._retrieve(macAddress, function (name) {
-        self.emit('person:device:online', name);
-    });
-};
-
-device.prototype._offline = function(macAddress) {
-    var self = this;
-
-    console.log(new Date() + ' ' + macAddress + ' just went offline');
-
-    this._retrieve(macAddress, function (name) {
-        self.emit('person:device:offline', name);
-    });
 };
 
 device.prototype._retrieve = function (macAddress, callback) {
