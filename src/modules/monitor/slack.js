@@ -85,7 +85,7 @@ slack.prototype.start = function () {
             if (user === undefined || user === null) {
                 that._add(id, username, name);
             } else {
-                that._update(id, username);
+                that._update(id, username, name);
             }
         })
     });
