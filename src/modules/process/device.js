@@ -19,7 +19,7 @@ device.prototype.info = function() {
 device.prototype.help = function() {
   var help = '';
 
-  help += '*!device* <add|rem|list> [<person name>] [<device address>] - _Associate a person with a device_';
+  help += '*!device* <add|rem|list> [<person name|slack id>] [<device address>] - _Associate a person with a device_';
 
   return help;
 };

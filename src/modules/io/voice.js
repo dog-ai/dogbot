@@ -17,23 +17,26 @@ voice.prototype.type = "IO";
 voice.prototype.name = "voice";
 
 voice.prototype.info = function() {
-    return "*" + this.name + "* - _Voice I/O module_";
-}
+    return "*" + this.name + "* - " +
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
+        this.type.toLowerCase() + " module_";
+};
 
 voice.prototype.MAX_LENGTH = 100;
 
 voice.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
-}
+};
 
-voice.prototype.unload = function() {}
+voice.prototype.unload = function () {
+};
 
 voice.prototype.send = function(recipient, message, language, callback) {
     if (language === undefined) {
         language = 'en-us';
     }
 
-    var texts = []
+    var texts = [];
     if (message.length > this.MAX_LENGTH) {
         texts = this._split_text(message);
     } else {
@@ -45,7 +48,7 @@ voice.prototype.send = function(recipient, message, language, callback) {
             callback();
         }
     });
-}
+};
 
 voice.prototype._split_text = function(text) {
     var texts =   [];
@@ -53,7 +56,7 @@ voice.prototype._split_text = function(text) {
     for (var p = i = 0; i < text.length; p++) {
         texts[p] = text.substr(i, this.MAX_LENGTH);
         if (texts[p].length == this.MAX_LENGTH) {
-            texts[p] = texts[p].substr(0, Math.min(texts[p].length, texts[p].lastIndexOf(" ")))
+            texts[p] = texts[p].substr(0, Math.min(texts[p].length, texts[p].lastIndexOf(" ")));
             i++;
         } else if (texts[p].length == 0) {
             break;
@@ -62,7 +65,7 @@ voice.prototype._split_text = function(text) {
     }
 
     return texts;
-}
+};
 
 voice.prototype._synthesize = function(texts, language, callback) {
     var self = this;
@@ -102,6 +105,6 @@ voice.prototype._play = function(urls, current, total, callback) {
     } catch (error) {
         console.error(error);
     }
-}
+};
 
 module.exports = new voice();

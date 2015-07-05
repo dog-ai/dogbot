@@ -14,23 +14,23 @@ core.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 core.prototype.help = function() {
   var help = '';
 
   help += '*!help* - _List help information_' + '\n';
-  help += '*!info* - _Hardware/OS/Network related information_'
+  help += '*!info* - _Hardware/OS/Network related information_';
 
   return help;
-}
+};
 
 core.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
-}
+};
 
 core.prototype.unload = function() {
-}
+};
 
 core.prototype.process = function(message, callback) {
 
@@ -105,9 +105,15 @@ core.prototype.process = function(message, callback) {
             }
         }
     }
-    var response = 'Network addresses: ' + addresses;
+    var response = '';
+    response += 'Uptime: ' + parseInt(os.uptime() / 86400) + 'd ' + (new Date(os.uptime() % 86400 * 1000)).toUTCString().replace(/.*(\d{2}):(\d{2}):(\d{2}).*/, "$1h $2m $3s") + '\n';
+    response += 'CPU load averages:' + os.loadavg().map(function (loadavg) {
+          return ' ' + Math.ceil(loadavg * 10) / 10;
+        }) + '\n';
+    response += 'Memory usage: ' + Math.ceil(((os.totalmem() - os.freemem()) / 1024 / 1024)) + '/' + (os.totalmem() / 1024 / 1024) + ' MiB\n';
+    response += 'Network addresses: ' + addresses;
     callback(response);
   }
-}
+};
 
 module.exports = new core();
