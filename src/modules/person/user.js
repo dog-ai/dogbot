@@ -48,7 +48,7 @@ user.prototype.start = function () {
         var that = self;
 
         self._retrieve(device.user, function (user) {
-            that.moduleManager.emit('person:user:online', user);
+            that.moduleManager.emit('person:user:nearby', user);
         });
     });
 
@@ -56,7 +56,7 @@ user.prototype.start = function () {
         var that = self;
 
         self._retrieve(device.user, function (user) {
-            that.moduleManager.emit('person:user:offline', user);
+            that.moduleManager.emit('person:user:faraway', user);
         });
     });
 };
