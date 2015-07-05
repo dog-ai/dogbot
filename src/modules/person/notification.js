@@ -29,11 +29,19 @@ notification.prototype.unload = function () {
 notification.prototype.start = function () {
 
     this.moduleManager.on('person:user:nearby', function (user) {
-        console.log(user.name + ' is nearby');
+        console.log(new Date() + ' ' + user.name + ' is nearby');
     });
 
     this.moduleManager.on('person:user:faraway', function (user) {
-        console.log(user.name + ' is faraway');
+        console.log(new Date() + ' ' + user.name + ' is faraway');
+    });
+
+    this.moduleManager.on('person:user:online', function (user) {
+        console.log(new Date() + ' ' + user.name + ' is online');
+    });
+
+    this.moduleManager.on('person:user:offline', function (user) {
+        console.log(new Date() + ' ' + user.name + ' is offline');
     });
 };
 

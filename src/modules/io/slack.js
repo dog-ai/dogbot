@@ -13,6 +13,7 @@ function slack() {
     var autoReconnect = true;
     var autoMark = true;
     var defaultChannel = undefined;
+    var discoverInterval = undefined;
 
     events.EventEmitter.call(this);
 }
@@ -54,8 +55,15 @@ slack.prototype.unload = function () {
 slack.prototype.start = function () {
     var self = this;
 
+    this.discoverInterval = setInterval(function () {
+        try {
+            self._discoverUsers();
+        } catch (error) {
+            console.error(error);
+        }
+    }, 60 * 1000);
+
     this.client.on('open', function () {
-        self._discoverActiveUsers();
     });
 
     this.client.on('close', function () {
@@ -78,7 +86,7 @@ slack.prototype.start = function () {
 };
 
 slack.prototype.stop = function () {
-
+    clearInterval(this.discoverInterval);
 };
 
 slack.prototype.send = function(recipient, message) {
@@ -115,13 +123,17 @@ slack.prototype._handleMessage = function (message) {
     }
 };
 
-slack.prototype._discoverActiveUsers = function () {
+slack.prototype._discoverUsers = function () {
     var self = this;
 
     var channel = this.client.getChannelByName(this.defaultChannel.substring(1));
-    var activeUsers = this._getActiveUsersInChannel(channel);
-    activeUsers.forEach(function (user) {
-        self.moduleManager.emit('io:slack:userIsAlreadyActive', user);
+    var users = this._getUsersInChannel(channel);
+    users.forEach(function (user) {
+        if (user.presence === 'active') {
+            self.moduleManager.emit('io:slack:userIsAlreadyActive', user);
+        } else {
+            self.moduleManager.emit('io:slack:userIsAlreadyAway', user);
+        }
     });
 };
 
@@ -149,7 +161,7 @@ slack.prototype._isUserInChannel = function (user, channel) {
     });
 };
 
-slack.prototype._getActiveUsersInChannel = function (channel) {
+slack.prototype._getUsersInChannel = function (channel) {
     if (!channel) {
         return [];
     }
@@ -160,7 +172,7 @@ slack.prototype._getActiveUsersInChannel = function (channel) {
             return self.client.users[id];
         })
         .filter(function (u) {
-            return !!u && !u.is_bot && u.presence === 'active';
+            return !!u && !u.is_bot;
         });
 };
 

@@ -40,7 +40,17 @@ device.prototype.process = function(message, callback) {
       var operation = fields[1];
 
       if (operation === 'add' && fields.length == 4) {
-        var name = fields[2].replace(/"/g, '');
+        fields[2] = fields[2].replace(/"/g, '');
+
+        var name = undefined;
+        var slackId = undefined;
+
+        if (fields[2].charAt(0) === '<') {
+          slackId = fields[2].substring(2, fields[2].length - 1);
+        } else {
+          name = fields[2];
+        }
+
         var macAddress = fields[3].replace(/"/g, '');
 
         var macAddressRegex = /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/i;
@@ -48,17 +58,27 @@ device.prototype.process = function(message, callback) {
           return callback('Please, give me a proper MAC address, i.e. ce:48:d2:28:e4:56');
         }
 
-        this._add(name, macAddress, callback);
+        this._add(name, slackId, macAddress, callback);
       } else if (operation === 'rem' && fields.length == 4) {
-        var name = fields[2].replace(/"/g, '');
+        fields[2] = fields[2].replace(/"/g, '');
+
+        var name = undefined;
+        var slackId = undefined;
+
+        if (fields[2].charAt(0) === '<') {
+          slackId = fields[2].substring(2, fields[2].length - 1);
+        } else {
+          name = fields[2];
+        }
+
         var macAddress = fields[3].replace(/"/g, '');
 
         var macAddressRegex = /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/i;
         if (!macAddressRegex.test(macAddress)) {
           return callback('Please, give me a proper MAC address, i.e. ce:48:d2:28:e4:56');
         }
-        
-        this._rem(name, macAddress, callback);
+
+        this._rem(name, slackId, macAddress, callback);
       } else if (operation === 'list' && fields.length == 2) {
         this._retrieve(callback);
       }
@@ -66,40 +86,18 @@ device.prototype.process = function(message, callback) {
   }
 };
 
-device.prototype._add = function(name, macAddress, callback) {
+device.prototype._add = function (name, slackId, macAddress, callback) {
   var self = this;
 
   this.moduleManager.emit('database:person:retrieve',
-      "SELECT * FROM user WHERE name LIKE ?;", [name],
+      "SELECT * FROM user WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
+      [name !== undefined ? name : slackId],
     function(error, row) {
       if (error !== null) {
         throw error;
       } else {
         if (row === undefined) {
-
-          self.moduleManager.emit('database:person:create',
-              "INSERT INTO user (name) VALUES (?);", [
-              name
-            ],
-            function(error, rowId) {
-              if (error !== undefined && error !== null) {
-                throw error;
-              } else {
-                self.moduleManager.emit('database:person:create',
-                    "INSERT INTO device (user, mac_address) VALUES (?, ?);", [
-                    rowId,
-                    macAddress
-                  ],
-                  function(error, rowId) {
-                    if (error !== undefined && error !== null) {
-                      throw error;
-                    } else {
-                      callback('Added device with address ' + macAddress + ' to ' + name);
-                    }
-                  });
-              }
-            });
-
+          callback('I\'m not aware of any person named ' + (name !== undefined ? name : "<@" + slackId + ">"));
         } else {
 
           self.moduleManager.emit('database:person:create',
@@ -107,11 +105,11 @@ device.prototype._add = function(name, macAddress, callback) {
               row.id,
               macAddress
             ],
-            function(error, rowId) {
+              function (error) {
               if (error !== undefined && error !== null) {
                 throw error;
               } else {
-                callback('Added device with address ' + macAddress + ' to ' + name);
+                callback('Added device with address ' + macAddress + ' to ' + (name !== undefined ? name : "<@" + slackId + ">"));
               }
             });
         }
@@ -120,11 +118,12 @@ device.prototype._add = function(name, macAddress, callback) {
     });
 };
 
-device.prototype._rem = function(name, macAddress, callback) {
+device.prototype._rem = function (name, slackId, macAddress, callback) {
   var self = this;
 
   this.moduleManager.emit('database:person:retrieve',
-      "SELECT * FROM user WHERE name LIKE ?;", [name],
+      "SELECT * FROM user WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
+      [name !== undefined ? name : slackId],
       function(error, row) {
         if (error !== null) {
           throw error;
@@ -145,7 +144,7 @@ device.prototype._rem = function(name, macAddress, callback) {
                     if (changes === 0) {
                       callback('I\'m not aware that ' + name + ' has any device with the address ' + macAddress);
                     } else {
-                      callback('Removed device with address ' + macAddress + ' from ' + name);
+                      callback('Removed device with address ' + macAddress + ' from ' + (name !== undefined ? name : "<@" + slackId + ">"));
                     }
                   }
                 });

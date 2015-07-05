@@ -26,7 +26,8 @@ user.prototype.load = function (moduleManager) {
         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "name TEXT NOT NULL UNIQUE" +
+        "name TEXT NOT NULL UNIQUE, " +
+        "slack_id TEXT" +
         ");", [],
         function (error) {
             if (error !== undefined && error !== null) {
@@ -47,7 +48,7 @@ user.prototype.start = function () {
     this.moduleManager.on('person:device:online', function (device) {
         var that = self;
 
-        self._retrieve(device.user, function (user) {
+        self._retrieveById(device.user, function (user) {
             that.moduleManager.emit('person:user:nearby', user);
         });
     });
@@ -55,8 +56,32 @@ user.prototype.start = function () {
     this.moduleManager.on('person:device:offline', function (device) {
         var that = self;
 
-        self._retrieve(device.user, function (user) {
+        self._retrieveById(device.user, function (user) {
             that.moduleManager.emit('person:user:faraway', user);
+        });
+    });
+
+    this.moduleManager.on('person:slack:active', function (slack) {
+        var that = self;
+
+        self._retrieveByName(slack.name, function (user) {
+            var self = that;
+
+            if (user === undefined || user === null) {
+                that._add(slack.name, slack.slack_id, function (user) {
+                    self.moduleManager.emit('person:user:online', user);
+                });
+            } else {
+                that.moduleManager.emit('person:user:online', user);
+            }
+        });
+    });
+
+    this.moduleManager.on('person:slack:away', function (slack) {
+        var that = self;
+
+        self._retrieveByName(slack.name, function (user) {
+            that.moduleManager.emit('person:user:offline', user);
         });
     });
 };
@@ -64,16 +89,43 @@ user.prototype.start = function () {
 user.prototype.stop = function () {
 };
 
-user.prototype._retrieve = function (userId, callback) {
-    this.moduleManager.emit('database:person:retrieve',
-        "SELECT * FROM user WHERE id = ?;", [userId],
-        function (error, row) {
+user.prototype._add = function (name, slackId, callback) {
+    this.moduleManager.emit('database:person:create',
+        "INSERT INTO user (name, slack_id) VALUES (?, ?);", [
+            name,
+            slackId
+        ],
+        function (error) {
             if (error !== null) {
                 throw error;
             } else {
-                if (row !== undefined) {
-                    callback(row);
+                callback({name: name});
+            }
+        });
+};
+
+user.prototype._retrieveById = function (id, callback) {
+    this.moduleManager.emit('database:person:retrieve',
+        "SELECT * FROM user WHERE id = ?;", [id],
+        function (error, user) {
+            if (error !== null) {
+                throw error;
+            } else {
+                if (user !== undefined) {
+                    callback(user);
                 }
+            }
+        });
+};
+
+user.prototype._retrieveByName = function (name, callback) {
+    this.moduleManager.emit('database:person:retrieve',
+        "SELECT * FROM user WHERE name LIKE ?;", [name],
+        function (error, user) {
+            if (error !== null) {
+                throw error;
+            } else {
+                callback(user);
             }
         });
 };
