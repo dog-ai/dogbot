@@ -79,7 +79,7 @@ arp.prototype._discover = function () {
     var self = this;
 
     var spawn = require('child_process').spawn,
-        process = spawn('arp-scan', ['--interface=wlan0', '-lqN']);
+        process = spawn('arp-scan', ['--interface=wlan0', '-lqNg', '-t 500', '-r 4']);
 
     process.stdout.setEncoding('utf8');
     process.stdout.pipe(require('split')()).on('data', function (line) {
@@ -110,6 +110,7 @@ arp.prototype._discover = function () {
     });
 
     process.stderr.on('data', function (data) {
+        console.error('' + data);
     });
 };
 
@@ -117,7 +118,7 @@ arp.prototype._clean = function () {
     //console.log("Cleaning old ARP entries");
 
     var currentDate = new Date();
-    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)));
+    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)));
 };
 
 arp.prototype._add = function (ipAddress, macAddress) {

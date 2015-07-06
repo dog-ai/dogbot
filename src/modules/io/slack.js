@@ -67,7 +67,7 @@ slack.prototype.start = function () {
     });
 
     this.client.on('close', function () {
-        console.log('closed slack');
+
     });
 
     this.client.on('message', function(message) {

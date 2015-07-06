@@ -199,7 +199,7 @@ bonjour.prototype._delete = function(oldestDate) {
                         if (error !== undefined && error !== null) {
                             console.error(error);
                         } else {
-                            that.emit('monitor:ipAddress:delete', row.ip_address);
+                            that.moduleManager.emit('monitor:ipAddress:delete', row.ip_address);
                         }
                     });
             }

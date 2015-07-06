@@ -19,11 +19,14 @@
     "passport": "^0.2.2",
     "passport-google-oauth": "^0.2.0",
     "passport-oauth2-refresh": "^0.4.0",
+    "plotly": "^1.0.2",
+    "procfs-stats": "0.0.4",
     "s3": "^4.4.0",
     "slack-client": "^1.4.1",
     "split": "^1.0.0",
     "sqlite3": "^3.0.8",
-    "stack-trace": "0.0.9"
+    "stack-trace": "0.0.9",
+    "wireless-tools": "^0.14.0"
   },
   "description": "",
   "main": "index.js",

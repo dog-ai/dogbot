@@ -2,6 +2,9 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var iwconfig = require('wireless-tools/iwconfig');
+var procfs = require('procfs-stats');
+
 function core() {
   var moduleManager = {};
 }
@@ -20,7 +23,7 @@ core.prototype.help = function() {
   var help = '';
 
   help += '*!help* - _List help information_' + '\n';
-  help += '*!info* - _Hardware/OS/Network related information_';
+  help += '*!status* - _Hardware/OS/Network status information_';
 
   return help;
 };
@@ -92,27 +95,47 @@ core.prototype.process = function(message, callback) {
     });
 
     callback(help);
-  } else if (message === "!info") {
+  } else if (message === "!status") {
     var os = require('os');
 
-    var interfaces = os.networkInterfaces();
-    var addresses = [];
-    for (var k in interfaces) {
-        for (var k2 in interfaces[k]) {
-            var address = interfaces[k][k2];
-            if (address.family === 'IPv4' && !address.internal) {
-                addresses.push(address.address);
-            }
-        }
-    }
+
     var response = '';
     response += 'Uptime: ' + parseInt(os.uptime() / 86400) + 'd ' + (new Date(os.uptime() % 86400 * 1000)).toUTCString().replace(/.*(\d{2}):(\d{2}):(\d{2}).*/, "$1h $2m $3s") + '\n';
     response += 'CPU load averages:' + os.loadavg().map(function (loadavg) {
           return ' ' + Math.ceil(loadavg * 10) / 10;
         }) + '\n';
-    response += 'Memory usage: ' + Math.ceil(((os.totalmem() - os.freemem()) / 1024 / 1024)) + '/' + (os.totalmem() / 1024 / 1024) + ' MiB\n';
+    response += 'Memory usage: ' + Math.ceil(((os.totalmem() - os.freemem()) / 1024 / 1024)) + '/' + Math.ceil((os.totalmem() / 1024 / 1024)) + ' MiB\n';
+
+    var interfaces = os.networkInterfaces();
+    var addresses = [];
+    for (var k in interfaces) {
+      for (var k2 in interfaces[k]) {
+        var address = interfaces[k][k2];
+        if (address.family === 'IPv4' && !address.internal) {
+          addresses.push(address.address);
+        }
+      }
+    }
     response += 'Network addresses: ' + addresses;
-    callback(response);
+
+    if (process.platform === 'linux') {
+      iwconfig.status(function (error, status) {
+        if (error === undefined || error === null) {
+          response += '\nWireless status:\n' +
+              '\t\tSSID: ' + status[0].ssid + '\n' + '' +
+              '\t\tChannel frequency: ' + status[0].frequency + ' GHz\n';
+
+          procfs.wifi(function (error, status) {
+            if (error === undefined || error === null) {
+              response += '\t\tRSSI: ' + status[0].level.Quality.replace('.', '') + ' dBm';
+            }
+            callback(response);
+          });
+        }
+      });
+    } else {
+      callback(response);
+    }
   }
 };
 
