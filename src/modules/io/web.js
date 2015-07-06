@@ -14,8 +14,7 @@ web.prototype.name = "web";
 
 web.prototype.info = function() {
     return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
 };
 
 web.prototype.load = function(moduleManager) {

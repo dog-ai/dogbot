@@ -26,8 +26,7 @@ slack.prototype.name = "slack";
 
 slack.prototype.info = function() {
     return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
 };
 
 slack.prototype.load = function(moduleManager) {
@@ -96,9 +95,17 @@ slack.prototype.send = function(recipient, message) {
     } else if (recipient.charAt(0) === '#') {
         var channel = this.client.getChannelByName(recipient.substring(1));
         channel.send(message);
-    } else {
+    } else if (recipient.charAt(0) === 'D') {
         var id = this.client.getChannelGroupOrDMByID(recipient);
         id.send(message);
+    } else if (recipient.charAt(0) === 'U') {
+        var self = this;
+
+        this.client.openDM(recipient, function (dm) {
+            if (dm !== undefined && dm !== null && dm.channel.id !== null) {
+                self.send(dm.channel.id, message);
+            }
+        });
     }
 };
 

@@ -13,7 +13,7 @@ slack.prototype.name = "slack";
 
 slack.prototype.info = function () {
     return "*" + this.name + "* - " +
-        "_" + this.name.toUpperCase() + " " +
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
 };
 

@@ -17,9 +17,8 @@ stdin.prototype.name = "stdin";
 
 stdin.prototype.info = function() {
     return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
-}
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
+};
 
 stdin.prototype.load = function(moduleManager) {
     var self = this;
@@ -46,12 +45,12 @@ stdin.prototype.load = function(moduleManager) {
         }
     })
 
-}
+};
 
 stdin.prototype.unload = function() {
-}
+};
 
 stdin.prototype.send = function(recipient, message) {
-}
+};
 
 module.exports = new stdin();

@@ -35,7 +35,6 @@ user.prototype.process = function (message, callback) {
     if (message.substring(0, "!users".length) === "!users") {
         this._retrieve(callback);
     }
-
 };
 
 user.prototype._retrieve = function (callback) {

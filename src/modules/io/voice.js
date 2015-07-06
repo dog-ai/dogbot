@@ -18,8 +18,7 @@ voice.prototype.name = "voice";
 
 voice.prototype.info = function() {
     return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
+        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
 };
 
 voice.prototype.MAX_LENGTH = 100;
