@@ -94,6 +94,14 @@ core.prototype.process = function(message, callback) {
       }
     });
 
+    help += '\nLoaded statistics modules:\n';
+    this.moduleManager.findAllLoadedModulesByType('STATS').forEach(function (module) {
+      try {
+        help += module.info() + '\n';
+      } catch (exception) {
+      }
+    });
+
     callback(help);
   } else if (message === "!status") {
     var os = require('os');

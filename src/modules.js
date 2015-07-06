@@ -8,8 +8,7 @@ var fs = require("fs");
 
 function modules() {
     events.EventEmitter.call(this);
-};
-
+}
 modules.prototype.__proto__ = events.EventEmitter.prototype;
 
 modules.prototype.loadAll = function() {
@@ -104,6 +103,6 @@ var instance = new modules();
 
 instance.loaded = [];
 instance.available = [];
-instance.types = ['DATABASE', 'SCHEDULE', 'PROCESS', 'MONITOR', 'IO', 'AUTH', 'PERSON']
+instance.types = ['DATABASE', 'SCHEDULE', 'PROCESS', 'MONITOR', 'IO', 'AUTH', 'PERSON', 'STATS'];
 
 module.exports = instance;

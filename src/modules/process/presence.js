@@ -50,21 +50,39 @@ presence.prototype.unload = function () {
 };
 
 presence.prototype.process = function (message, callback) {
+    var self = this;
+
     if (message.substring(0, "!presence".length) === "!presence") {
-        var data = [
-            {
-                x: ["2013-10-04 22:23:00", "2013-11-04 22:23:00", "2013-12-04 22:23:00"],
-                y: [1, 3, 8],
-                type: "scatter"
-            }
-        ];
-        var graphOptions = {filename: "date-axes", fileopt: "overwrite"};
-        plotly.plot(data, graphOptions, function (err, msg) {
-            console.log(msg);
-            callback(msg.url + '.png?' + Math.random());
+        this._retrieveSample(function (samples) {
+            var data = [
+                {
+                    x: samples.map(function (sample) {
+                        return sample.date
+                    }),
+                    y: samples.map(function (sample) {
+                        return sample.value
+                    }),
+                    type: "scatter"
+                }
+            ];
+            var graphOptions = {filename: "date-axes", fileopt: "overwrite"};
+            self.plotly.plot(data, graphOptions, function (err, msg) {
+                callback(msg.url + '.png?' + Math.random());
+            });
         });
     }
+};
 
+presence.prototype._retrieveSample = function (callback) {
+    this.moduleManager.emit('database:stats:retrieveAll',
+        "SELECT date, value FROM arp;", [],
+        function (error, rows) {
+            if (error !== undefined && error !== null) {
+                console.error(error);
+            } else {
+                callback(rows);
+            }
+        });
 };
 
 module.exports = new presence();
