@@ -2,12 +2,9 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-var fs = require("fs");
 var sqlite3 = require("sqlite3").verbose();
 
-var path = __dirname + "/../../../db";
-var file = __dirname + "/../../../db/monitor.db";
-var db = new sqlite3.Database(file);
+var db = new sqlite3.Database(":memory:");
 
 function monitor() {
     var moduleManager = {};
@@ -33,10 +30,6 @@ monitor.prototype.load = function(moduleManager) {
     this.moduleManager.on('database:monitor:retrieveAll', this._all);
     this.moduleManager.on('database:monitor:update', this._run);
     this.moduleManager.on('database:monitor:delete', this._run);
-
-    if (!fs.existsSync(file)) {
-        fs.mkdirSync(path);
-    }
 };
 
 monitor.prototype._run = function(query, parameters, callback) {

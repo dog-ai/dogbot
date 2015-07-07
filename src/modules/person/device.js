@@ -49,8 +49,6 @@ device.prototype.start = function() {
     this.moduleManager.on('monitor:macAddress:create', function (macAddress) {
         var that = self;
 
-        console.log(new Date() + ' ' + macAddress + ' just came online');
-
         self._retrieve(macAddress, function (device) {
             that.moduleManager.emit('person:device:online', device);
         });
@@ -58,8 +56,6 @@ device.prototype.start = function() {
 
     this.moduleManager.on('monitor:macAddress:delete', function (macAddress) {
         var that = self;
-
-        console.log(new Date() + ' ' + macAddress + ' just went offline');
 
         self._retrieve(macAddress, function (device) {
             that.moduleManager.emit('person:device:offline', device);

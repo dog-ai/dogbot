@@ -49,6 +49,7 @@ user.prototype.start = function () {
         var that = self;
 
         self._retrieveById(device.user, function (user) {
+            // TODO: only emit nearby if this is the only device online from the user
             that.moduleManager.emit('person:user:nearby', user);
         });
     });
@@ -57,6 +58,7 @@ user.prototype.start = function () {
         var that = self;
 
         self._retrieveById(device.user, function (user) {
+            // TODO only emit farway if the user does not have any other device online
             that.moduleManager.emit('person:user:faraway', user);
         });
     });

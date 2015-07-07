@@ -2,12 +2,9 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-var fs = require("fs");
 var sqlite3 = require("sqlite3").verbose();
 
-var path = __dirname + "/../../../db";
-var file = __dirname + "/../../../db/stats.db";
-var db = new sqlite3.Database(file);
+var db = new sqlite3.Database(":memory:");
 
 function stats() {
     var moduleManager = {};
@@ -33,10 +30,6 @@ stats.prototype.load = function (moduleManager) {
     this.moduleManager.on('database:stats:retrieveAll', this._all);
     this.moduleManager.on('database:stats:update', this._run);
     this.moduleManager.on('database:stats:delete', this._run);
-
-    if (!fs.existsSync(file)) {
-        fs.mkdirSync(path);
-    }
 };
 
 stats.prototype._run = function (query, parameters, callback) {

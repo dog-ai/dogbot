@@ -6,9 +6,12 @@ var events = require('events');
 var path = require('path');
 var fs = require("fs");
 
+var modulesDir = path.join(__dirname, 'modules/');
+
 function modules() {
     events.EventEmitter.call(this);
 }
+
 modules.prototype.__proto__ = events.EventEmitter.prototype;
 
 modules.prototype.loadAll = function() {
@@ -19,7 +22,7 @@ modules.prototype.loadAll = function() {
 };
 
 modules.prototype._loadAllByType = function(type) {
-    var dir = path.join(__dirname, 'modules/' + type.toLowerCase());
+    var dir = path.join(modulesDir + type.toLowerCase());
     var that = this;
     fs.readdirSync(dir).forEach(function(file) {
         that._load(type, file);
@@ -103,6 +106,9 @@ var instance = new modules();
 
 instance.loaded = [];
 instance.available = [];
-instance.types = ['DATABASE', 'SCHEDULE', 'PROCESS', 'MONITOR', 'IO', 'AUTH', 'PERSON', 'STATS'];
+
+instance.types = (fs.readdirSync(modulesDir) || []).map(function (type) {
+    return type.toUpperCase();
+});
 
 module.exports = instance;

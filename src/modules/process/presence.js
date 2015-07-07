@@ -75,7 +75,7 @@ presence.prototype.process = function (message, callback) {
 
 presence.prototype._retrieveSample = function (callback) {
     this.moduleManager.emit('database:stats:retrieveAll',
-        "SELECT Datetime(date, 'localtime'), value FROM arp;", [],
+        "SELECT Datetime(date, 'localtime') as date, value FROM arp;", [],
         function (error, rows) {
             if (error !== undefined && error !== null) {
                 console.error(error);

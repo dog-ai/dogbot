@@ -121,7 +121,7 @@ slack.prototype._handleMessage = function (message) {
             try {
                 module.process(text, function (response) {
                     channel.send(response);
-                });
+                }, user);
             } catch (exception) {
                 channel.send("Oops! Something went wrong...please call the maintenance team!");
                 console.log(exception.stack);

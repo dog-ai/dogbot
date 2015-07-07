@@ -20,7 +20,7 @@ action.prototype.help = function () {
     var help = '';
 
     help += '*!slap* <slack id> - _Tell me to slap someone_\n';
-    help += '*!hi5* <slack id> - _Tell me to hi5 someone_';
+    help += '*!hi5* <slack id> - _Tell me to hi5 someone_\n';
 
     return help;
 };
@@ -43,7 +43,7 @@ action.prototype.stop = function () {
 
 };
 
-action.prototype.process = function (message) {
+action.prototype.process = function (message, callback, user) {
     if (message.substring(0, "!slap".length) === "!slap") {
         var fields = message.replace(/(“|”)/g, '"').match(/(?:[^\s"]+|"[^"]*")+/g);
 
@@ -64,7 +64,15 @@ action.prototype.process = function (message) {
 
             this.moduleManager.findAllLoadedModulesByType('IO').forEach(function (module) {
                 if (module.name === 'slack') {
-                    module.send(slackId, 'http://cdn.worldcupblog.org/croatia.worldcupblog.org/files/2009/11/highfive.png?' + Math.random());
+
+                    var image = undefined;
+                    if (slackId === user.id) {
+                        image = 'http://media2.giphy.com/media/cJgkhpLgsuTkY/giphy.gif?' + Math.random();
+                    } else {
+                        image = 'http://cdn.worldcupblog.org/croatia.worldcupblog.org/files/2009/11/highfive.png?' + Math.random();
+                    }
+
+                    module.send(slackId, image);
                 }
             });
         }
