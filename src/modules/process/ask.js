@@ -3,15 +3,10 @@
  */
 
 var Client = require('node-wolfram');
-var nconf = require('nconf');
-
-nconf.env().argv();
-nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/wolfram.json'});
-
-var Wolfram = new Client(nconf.get('auth:token'));
 
 function ask() {
   var moduleManager = {};
+  var wolfram = undefined;
 }
 
 ask.prototype.type = "PROCESS";
@@ -22,21 +17,29 @@ ask.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 ask.prototype.help = function() {
   var help = '';
 
-  help += '*!ask* - _Ask a question and get its answer_'
+  help += '*!ask* - _Ask a question and get its answer_';
 
   return help;
-}
+};
 
-ask.prototype.load = function(moduleManager) {
+ask.prototype.load = function (moduleManager, config) {
   this.moduleManager = moduleManager;
-}
 
-ask.prototype.unload = function() {}
+  var authToken = (config && config.auth && config.auth.token || undefined);
+  if (authToken === undefined || authToken === null || authToken.trim() === '') {
+    throw new Error('invalid configuration: no authentication token available');
+  }
+
+  this.wolfram = new Client(authToken);
+};
+
+ask.prototype.unload = function () {
+};
 
 ask.prototype.process = function(message, callback) {
 
@@ -46,7 +49,7 @@ ask.prototype.process = function(message, callback) {
     if (question !== undefined && question !== null && question.length > 0) {
       var self = this;
 
-      Wolfram.query(question, function(error, result) {
+      this.wolfram.query(question, function (error, result) {
         if (error !== undefined && error !== null) {
           console.error(error);
           callback("Can you repeat that again?");
@@ -64,7 +67,7 @@ ask.prototype.process = function(message, callback) {
       });
     }
   }
-}
+};
 
 ask.prototype._handleResult = function(result) {
   var plaintext, image;
@@ -94,7 +97,7 @@ ask.prototype._handleResult = function(result) {
   }
 
   return 'I\'m not sure if I follow you...';
-}
+};
 
 ask.prototype._handleAnswer = function(datatypes, plaintext, image) {
   if (this._handlePlaintext(plaintext) !== undefined) {
@@ -102,18 +105,18 @@ ask.prototype._handleAnswer = function(datatypes, plaintext, image) {
   } else {
     return this._handleImage(image);
   }
-}
+};
 
 ask.prototype._handlePlaintext = function(plaintext) {
   if (plaintext !== undefined && plaintext !== null && plaintext[0] !== '') {
     return plaintext[0];
   }
-}
+};
 
 ask.prototype._handleImage = function(image) {
   if (image !== undefined && image !== null) {
     return image[0]['$'].src;
   }
-}
+};
 
 module.exports = new ask();

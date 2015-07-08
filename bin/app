@@ -21,9 +21,9 @@ process.on('uncaughtException', function(exception) {
     } catch (e) {
         console.error(exception.stack);
     }
-})
+});
 
-var raspbot = require('./raspbot.js');
+var raspbot = require('../src/raspbot.js');
 
 raspbot.start(function() {
 });

@@ -31,8 +31,8 @@ device.prototype.load = function(moduleManager) {
         "UNIQUE(user, mac_address)" +
         ");", [],
         function (error) {
-            if (error !== undefined && error !== null) {
-                throw new Error(error);
+            if (error) {
+                throw error;
             } else {
                 self.start();
             }
@@ -57,6 +57,7 @@ device.prototype.start = function() {
     this.moduleManager.on('monitor:macAddress:delete', function (macAddress) {
         var that = self;
 
+
         self._retrieve(macAddress, function (device) {
             that.moduleManager.emit('person:device:offline', device);
         });
@@ -67,13 +68,13 @@ device.prototype.stop = function() {
 };
 
 device.prototype._retrieve = function (macAddress, callback) {
-    this.moduleManager.emit('database:person:retrieve',
+    this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM device WHERE mac_address = ?;", [macAddress],
         function (error, row) {
-            if (error !== null) {
+            if (error) {
                 throw error;
             } else {
-                if (row !== undefined) {
+                if (row) {
                     callback(row);
                 }
             }

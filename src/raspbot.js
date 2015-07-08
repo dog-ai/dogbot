@@ -4,17 +4,37 @@
 
 var stackTrace = require('stack-trace');
 
-var revision = require('./revision.js');
+var revision = require('./utils/revision.js');
+var synchronization = require('./utils/synchronization.js');
 var modules = require('./modules.js');
 
-var feedeobot = {
-  start: function(callback) {
-    modules.loadAll();
+var raspbot = {
 
-    callback();
+  synchronizationInterval: undefined,
+
+  start: function(callback) {
+    var self = this;
+
+    this.configure(function (configs) {
+      var that = self;
+
+      modules.loadAll(configs);
+
+      self.synchronizationInterval = setInterval(function () {
+        that.synchronize(function (error) {
+          if (error) {
+            console.error(error.stack);
+          }
+        });
+      }, 5 * 60 * 1000);
+
+      callback();
+    });
   },
 
   stop: function(callback) {
+    clearInterval(this.synchronizationInterval);
+
     modules.unloadAll();
 
     callback();
@@ -22,8 +42,9 @@ var feedeobot = {
 
   reload: function(callback) {
     var self = this;
+
     revision.hasRevisionChanged(function(error, changed, revision) {
-      if (error !== undefined) {
+      if (error) {
         console.error(error);
       } else {
         /*if (changed) {
@@ -39,10 +60,25 @@ var feedeobot = {
     });
   },
 
+  configure: function (callback) {
+    if (callback !== undefined && callback !== null) {
+      callback(synchronization.getConfigurations());
+    }
+  },
+
+  synchronize: function (callback) {
+    try {
+      synchronization.synchronizeDatabases(modules);
+      callback(null);
+    } catch (error) {
+      callback(error);
+    }
+  },
+
   error: function(error) {
     var traces = stackTrace.parse(error);
 
-    console.log(error.stack);
+    console.error(error.stack);
 
     if (traces !== undefined && traces !== null) {
       traces.forEach(function(trace) {
@@ -57,4 +93,4 @@ var feedeobot = {
   }
 };
 
-module.exports = feedeobot;
+module.exports = raspbot;

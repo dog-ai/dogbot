@@ -89,14 +89,14 @@ device.prototype.process = function(message, callback) {
 device.prototype._add = function (name, slackId, macAddress, callback) {
   var self = this;
 
-  this.moduleManager.emit('database:person:retrieve',
+  this.moduleManager.emit('database:person:retrieveOne',
       "SELECT * FROM user WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
       [name !== undefined ? name : slackId],
     function(error, row) {
-      if (error !== null) {
+      if (error) {
         throw error;
       } else {
-        if (row === undefined) {
+        if (row) {
           callback('I\'m not aware of any person named ' + (name !== undefined ? name : "<@" + slackId + ">"));
         } else {
 
@@ -121,14 +121,14 @@ device.prototype._add = function (name, slackId, macAddress, callback) {
 device.prototype._rem = function (name, slackId, macAddress, callback) {
   var self = this;
 
-  this.moduleManager.emit('database:person:retrieve',
+  this.moduleManager.emit('database:person:retrieveOne',
       "SELECT * FROM user WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
       [name !== undefined ? name : slackId],
       function(error, row) {
-        if (error !== null) {
+        if (error) {
           throw error;
         } else {
-          if (row === undefined) {
+          if (row) {
             callback('I\'m not aware of any person named ' + name);
           } else {
 
@@ -155,13 +155,13 @@ device.prototype._rem = function (name, slackId, macAddress, callback) {
 };
 
 device.prototype._retrieve = function (callback) {
-  this.moduleManager.emit('database:person:retrieveAll',
+  this.moduleManager.emit('database:person:retrieveOneByOne',
       "SELECT u.name, d.mac_address FROM user u, device d WHERE u.id = d.user ORDER BY u.id ASC, d.id ASC;", [],
       function(error, row) {
-        if (error !== null) {
+        if (error) {
           throw error;
         } else {
-          if (row !== undefined) {
+          if (row) {
             callback(row.name + ' has device with address ' + row.mac_address);
           }
         }

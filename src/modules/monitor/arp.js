@@ -92,7 +92,7 @@ arp.prototype._discover = function () {
         var ipAddress = values[0];
         var macAddress = values[1];
 
-        self.moduleManager.emit('database:monitor:retrieve',
+        self.moduleManager.emit('database:monitor:retrieveOne',
             "SELECT * FROM arp WHERE ip_address = ?;", [ipAddress],
             function (error, row) {
                 if (error !== null) {
@@ -163,7 +163,7 @@ arp.prototype._delete = function (oldestDate) {
 
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:retrieveAll',
+    this.moduleManager.emit('database:monitor:retrieveOneByOne',
         "SELECT * FROM arp WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, row) {
             if (error !== undefined && error !== null) {

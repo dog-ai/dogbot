@@ -2,8 +2,6 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-var nconf = require('nconf');
-
 function presence() {
     var moduleManager = {};
     var plotly = undefined;
@@ -27,18 +25,15 @@ presence.prototype.help = function () {
     return help;
 };
 
-presence.prototype.load = function (moduleManager) {
+presence.prototype.load = function (moduleManager, config) {
     this.moduleManager = moduleManager;
 
-    nconf.env().argv();
-    nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/plotly.json'});
-
-    var username = nconf.get('auth:username');
+    var username = (config && config.auth && config.auth.username || undefined);
     if (username === undefined || username === null || username.trim() === '') {
         throw new Error('invalid configuration: no authentication username available');
     }
 
-    var apiKey = nconf.get('auth:api_key');
+    var apiKey = (config && config.auth && config.auth.api_key || undefined);
     if (apiKey === undefined || apiKey === null || apiKey.trim() === '') {
         throw new Error('invalid configuration: no authentication API key available');
     }

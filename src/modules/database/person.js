@@ -23,19 +23,31 @@ person.prototype.info = function() {
 person.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
 
-    this.moduleManager.on('database:person:setup', this._run);
+    this.start();
+};
 
+person.prototype.unload = function (moduleManager) {
+    this.stop();
+};
+
+person.prototype.start = function () {
+    this.moduleManager.on('database:person:setup', this._run);
     this.moduleManager.on('database:person:create', this._run);
-    this.moduleManager.on('database:person:retrieve', this._get);
+    this.moduleManager.on('database:person:retrieveOne', this._get);
     this.moduleManager.on('database:person:retrieveAll', this._all);
+    this.moduleManager.on('database:person:retrieveOneByOne', this._each);
     this.moduleManager.on('database:person:update', this._run);
     this.moduleManager.on('database:person:delete', this._run);
 };
 
+person.prototype.stop = function () {
+    db.close();
+};
+
 person.prototype._run = function(query, parameters, callback) {
     var handler = function(error) {
-        if (error !== null) {
-            if (callback !== undefined) {
+        if (error) {
+            if (callback) {
                 callback(error);
             }
         } else {
@@ -43,7 +55,7 @@ person.prototype._run = function(query, parameters, callback) {
         }
     };
 
-    if (parameters !== undefined) {
+    if (parameters) {
         db.run(query, parameters, handler);
     } else {
         db.run(query, handler);
@@ -52,14 +64,16 @@ person.prototype._run = function(query, parameters, callback) {
 
 person.prototype._get = function(query, parameters, callback) {
     var handler = function(error, row) {
-        if (callback !== undefined && error !== null) {
-            callback(error);
+        if (error) {
+            if (callback) {
+                callback(error);
+            }
         } else {
             callback(null, row);
         }
     };
 
-    if (parameters !== undefined) {
+    if (parameters) {
         db.get(query, parameters, handler);
     } else {
         db.get(query, handler);
@@ -68,8 +82,28 @@ person.prototype._get = function(query, parameters, callback) {
 
 person.prototype._all = function(query, parameters, callback) {
     var handler = function(error, row) {
-        if (callback !== undefined && error !== null) {
-            callback(error);
+        if (error) {
+            if (callback) {
+                callback(error);
+            }
+        } else {
+            callback(null, row);
+        }
+    };
+
+    if (parameters !== undefined) {
+        db.all(query, parameters, handler);
+    } else {
+        db.all(query, handler);
+    }
+};
+
+person.prototype._each = function (query, parameters, callback) {
+    var handler = function (error, row) {
+        if (error) {
+            if (callback) {
+                callback(error);
+            }
         } else {
             callback(null, row);
         }
@@ -80,10 +114,6 @@ person.prototype._all = function(query, parameters, callback) {
     } else {
         db.each(query, handler);
     }
-};
-
-person.prototype.unload = function() {
-    db.close();
 };
 
 module.exports = new person();

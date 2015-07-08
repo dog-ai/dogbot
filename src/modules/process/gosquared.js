@@ -3,18 +3,10 @@
  */
 
 var GoSquared = require('gosquared');
-var nconf = require('nconf');
-
-nconf.env().argv();
-nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/gosquared.json'});
-
-var api = new GoSquared({
-  api_key: nconf.get('auth:api_key'),
-  site_token: nconf.get('auth:site_token')
-});
 
 function gosquared() {
   var bot = {};
+  var api = undefined;
 }
 
 gosquared.prototype.type = "PROCESS";
@@ -25,26 +17,42 @@ gosquared.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + "GoSquared" + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 gosquared.prototype.help = function() {
   var help = '';
 
-  help += '*!who* - _List online users_'
+  help += '*!who* - _List online users_';
 
   return help;
-}
+};
 
-gosquared.prototype.load = function(moduleManager) {
+gosquared.prototype.load = function (moduleManager, config) {
   this.moduleManager = moduleManager;
-}
 
-gosquared.prototype.unload = function() {}
+  var apiKey = (config && config.auth && config.auth.api_key || undefined);
+  if (apiKey === undefined || apiKey === null || apiKey.trim() === '') {
+    throw new Error('invalid configuration: no authentication API key available');
+  }
+
+  var siteToken = (config && config.auth && config.auth.site_token || undefined);
+  if (siteToken === undefined || siteToken === null || siteToken.trim() === '') {
+    throw new Error('invalid configuration: no authentication site token available');
+  }
+
+  this.api = new GoSquared({
+    api_key: apiKey,
+    site_token: siteToken
+  });
+};
+
+gosquared.prototype.unload = function () {
+};
 
 gosquared.prototype.process = function(message, callback) {
   if (message === "!who") {
 
-    api.now.v3.visitors(function(e, data) {
+    this.api.now.v3.visitors(function (e, data) {
       if (e) {
         return console.log(e);
       }
@@ -80,6 +88,6 @@ gosquared.prototype.process = function(message, callback) {
       callback(response);
     });
   }
-}
+};
 
 module.exports = new gosquared();

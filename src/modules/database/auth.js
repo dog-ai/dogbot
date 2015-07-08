@@ -22,20 +22,30 @@ auth.prototype.info = function() {
 
 auth.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
+};
 
+auth.prototype.unload = function () {
+    this.stop();
+};
+
+auth.prototype.start = function () {
     this.moduleManager.on('database:auth:setup', this._run);
-
     this.moduleManager.on('database:auth:create', this._run);
+    this.moduleManager.on('database:auth:retrieveOne', this._get);
     this.moduleManager.on('database:auth:retrieveAll', this._all);
-    this.moduleManager.on('database:auth:retrieve', this._get);
+    this.moduleManager.on('database:auth:retrieveOneByOne', this._each);
     this.moduleManager.on('database:auth:update', this._run);
     this.moduleManager.on('database:auth:delete', this._run);
 };
 
+auth.prototype.stop = function () {
+    db.close();
+};
+
 auth.prototype._run = function(query, parameters, callback) {
     var handler = function(error) {
-        if (error !== null) {
-            if (callback !== undefined) {
+        if (error) {
+            if (callback) {
                 callback(error);
             }
         } else {
@@ -43,7 +53,7 @@ auth.prototype._run = function(query, parameters, callback) {
         }
     };
 
-    if (parameters !== undefined) {
+    if (parameters) {
         db.run(query, parameters, handler);
     } else {
         db.run(query, handler);
@@ -52,14 +62,16 @@ auth.prototype._run = function(query, parameters, callback) {
 
 auth.prototype._get = function(query, parameters, callback) {
     var handler = function(error, row) {
-        if (callback !== undefined && error !== null) {
-            callback(error);
+        if (error) {
+            if (callback) {
+                callback(error);
+            }
         } else {
             callback(null, row);
         }
     };
 
-    if (parameters !== undefined) {
+    if (parameters) {
         db.get(query, parameters, handler);
     } else {
         db.get(query, handler);
@@ -68,22 +80,38 @@ auth.prototype._get = function(query, parameters, callback) {
 
 auth.prototype._all = function(query, parameters, callback) {
     var handler = function(error, row) {
-        if (callback !== undefined && error !== null) {
-            callback(error);
+        if (error) {
+            if (callback) {
+                callback(error);
+            }
         } else {
             callback(null, row);
         }
     };
 
-    if (parameters !== undefined) {
+    if (parameters) {
         db.all(query, parameters, handler);
     } else {
         db.all(query, handler);
     }
 };
 
-auth.prototype.unload = function() {
-    db.close();
+auth.prototype._each = function (query, parameters, callback) {
+    var handler = function (error, row) {
+        if (error) {
+            if (callback) {
+                callback(error);
+            }
+        } else {
+            callback(null, row);
+        }
+    };
+
+    if (parameters !== undefined) {
+        db.each(query, parameters, handler);
+    } else {
+        db.each(query, handler);
+    }
 };
 
 module.exports = new auth();

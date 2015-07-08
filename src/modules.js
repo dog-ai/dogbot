@@ -2,6 +2,7 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var _ = require('lodash');
 var events = require('events');
 var path = require('path');
 var fs = require("fs");
@@ -14,34 +15,35 @@ function modules() {
 
 modules.prototype.__proto__ = events.EventEmitter.prototype;
 
-modules.prototype.loadAll = function() {
+modules.prototype.loadAll = function (configs) {
     var that = this;
     this.types.forEach(function(type) {
-        that._loadAllByType(type);
+        that._loadAllByType(type, configs && configs[type.toLowerCase()] || undefined);
     });
 };
 
-modules.prototype._loadAllByType = function(type) {
-    var dir = path.join(modulesDir + type.toLowerCase());
+modules.prototype._loadAllByType = function (type, configs) {
     var that = this;
+
+    var dir = path.join(modulesDir + type.toLowerCase());
+
     fs.readdirSync(dir).forEach(function(file) {
-        that._load(type, file);
+        that._load(type, file, configs && configs[file.replace('.js', '')] || undefined);
     });
 };
 
-modules.prototype.loadModule = function(file) {
+modules.prototype.loadModule = function (file, config) {
 
 };
 
-modules.prototype._load = function(type, file) {
-    if (file.charAt(0) === '.') {
+modules.prototype._load = function (type, file, config) {
+    if (file.charAt(0) === '.' || !config.is_enabled) {
         return;
     }
 
     try {
         var module = require('./modules/' + type.toLowerCase() + '/' + file);
-
-        module.load(this);
+        module.load(this, config);
 
         this.loaded.push(module);
         console.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);

@@ -106,7 +106,7 @@ slack.prototype._clean = function () {
 };
 
 slack.prototype._retrieve = function (slackId, callback) {
-    this.moduleManager.emit('database:monitor:retrieve',
+    this.moduleManager.emit('database:monitor:retrieveOne',
         "SELECT * FROM slack WHERE slack_id = ?;", [
             slackId
         ],
@@ -156,7 +156,7 @@ slack.prototype._update = function (slackId, username, name) {
 
 slack.prototype._delete = function (slackId) {
     var self = this;
-    this.moduleManager.emit('database:monitor:retrieve',
+    this.moduleManager.emit('database:monitor:retrieveOne',
         "SELECT * FROM slack WHERE slack_id LIKE ?;", [slackId],
         function (error, row) {
             if (error !== undefined && error !== null) {
@@ -187,7 +187,7 @@ slack.prototype._deleteAllByUpdatedDate = function (oldestDate) {
 
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:retrieveAll',
+    this.moduleManager.emit('database:monitor:retrieveOneByOne',
         "SELECT * FROM slack WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, row) {
             if (error !== undefined && error !== null) {

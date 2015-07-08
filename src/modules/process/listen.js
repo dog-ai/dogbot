@@ -3,16 +3,11 @@
  */
 
 var wit = require('node-wit');
-var nconf = require('nconf');
-
-nconf.env().argv();
-nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/wit.json'});
-
-var ACCESS_TOKEN = nconf.get('auth:access_token');
 var fs = require('fs');
 
 function listen() {
   var moduleManager = {};
+  var accessToken = undefined;
 }
 
 listen.prototype.type = "PROCESS";
@@ -23,28 +18,34 @@ listen.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 listen.prototype.help = function() {
   var help = '';
 
-  help += '*!listen* - _Listen for a question and get its answer_'
+  help += '*!listen* - _Listen for a question and get its answer_';
 
   return help;
-}
+};
 
-listen.prototype.load = function(moduleManager) {
+listen.prototype.load = function (moduleManager, config) {
   this.moduleManager = moduleManager;
-}
 
-listen.prototype.unload = function() {}
+  this.accessToken = (config && config.auth && config.auth.access_token || undefined);
+  if (this.accessToken === undefined || this.accessToken === null || this.accessToken.trim() === '') {
+    throw new Error('invalid configuration: no authentication access token available');
+  }
+};
+
+listen.prototype.unload = function () {
+};
 
 listen.prototype.process = function(message, callback) {
 
   if (message === "!listen") {
     this._listen(callback);
   }
-}
+};
 
 listen.prototype._listen = function(callback) {
   var self = this;
@@ -80,7 +81,7 @@ listen.prototype._listen = function(callback) {
     });
 
   });
-}
+};
 
 listen.prototype._sample = function(file, duration, callback) {
   var self = this;
@@ -94,14 +95,14 @@ listen.prototype._sample = function(file, duration, callback) {
       }
       callback(error);
     });
-}
+};
 
 listen.prototype._upload = function(file, callback) {
   var self = this;
 
   var stream = fs.createReadStream(file);
 
-  wit.captureSpeechIntent(ACCESS_TOKEN, stream, "audio/wav", function(error, response) {
+  wit.captureSpeechIntent(this.accessToken, stream, "audio/wav", function (error, response) {
 
     if (error !== undefined && error !== null) {
       callback(error);
@@ -110,6 +111,6 @@ listen.prototype._upload = function(file, callback) {
     }
 
   });
-}
+};
 
 module.exports = new listen();

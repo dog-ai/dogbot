@@ -33,8 +33,8 @@ arp.prototype.load = function (moduleManager) {
         "value INTEGER NOT NULL" +
         ");", [],
         function (error) {
-            if (error !== undefined && error !== null) {
-                throw new Error(error);
+            if (error) {
+                throw error;
             } else {
                 self.start();
             }
@@ -49,11 +49,9 @@ arp.prototype.start = function () {
     var self = this;
 
     this.cron = new CronJob('0 0 * * * *', function () {
-        try {
-            self._sample();
-        } catch (error) {
-            console.error(error.stack);
-        }
+        self._sample(function (error) {
+            console.error(error);
+        });
     }, null, true, "Europe/Stockholm");
 };
 
@@ -61,17 +59,25 @@ arp.prototype.stop = function () {
     this.cron.stop();
 };
 
-arp.prototype._sample = function () {
+arp.prototype._sample = function (callback) {
     var self = this;
 
     var date = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this._count(function (value) {
-        self._add(date, value);
+    this._count(function (error, value) {
+        if (error) {
+            throw error;
+        } else {
+            self._add(date, value, function (error) {
+                if (error) {
+                    throw error;
+                }
+            });
+        }
     })
 };
 
-arp.prototype._add = function (date, value) {
+arp.prototype._add = function (date, value, callback) {
     var self = this;
 
     this.moduleManager.emit('database:stats:create',
@@ -86,8 +92,10 @@ arp.prototype._add = function (date, value) {
                 self.moduleManager.emit('database:stats:delete',
                     'DELETE FROM arp WHERE id NOT IN (SELECT id FROM arp ORDER BY date DESC LIMIT 24)',
                     [], function (error) {
-                        if (error !== undefined && error !== null) {
-                            console.error(error);
+                        if (error) {
+                            callback(error);
+                        } else {
+                            callback(null);
                         }
                     });
             }
@@ -95,13 +103,13 @@ arp.prototype._add = function (date, value) {
 };
 
 arp.prototype._count = function (callback) {
-    this.moduleManager.emit('database:monitor:retrieve',
+    this.moduleManager.emit('database:monitor:retrieveOne',
         "SELECT COUNT(*) as count FROM arp;", [],
         function (error, row) {
-            if (error !== undefined && error !== null) {
-                console.error(error);
+            if (error) {
+                callback(error);
             } else {
-                callback(row.count);
+                callback(null, row.count);
             }
         });
 };

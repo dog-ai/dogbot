@@ -2,6 +2,8 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var _ = require('lodash');
+
 function user() {
     var moduleManager = {};
 }
@@ -30,8 +32,8 @@ user.prototype.load = function (moduleManager) {
         "slack_id TEXT" +
         ");", [],
         function (error) {
-            if (error !== undefined && error !== null) {
-                throw new Error(error);
+            if (error) {
+                throw error;
             } else {
                 self.start();
             }
@@ -49,8 +51,13 @@ user.prototype.start = function () {
         var that = self;
 
         self._retrieveById(device.user, function (user) {
-            // TODO: only emit nearby if this is the only device online from the user
-            that.moduleManager.emit('person:user:nearby', user);
+            // only emit nearby if this is the only device online from the user
+            var self = that;
+            that._retrieveAllOnlineDevicesById(user.id, function (devices) {
+                if (devices && devices.length == 1) {
+                    self.moduleManager.emit('person:user:nearby', user);
+                }
+            })
         });
     });
 
@@ -58,8 +65,13 @@ user.prototype.start = function () {
         var that = self;
 
         self._retrieveById(device.user, function (user) {
-            // TODO only emit farway if the user does not have any other device online
-            that.moduleManager.emit('person:user:faraway', user);
+            // only emit farway if the user does not have any other device online
+            var self = that;
+            that._retrieveAllOnlineDevicesById(user.id, function (devices) {
+                if (!devices) {
+                    self.moduleManager.emit('person:user:faraway', user);
+                }
+            })
         });
     });
 
@@ -98,8 +110,8 @@ user.prototype._add = function (name, slackId, callback) {
             slackId
         ],
         function (error) {
-            if (error !== null) {
-                throw error;
+            if (error) {
+                callback(error);
             } else {
                 callback({name: name});
             }
@@ -107,27 +119,51 @@ user.prototype._add = function (name, slackId, callback) {
 };
 
 user.prototype._retrieveById = function (id, callback) {
-    this.moduleManager.emit('database:person:retrieve',
+    this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM user WHERE id = ?;", [id],
-        function (error, user) {
-            if (error !== null) {
-                throw error;
+        function (error, row) {
+            if (error) {
+                callback(error);
             } else {
-                if (user !== undefined) {
-                    callback(user);
-                }
+                callback(row);
             }
         });
 };
 
 user.prototype._retrieveByName = function (name, callback) {
-    this.moduleManager.emit('database:person:retrieve',
+    this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM user WHERE name LIKE ?;", [name],
         function (error, user) {
-            if (error !== null) {
-                throw error;
+            if (error) {
+                callback(error);
             } else {
                 callback(user);
+            }
+        });
+};
+
+user.prototype._retrieveAllOnlineDevicesById = function (id, callback) {
+    var self = this;
+
+    this.moduleManager.emit('database:person:retrieveAll',
+        'SELECT * FROM device WHERE user = ?;', [id],
+        function (error, rows) {
+            if (error) {
+                callback(error);
+            } else {
+                if (rows) {
+                    var macAddresses = _.pluck(rows, 'mac_address');
+                    self.moduleManager.emit('database:monitor:retrieveAll',
+                        'SELECT * FROM arp WHERE mac_address IS IN (' + macAddresses + ');',
+                        [],
+                        function (error, rows) {
+                            if (error) {
+                                callback(error);
+                            } else {
+                                callback(null, rows);
+                            }
+                        });
+                }
             }
         });
 };

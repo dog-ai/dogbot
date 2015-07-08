@@ -38,13 +38,13 @@ user.prototype.process = function (message, callback) {
 };
 
 user.prototype._retrieve = function (callback) {
-    this.moduleManager.emit('database:person:retrieveAll',
+    this.moduleManager.emit('database:person:retrieveOneByOne',
         "SELECT * FROM user ORDER BY name ASC;", [],
         function (error, row) {
-            if (error !== null) {
+            if (error) {
                 throw error;
             } else {
-                if (row !== undefined) {
+                if (row) {
                     callback(row.name);
                 }
             }

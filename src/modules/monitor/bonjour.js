@@ -111,7 +111,7 @@ bonjour.prototype._discover = function() {
             return;
         }
 
-        self.moduleManager.emit('database:monitor:retrieve', sqlSelectFromTableByTypeAndName, [type, name],
+        self.moduleManager.emit('database:monitor:retrieveOne', sqlSelectFromTableByTypeAndName, [type, name],
             function(error, row) {
                 if (error !== null) {
                     console.error(error);
@@ -186,7 +186,7 @@ bonjour.prototype._delete = function(oldestDate) {
 
    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-   this.moduleManager.emit('database:monitor:retrieveAll',
+    this.moduleManager.emit('database:monitor:retrieveOneByOne',
        "SELECT * FROM bonjour WHERE updated_date < Datetime(?);", [updatedDate],
         function(error, row) {
             if (error !== undefined && error !== null) {

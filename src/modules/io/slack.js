@@ -4,7 +4,6 @@
 
 var _ = require('lodash');
 var events = require('events');
-var nconf = require('nconf');
 var Slack = require('slack-client');
 
 function slack() {
@@ -29,18 +28,15 @@ slack.prototype.info = function() {
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
 };
 
-slack.prototype.load = function(moduleManager) {
+slack.prototype.load = function (moduleManager, config) {
     this.moduleManager = moduleManager;
 
-    nconf.env().argv();
-    nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/slack.json'});
-
-    this.authToken = nconf.get('auth:token');
+    this.authToken = (config && config.auth && config.auth.token || undefined);
     if (this.authToken === undefined || this.authToken === null || this.authToken.trim() === '') {
         throw new Error('invalid configuration: no authentication token available');
     }
 
-    this.defaultChannel = nconf.get('default_channel');
+    this.defaultChannel = (config && config.default_channel || undefined);
 
     this.client = new Slack(this.authToken, this.autoReconnect, this.autoMark);
 

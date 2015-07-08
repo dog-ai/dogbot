@@ -21,7 +21,7 @@ NAME=raspbot
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-DAEMON=$RASPBOT_HOME/src/app
+DAEMON=$RASPBOT_HOME/src/bin
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
@@ -54,7 +54,7 @@ do_start()
     --append -l $RASPBOT_HOME/log/raspbot.log \
     --pidFile $PIDFILE \
     --workingDir $RASPBOT_HOME \
-    -c "$nodemon --exitcrash" $RASPBOT_HOME/src/app
+    -c "$nodemon --exitcrash" $DAEMON
     RETVAL="$?"
 
     return "$RETVAL"

@@ -2,8 +2,6 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-var nconf = require('nconf');
-
 var sqlCreateTable = "CREATE TABLE IF NOT EXISTS google (" +
   "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
   "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -14,7 +12,7 @@ var sqlCreateTable = "CREATE TABLE IF NOT EXISTS google (" +
   "access_token TEXT NOT NULL, " +
   "expires_in INTEGER NOT NULL, " +
   "refresh_token TEXT NOT NULL" +
-  ");"
+    ");";
 
 var sqlInsertEntryIntoTable = "INSERT INTO google (user_id, name, email, access_token, expires_in, refresh_token) VALUES (?, ?, ?, ?, ?, ?);";
 
@@ -43,22 +41,19 @@ google.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
-google.prototype.load = function(moduleManager) {
+google.prototype.load = function (moduleManager, config) {
   var self = this;
 
   this.moduleManager = moduleManager;
 
-  nconf.env().argv();
-  nconf.add('local', {type: 'file', file: __dirname + '/../../../conf/google.json'});
-
-  this.authClientId = nconf.get('auth:client_id');
+  this.authClientId = (config && config.auth && config.auth.client_id || undefined);
   if (this.authClientId === undefined || this.authClientId === null || this.authClientId.trim() === '') {
     throw new Error('invalid configuration: no client id available');
   }
 
-  this.authClientSecret = nconf.get('auth:client_secret');
+  this.authClientSecret = (config && config.auth && config.auth.client_secret || undefined);
   if (this.authClientSecret === undefined || this.authClientSecret === null || this.authClientSecret.trim() === '') {
     throw new Error('invalid configuration: no client secret available');
   }
@@ -70,9 +65,10 @@ google.prototype.load = function(moduleManager) {
       self.start();
     }
   });
-}
+};
 
-google.prototype.unload = function() {}
+google.prototype.unload = function () {
+};
 
 google.prototype.start = function() {
   var self = this;
@@ -86,7 +82,7 @@ google.prototype.start = function() {
       callbackURL: "http://localhost:8082/auth/google/callback"
     },
     function(accessToken, refreshToken, params, profile, done) {
-      self.moduleManager.emit('database:auth:retrieve', sqlSelectFromTableByUserId, [profile.id],
+      self.moduleManager.emit('database:auth:retrieveOne', sqlSelectFromTableByUserId, [profile.id],
         function(error, row) {
           if (error !== null) {
             console.error(error);
@@ -106,9 +102,10 @@ google.prototype.start = function() {
   web.registerAuthStrategy(this.name, strategy);
 
   refresh.use(strategy);
-}
+};
 
-google.prototype.stop = function() {}
+google.prototype.stop = function () {
+};
 
 google.prototype.getAccounts = function(callback) {
   this.moduleManager.emit('database:auth:retrieveAll', sqlSelectAllFromTable, [], function(error, rows) {
@@ -120,12 +117,12 @@ google.prototype.getAccounts = function(callback) {
       }
     }
   });
-}
+};
 
 google.prototype.refreshAuth = function(accountId, callback) {
   var self = this;
 
-  this.moduleManager.emit('database:auth:retrieve', sqlSelectFromTableByUserId, [accountId],
+  this.moduleManager.emit('database:auth:retrieveOne', sqlSelectFromTableByUserId, [accountId],
     function(error, row) {
       if (error !== null) {
         console.error(error);
@@ -144,7 +141,7 @@ google.prototype.refreshAuth = function(accountId, callback) {
         }
       }
     });
-}
+};
 
 google.prototype._add = function(userId, name, email, accessToken, expiresIn, refreshToken) {
 
@@ -163,7 +160,7 @@ google.prototype._add = function(userId, name, email, accessToken, expiresIn, re
 
       }
     });
-}
+};
 
 google.prototype._update = function(userId, name, email, accessToken, expiresIn, refreshToken) {
 
@@ -183,6 +180,6 @@ google.prototype._update = function(userId, name, email, accessToken, expiresIn,
         console.error(error);
       } else {}
     });
-}
+};
 
 module.exports = new google();
