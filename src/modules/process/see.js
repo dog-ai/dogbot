@@ -20,25 +20,43 @@ see.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 see.prototype.help = function() {
   var help = '';
 
-  help += '*!see snapshot* - _Take a camera snapshot_'
+  help += '*!see snapshot* - _Take a camera snapshot_';
 
   return help;
-}
+};
 
-see.prototype.load = function(moduleManager) {
+see.prototype.load = function (moduleManager, config) {
   this.moduleManager = moduleManager;
 
   if (process.platform !== 'linux') {
     throw new Error(process.platform + ' platform is not supported');
   }
-}
 
-see.prototype.unload = function() {}
+  var accessKeyId = (config && config.auth && config.auth.access_key_id || undefined);
+  if (!accessKeyId || accessKeyId.trim() === '') {
+    throw new Error('invalid configuration: no authentication access key ID available');
+  }
+
+  var secretAccessKey = (config && config.auth && config.auth.secret_access_key || undefined);
+  if (!secretAccessKey || accessKeyId.trim() === '') {
+    throw new Error('invalid configuration: no authentication secret access key available');
+  }
+
+  this.client = s3.createClient({
+    s3Options: {
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+    }
+  });
+};
+
+see.prototype.unload = function () {
+};
 
 see.prototype.process = function(message, callback) {
   var self = this;
@@ -68,7 +86,7 @@ see.prototype.process = function(message, callback) {
 
     });
   }
-}
+};
 
 see.prototype._snapshot = function(callback) {
   var width = 640;
@@ -80,7 +98,7 @@ see.prototype._snapshot = function(callback) {
       ' -w ' + width +
       ' -h ' + height +
       ' -rot ' + rotation +
-      ' -o ' + __dirname + '/../../../tmp/snapshot.jpg',
+      ' -o ' + __dirname + '/../../../var/tmp/snapshot.jpg',
       function(error, stdout, stderr) {
         if (error !== undefined && error !== null) {
           callback(error);
@@ -88,7 +106,7 @@ see.prototype._snapshot = function(callback) {
           callback();
         }
       });
-}
+};
 
 see.prototype._upload = function(callback) {
   var self = this;
@@ -121,15 +139,6 @@ see.prototype._upload = function(callback) {
   uploader.on('end', function() {
     callback(null, s3.getPublicUrlHttp(bucket, key));
   });
-}
+};
 
-var instance = new see();
-
-instance.client = s3.createClient({
-  s3Options: {
-    accessKeyId: "AKIAII4PCLQ4QBLWZJEQ",
-    secretAccessKey: "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",
-  }
-});
-
-module.exports = instance;
+module.exports = new see();

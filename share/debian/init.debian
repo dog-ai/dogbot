@@ -46,12 +46,11 @@ do_start()
 {
     cd $RASPBOT_HOME
 
-    mkdir log > /dev/null 2>&1
-    mkdir db > /dev/null 2>&1
-    mkdir tmp > /dev/null 2>&1
+    mkdir -p var/log > /dev/null 2>&1
+    mkdir -p var/tmp > /dev/null 2>&1
 
     $forever start \
-    --append -l $RASPBOT_HOME/log/raspbot.log \
+    --append -l $RASPBOT_HOME/var/log/raspbot.log \
     --pidFile $PIDFILE \
     --workingDir $RASPBOT_HOME \
     -c "$nodemon --exitcrash" $DAEMON
