@@ -21,7 +21,7 @@ NAME=raspbot
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-DAEMON=$RASPBOT_HOME/src/bin
+DAEMON=$RASPBOT_HOME/bin/app
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 

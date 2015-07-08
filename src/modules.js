@@ -37,7 +37,7 @@ modules.prototype.loadModule = function (file, config) {
 };
 
 modules.prototype._load = function (type, file, config) {
-    if (file.charAt(0) === '.' || !config.is_enabled) {
+    if (file.charAt(0) === '.' || (config && !config.is_enabled)) {
         return;
     }
 
