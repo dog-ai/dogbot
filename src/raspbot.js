@@ -10,87 +10,93 @@ var modules = require('./modules.js');
 
 var raspbot = {
 
-  synchronizationInterval: undefined,
+    synchronizationInterval: undefined,
 
-  start: function(callback) {
-    var self = this;
+    start: function (callback) {
+        var self = this;
 
-    this.configure(function (configs) {
-      var that = self;
+        this.configure(function (configs) {
+            var that = self;
 
-      modules.loadAll(configs);
+            modules.loadAll(configs);
 
-      self.synchronizationInterval = setInterval(function () {
-        that.synchronize(function (error) {
-          if (error) {
-            console.error(error.stack);
-          }
+            self.synchronizationInterval = setInterval(function () {
+                that.synchronize(function (error) {
+                    if (error) {
+                        console.error(error.stack);
+                    }
+                });
+            }, 5 * 60 * 1000);
+
+            self.synchronize(function (error) {
+                if (error) {
+                    console.error(error.stack);
+                }
+
+                callback();
+            });
         });
-      }, 5 * 60 * 1000);
+    },
 
-      callback();
-    });
-  },
+    stop: function (callback) {
+        clearInterval(this.synchronizationInterval);
 
-  stop: function(callback) {
-    clearInterval(this.synchronizationInterval);
+        modules.unloadAll();
 
-    modules.unloadAll();
+        callback();
+    },
 
-    callback();
-  },
+    reload: function (callback) {
+        var self = this;
 
-  reload: function(callback) {
-    var self = this;
+        revision.hasRevisionChanged(function (error, changed, revision) {
+            if (error) {
+                console.error(error);
+            } else {
+                /*if (changed) {
+                 console.log('Detected new code revision: ' + revision);
 
-    revision.hasRevisionChanged(function(error, changed, revision) {
-      if (error) {
-        console.error(error);
-      } else {
-        /*if (changed) {
-          console.log('Detected new code revision: ' + revision);
+                 modules.findAllLoadedModulesByType('IO').forEach(function(module) {
+                 module.send(null, 'Refreshing my brains with code revision ' + revision);
+                 });
+                 }*/
+            }
 
-          modules.findAllLoadedModulesByType('IO').forEach(function(module) {
-            module.send(null, 'Refreshing my brains with code revision ' + revision);
-          });
-        }*/
-      }
+            self.stop(callback);
+        });
+    },
 
-      self.stop(callback);
-    });
-  },
-
-  configure: function (callback) {
-    if (callback !== undefined && callback !== null) {
-      callback(synchronization.getConfigurations());
-    }
-  },
-
-  synchronize: function (callback) {
-    try {
-      synchronization.synchronizeDatabases(modules);
-      callback(null);
-    } catch (error) {
-      callback(error);
-    }
-  },
-
-  error: function(error) {
-    var traces = stackTrace.parse(error);
-
-    console.error(error.stack);
-
-    if (traces !== undefined && traces !== null) {
-      traces.forEach(function(trace) {
-        var filename = trace.getFileName();
-        var name = filename.substring(filename.lastIndexOf("/") + 1, filename.lastIndexOf("."));
-        var module = modules.findLoadedModuleByName(name);
-        if (module !== undefined && module !== null) {
-          modules.unloadModule(module);
+    configure: function (callback) {
+        if (callback !== undefined && callback !== null) {
+            callback(synchronization.getConfigurations());
         }
-      });
+    },
+
+    synchronize: function (callback) {
+        try {
+            synchronization.synchronizeDatabases(modules);
+            callback(null);
+        } catch (error) {
+            callback(error);
+        }
+    },
+
+    error: function (error) {
+        var traces = stackTrace.parse(error);
+
+        console.error(error.stack);
+
+        if (traces !== undefined && traces !== null) {
+            traces.forEach(function (trace) {
+                var filename = trace.getFileName();
+                var name = filename.substring(filename.lastIndexOf("/") + 1, filename.lastIndexOf("."));
+                var module = modules.findLoadedModuleByName(name);
+                if (module !== undefined && module !== null) {
+                    modules.unloadModule(module);
+                }
+            });
+        }
     }
-  }
 };
 
 module.exports = raspbot;
