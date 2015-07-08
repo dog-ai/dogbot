@@ -2,44 +2,44 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-function user() {
+function employee() {
     var moduleManager = {};
 }
 
-user.prototype.type = "PROCESS";
+employee.prototype.type = "PROCESS";
 
-user.prototype.name = "user";
+employee.prototype.name = "employee";
 
-user.prototype.info = function () {
+employee.prototype.info = function () {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
 };
 
-user.prototype.help = function () {
+employee.prototype.help = function () {
     var help = '';
 
-    help += '*!users* - _List known users_';
+    help += '*!employees* - _List known employees_';
 
     return help;
 };
 
-user.prototype.load = function (moduleManager) {
+employee.prototype.load = function (moduleManager) {
     this.moduleManager = moduleManager;
 };
 
-user.prototype.unload = function () {
+employee.prototype.unload = function () {
 };
 
-user.prototype.process = function (message, callback) {
-    if (message.substring(0, "!users".length) === "!users") {
+employee.prototype.process = function (message, callback) {
+    if (message.substring(0, "!employees".length) === "!employees") {
         this._retrieve(callback);
     }
 };
 
-user.prototype._retrieve = function (callback) {
+employee.prototype._retrieve = function (callback) {
     this.moduleManager.emit('database:person:retrieveOneByOne',
-        "SELECT * FROM user ORDER BY name ASC;", [],
+        "SELECT * FROM employee ORDER BY name ASC;", [],
         function (error, row) {
             if (error) {
                 throw error;
@@ -51,4 +51,4 @@ user.prototype._retrieve = function (callback) {
         });
 };
 
-module.exports = new user();
+module.exports = new employee();

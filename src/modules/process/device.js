@@ -90,7 +90,7 @@ device.prototype._add = function (name, slackId, macAddress, callback) {
   var self = this;
 
   this.moduleManager.emit('database:person:retrieveOne',
-      "SELECT * FROM user WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
+      "SELECT * FROM employee WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
       [name !== undefined ? name : slackId],
     function(error, row) {
       if (error) {
@@ -101,7 +101,7 @@ device.prototype._add = function (name, slackId, macAddress, callback) {
         } else {
 
           self.moduleManager.emit('database:person:create',
-              "INSERT INTO device (user, mac_address) VALUES (?, ?);", [
+              "INSERT INTO device (employee, mac_address) VALUES (?, ?);", [
               row.id,
               macAddress
             ],
@@ -122,7 +122,7 @@ device.prototype._rem = function (name, slackId, macAddress, callback) {
   var self = this;
 
   this.moduleManager.emit('database:person:retrieveOne',
-      "SELECT * FROM user WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
+      "SELECT * FROM employee WHERE " + (name !== undefined ? "name" : "slack_id") + " LIKE ?;",
       [name !== undefined ? name : slackId],
       function(error, row) {
         if (error) {
@@ -133,7 +133,7 @@ device.prototype._rem = function (name, slackId, macAddress, callback) {
           } else {
 
             self.moduleManager.emit('database:person:delete',
-                "DELETE FROM device WHERE user = ? AND mac_address = ?;", [
+                "DELETE FROM device WHERE employee = ? AND mac_address = ?;", [
                   row.id,
                   macAddress
                 ],
@@ -156,7 +156,7 @@ device.prototype._rem = function (name, slackId, macAddress, callback) {
 
 device.prototype._retrieve = function (callback) {
   this.moduleManager.emit('database:person:retrieveOneByOne',
-      "SELECT u.name, d.mac_address FROM user u, device d WHERE u.id = d.user ORDER BY u.id ASC, d.id ASC;", [],
+      "SELECT e.name, d.mac_address FROM employee e, device d WHERE e.id = d.employee ORDER BY e.id ASC, d.id ASC;", [],
       function(error, row) {
         if (error) {
           throw error;

@@ -26,9 +26,9 @@ device.prototype.load = function(moduleManager) {
         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "user INTEGER REFERENCES user(id), " +
+        "employee INTEGER REFERENCES employee(id), " +
         "mac_address TEXT NOT NULL, " +
-        "UNIQUE(user, mac_address)" +
+        "UNIQUE(employee, mac_address)" +
         ");", [],
         function (error) {
             if (error) {

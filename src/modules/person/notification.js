@@ -28,20 +28,20 @@ notification.prototype.unload = function () {
 
 notification.prototype.start = function () {
 
-    this.moduleManager.on('person:user:nearby', function (user) {
-        console.log(new Date() + ' ' + user.name + ' is nearby');
+    this.moduleManager.on('person:employee:nearby', function (employee) {
+        console.log(new Date() + ' ' + employee.name + ' is nearby');
     });
 
-    this.moduleManager.on('person:user:faraway', function (user) {
-        console.log(new Date() + ' ' + user.name + ' is faraway');
+    this.moduleManager.on('person:employee:faraway', function (employee) {
+        console.log(new Date() + ' ' + employee.name + ' is faraway');
     });
 
-    this.moduleManager.on('person:user:online', function (user) {
-        console.log(new Date() + ' ' + user.name + ' is online');
+    this.moduleManager.on('person:employee:online', function (employee) {
+        console.log(new Date() + ' ' + employee.name + ' is online');
     });
 
-    this.moduleManager.on('person:user:offline', function (user) {
-        console.log(new Date() + ' ' + user.name + ' is offline');
+    this.moduleManager.on('person:employee:offline', function (employee) {
+        console.log(new Date() + ' ' + employee.name + ' is offline');
     });
 };
 

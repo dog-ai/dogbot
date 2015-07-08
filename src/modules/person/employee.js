@@ -4,27 +4,27 @@
 
 var _ = require('lodash');
 
-function user() {
+function employee() {
     var moduleManager = {};
 }
 
-user.prototype.type = "PERSON";
+employee.prototype.type = "PERSON";
 
-user.prototype.name = "user";
+employee.prototype.name = "employee";
 
-user.prototype.info = function () {
+employee.prototype.info = function () {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
 };
 
-user.prototype.load = function (moduleManager) {
+employee.prototype.load = function (moduleManager) {
     var self = this;
 
     this.moduleManager = moduleManager;
 
     this.moduleManager.emit('database:person:setup',
-        "CREATE TABLE IF NOT EXISTS user (" +
+        "CREATE TABLE IF NOT EXISTS employee (" +
         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -40,22 +40,22 @@ user.prototype.load = function (moduleManager) {
         });
 };
 
-user.prototype.unload = function () {
+employee.prototype.unload = function () {
     this.stop();
 };
 
-user.prototype.start = function () {
+employee.prototype.start = function () {
     var self = this;
 
     this.moduleManager.on('person:device:online', function (device) {
         var that = self;
 
-        self._retrieveById(device.user, function (user) {
-            // only emit nearby if this is the only device online from the user
+        self._retrieveById(device.employee, function (employee) {
+            // only emit nearby if this is the only device online from the employee
             var self = that;
-            that._retrieveAllOnlineDevicesById(user.id, function (devices) {
+            that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
                 if (devices && devices.length == 1) {
-                    self.moduleManager.emit('person:user:nearby', user);
+                    self.moduleManager.emit('person:employee:nearby', employee);
                 }
             })
         });
@@ -64,12 +64,12 @@ user.prototype.start = function () {
     this.moduleManager.on('person:device:offline', function (device) {
         var that = self;
 
-        self._retrieveById(device.user, function (user) {
-            // only emit farway if the user does not have any other device online
+        self._retrieveById(device.employee, function (employee) {
+            // only emit farway if the employee does not have any other device online
             var self = that;
-            that._retrieveAllOnlineDevicesById(user.id, function (devices) {
+            that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
                 if (!devices) {
-                    self.moduleManager.emit('person:user:faraway', user);
+                    self.moduleManager.emit('person:employee:faraway', employee);
                 }
             })
         });
@@ -78,15 +78,15 @@ user.prototype.start = function () {
     this.moduleManager.on('person:slack:active', function (slack) {
         var that = self;
 
-        self._retrieveByName(slack.name, function (user) {
+        self._retrieveByName(slack.name, function (employee) {
             var self = that;
 
-            if (user === undefined || user === null) {
-                that._add(slack.name, slack.slack_id, function (user) {
-                    self.moduleManager.emit('person:user:online', user);
+            if (employee === undefined || employee === null) {
+                that._add(slack.name, slack.slack_id, function (employee) {
+                    self.moduleManager.emit('person:employee:online', employee);
                 });
             } else {
-                that.moduleManager.emit('person:user:online', user);
+                that.moduleManager.emit('person:employee:online', employee);
             }
         });
     });
@@ -94,18 +94,18 @@ user.prototype.start = function () {
     this.moduleManager.on('person:slack:away', function (slack) {
         var that = self;
 
-        self._retrieveByName(slack.name, function (user) {
-            that.moduleManager.emit('person:user:offline', user);
+        self._retrieveByName(slack.name, function (employee) {
+            that.moduleManager.emit('person:employee:offline', employee);
         });
     });
 };
 
-user.prototype.stop = function () {
+employee.prototype.stop = function () {
 };
 
-user.prototype._add = function (name, slackId, callback) {
+employee.prototype._add = function (name, slackId, callback) {
     this.moduleManager.emit('database:person:create',
-        "INSERT INTO user (name, slack_id) VALUES (?, ?);", [
+        "INSERT INTO employee (name, slack_id) VALUES (?, ?);", [
             name,
             slackId
         ],
@@ -118,9 +118,9 @@ user.prototype._add = function (name, slackId, callback) {
         });
 };
 
-user.prototype._retrieveById = function (id, callback) {
+employee.prototype._retrieveById = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
-        "SELECT * FROM user WHERE id = ?;", [id],
+        "SELECT * FROM employee WHERE id = ?;", [id],
         function (error, row) {
             if (error) {
                 callback(error);
@@ -130,23 +130,23 @@ user.prototype._retrieveById = function (id, callback) {
         });
 };
 
-user.prototype._retrieveByName = function (name, callback) {
+employee.prototype._retrieveByName = function (name, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
-        "SELECT * FROM user WHERE name LIKE ?;", [name],
-        function (error, user) {
+        "SELECT * FROM employee WHERE name LIKE ?;", [name],
+        function (error, employee) {
             if (error) {
                 callback(error);
             } else {
-                callback(user);
+                callback(employee);
             }
         });
 };
 
-user.prototype._retrieveAllOnlineDevicesById = function (id, callback) {
+employee.prototype._retrieveAllOnlineDevicesById = function (id, callback) {
     var self = this;
 
     this.moduleManager.emit('database:person:retrieveAll',
-        'SELECT * FROM device WHERE user = ?;', [id],
+        'SELECT * FROM device WHERE employee = ?;', [id],
         function (error, rows) {
             if (error) {
                 callback(error);
@@ -168,4 +168,4 @@ user.prototype._retrieveAllOnlineDevicesById = function (id, callback) {
         });
 };
 
-module.exports = new user();
+module.exports = new employee();

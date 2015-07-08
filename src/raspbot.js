@@ -26,15 +26,10 @@ var raspbot = {
                         console.error(error.stack);
                     }
                 });
-            }, 5 * 60 * 1000);
+            }, 1 * 60 * 1000);
 
-            self.synchronize(function (error) {
-                if (error) {
-                    console.error(error.stack);
-                }
+            callback();
 
-                callback();
-            });
         });
     },
 
@@ -75,6 +70,7 @@ var raspbot = {
     synchronize: function (callback) {
         try {
             synchronization.synchronizeDatabases(modules);
+
             callback(null);
         } catch (error) {
             callback(error);
