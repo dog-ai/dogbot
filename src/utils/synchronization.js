@@ -12,7 +12,7 @@ var synchronization = {
     getConfigurations: function () {
         var self = this;
 
-        var confDir = __dirname + '/../../var/conf/';
+        var confDir = __dirname + '/../../var/tmp/conf/';
         fs.readdirSync(confDir).forEach(function (subDir) {
             var that = self;
 
@@ -28,7 +28,7 @@ var synchronization = {
     getDatabases: function () {
         var self = this;
 
-        var confDir = __dirname + '/../../var/db/';
+        var confDir = __dirname + '/../../var/tmp/db/';
         fs.readdirSync(confDir).forEach(function (subDir) {
             var that = self;
 

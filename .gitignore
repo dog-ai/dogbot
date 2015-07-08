@@ -1,7 +1,5 @@
 node_modules
-log
-db
-tmp
+var
 *.iml
 *.ipr
 *.iws
