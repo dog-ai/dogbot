@@ -23,9 +23,9 @@ arp.prototype.load = function (moduleManager) {
 
     this.moduleManager = moduleManager;
 
-    if (process.platform !== 'linux') {
+    /*if (process.platform !== 'linux') {
         throw new Error(process.platform + ' platform is not supported');
-    }
+     }*/
 
     this.moduleManager.emit('database:monitor:setup',
         "CREATE TABLE IF NOT EXISTS arp (" +
@@ -36,8 +36,8 @@ arp.prototype.load = function (moduleManager) {
         "mac_address TEXT NOT NULL" +
         ");", [],
         function (error) {
-            if (error !== undefined && error !== null) {
-                throw new Error(error);
+            if (error !== null) {
+                throw error;
             } else {
                 self.start();
             }
@@ -51,11 +51,39 @@ arp.prototype.unload = function () {
 arp.prototype.start = function () {
     var self = this;
 
+    this.moduleManager.on('monitor:ipAddress:create', function (ipAddress) {
+        self._resolve(ipAddress, function (error, macAddress) {
+            if (error !== null) {
+                console.error(error.stack);
+            } else {
+                self._addOrUpdate(ipAddress, macAddress, function (error) {
+                    if (error !== null) {
+                        console.error(error.stack);
+                    }
+                });
+            }
+        })
+    });
+
+    this.moduleManager.on('monitor:ipAddress:update', function (ipAddress) {
+        self._resolve(ipAddress, function (error, macAddress) {
+            if (error !== null) {
+                console.error(error.stack);
+            } else {
+                self._addOrUpdate(ipAddress, macAddress, function (error) {
+                    if (error !== null) {
+                        console.error(error.stack);
+                    }
+                });
+            }
+        })
+    });
+
     this.discoverInterval = setInterval(function () {
         try {
             self._discover();
         } catch (error) {
-            console.error(error);
+            console.error(error.stack);
         }
     }, 60 * 1000);
 
@@ -63,7 +91,7 @@ arp.prototype.start = function () {
         try {
             self._clean();
         } catch (error) {
-            console.error(error);
+            console.error(error.stack);
         }
     }, 2 * 60 * 1000);
 };
@@ -74,10 +102,8 @@ arp.prototype.stop = function () {
 };
 
 arp.prototype._discover = function () {
-    //console.log("Discovering ARP entries");
-
     var self = this;
-
+    /*
     var spawn = require('child_process').spawn,
         process = spawn('arp-scan', ['--interface=wlan0', '-lqNg', '-t 500', '-r 4']);
 
@@ -92,55 +118,102 @@ arp.prototype._discover = function () {
         var ipAddress = values[0];
         var macAddress = values[1];
 
-        self.moduleManager.emit('database:monitor:retrieveOne',
-            "SELECT * FROM arp WHERE ip_address = ?;", [ipAddress],
-            function (error, row) {
-                if (error !== null) {
-                    console.error(error);
-                } else {
-                    if (row === undefined) {
-                        //console.log("Adding ARP entry: " + ipAddress + " at " + macAddress);
-                        self._add(ipAddress, macAddress);
-                    } else {
-                        //console.log("Updating ARP entry: " + ipAddress + " at " + macAddress);
-                        self._update(ipAddress, macAddress);
-                    }
-                }
-            });
+     self._addOrUpdate(ipAddress, macAddress, function(error) {
+     if (error !== null) {
+     console.error(error.stack);
+     }
+     });
     });
 
     process.stderr.on('data', function (data) {
-        console.error('' + data);
-    });
+     console.error(new Error(data));
+     });    */
 };
 
 arp.prototype._clean = function () {
-    //console.log("Cleaning old ARP entries");
-
-    var currentDate = new Date();
-    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)));
-};
-
-arp.prototype._add = function (ipAddress, macAddress) {
     var self = this;
 
+    var currentDate = new Date();
+    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error, arp) {
+        if (error !== null) {
+            console.error(error.stack);
+        } else {
+            self.moduleManager.emit('monitor:macAddress:delete', arp.mac_address);
+        }
+    });
+};
+
+arp.prototype._resolve = function (ipAddress, callback) {
+    var spawn = require('child_process').spawn,
+        process = spawn('arp', ['-n', ipAddress]);
+
+    process.stdout.setEncoding('utf8');
+    process.stdout.pipe(require('split')()).on('data', function (line) {
+        if (line.indexOf('?') === -1) {
+            return;
+        }
+        var values = line.split(' ');
+
+        var macAddress = values[3];
+
+        callback(null, macAddress);
+    });
+
+    process.stderr.on('data', function (data) {
+        callback(new Error(data));
+    });
+};
+
+arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
+    var self = this;
+
+    this.moduleManager.emit('database:monitor:retrieveOne',
+        "SELECT * FROM arp WHERE ip_address = ?;", [ipAddress],
+        function (error, row) {
+            if (error !== null) {
+                if (callback !== undefined) {
+                    callback(error)
+                }
+            } else {
+                if (row === undefined) {
+                    self._add(ipAddress, macAddress, function (error) {
+                        if (error !== null) {
+                            self.moduleManager.emit('monitor:macAddress:create', macAddress);
+                        }
+
+                        if (callback !== undefined) {
+                            callback(error)
+                        }
+                    });
+                } else {
+                    self._update(ipAddress, macAddress, function (error) {
+                        if (error === null) {
+                            self.moduleManager.emit('monitor:macAddress:update', macAddress);
+                        }
+
+                        if (callback !== undefined) {
+                            callback(error)
+                        }
+                    });
+                }
+            }
+        });
+};
+
+arp.prototype._add = function (ipAddress, macAddress, callback) {
     this.moduleManager.emit('database:monitor:create',
         "INSERT INTO arp (ip_address, mac_address) VALUES (?, ?);", [
             ipAddress,
             macAddress
         ],
         function (error) {
-            if (error !== undefined && error !== null) {
-                console.error(error);
-            } else {
-                self.moduleManager.emit('monitor:macAddress:create', macAddress);
+            if (callback !== undefined) {
+                callback(error);
             }
         });
 };
 
-arp.prototype._update = function (ipAddress, macAddress) {
-    var self = this;
-
+arp.prototype._update = function (ipAddress, macAddress, callback) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     this.moduleManager.emit('database:monitor:update',
@@ -150,15 +223,13 @@ arp.prototype._update = function (ipAddress, macAddress) {
             ipAddress
         ],
         function (error) {
-            if (error !== undefined && error !== null) {
-                console.error(error);
-            } else {
-                self.moduleManager.emit('monitor:macAddress:update', macAddress);
+            if (callback !== undefined) {
+                callback(error);
             }
         });
 };
 
-arp.prototype._delete = function (oldestDate) {
+arp.prototype._delete = function (oldestDate, callback) {
     var self = this;
 
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
@@ -166,17 +237,16 @@ arp.prototype._delete = function (oldestDate) {
     this.moduleManager.emit('database:monitor:retrieveOneByOne',
         "SELECT * FROM arp WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, row) {
-            if (error !== undefined && error !== null) {
-                console.error(error);
+            if (error !== null) {
+                if (callback !== undefined) {
+                    callback(error.stack);
+                }
             } else {
-                var that = self;
                 self.moduleManager.emit('database:monitor:delete',
                     "DELETE FROM arp WHERE id = ?;", [row.id],
                     function (error) {
-                        if (error !== undefined && error !== null) {
-                            console.error(error);
-                        } else {
-                            that.moduleManager.emit('monitor:macAddress:delete', row.mac_address);
+                        if (callback !== undefined) {
+                            callback(error, row);
                         }
                     });
             }

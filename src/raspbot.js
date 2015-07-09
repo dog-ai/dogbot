@@ -20,16 +20,16 @@ var raspbot = {
 
             modules.loadAll(configs);
 
-            self.synchronizationInterval = setInterval(function () {
+            self.synchronizationInterval = setInterval((function interval() {
                 that.synchronize(function (error) {
                     if (error) {
                         console.error(error.stack);
                     }
                 });
-            }, 1 * 60 * 1000);
+                return interval;
+            })(), 5 * 60 * 1000);
 
             callback();
-
         });
     },
 

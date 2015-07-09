@@ -41,20 +41,25 @@ modules.prototype._load = function (type, file, config) {
         return;
     }
 
-    try {
-        var module = require('./modules/' + type.toLowerCase() + '/' + file);
-        module.load(this, config);
+    var self = this;
 
-        this.loaded.push(module);
-        console.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
-    } catch (error) {
-        console.log('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
-        if (!(error.message.indexOf('platform is not supported') > -1 ||
-            error.message.indexOf('invalid configuration') > -1)) {
-            console.error(error.stack);
+    _.defer(function () {
+        try {
+            var module = require('./modules/' + type.toLowerCase() + '/' + file);
+
+            module.load(self, config);
+
+            self.loaded.push(module);
+            console.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
+        } catch (error) {
+            console.log('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
+            if (!(error.message.indexOf('platform is not supported') > -1 ||
+                error.message.indexOf('invalid configuration') > -1)) {
+                console.error(error.stack);
+            }
+            self.available.push(module);
         }
-        this.available.push(module);
-    }
+    });
 };
 
 modules.prototype.unloadAll = function() {

@@ -74,7 +74,7 @@ slack.prototype.start = function () {
     });
 
     this.client.on('error', function(error) {
-        throw error;
+        console.error(error)
     });
 
     this.client.login();
