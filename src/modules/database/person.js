@@ -4,7 +4,9 @@
 
 var sqlite3 = require("sqlite3").verbose();
 
-var db = new sqlite3.Database(":memory:");
+var path = __dirname + "/../../../var/db/";
+var file = path + "person.db";
+var db = new sqlite3.Database(file);
 
 function person() {
     var moduleManager = {};

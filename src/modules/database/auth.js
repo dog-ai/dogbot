@@ -4,7 +4,9 @@
 
 var sqlite3 = require("sqlite3").verbose();
 
-var db = new sqlite3.Database(":memory:");
+var path = __dirname + "/../../../var/db/";
+var file = path + "auth.db";
+var db = new sqlite3.Database(file);
 
 function auth() {
     var moduleManager = {};
@@ -22,6 +24,8 @@ auth.prototype.info = function() {
 
 auth.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
+
+    this.start();
 };
 
 auth.prototype.unload = function () {

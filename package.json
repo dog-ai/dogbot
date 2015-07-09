@@ -8,6 +8,7 @@
     "google-calendar": "^1.3.2",
     "gosquared": "^2.0.2",
     "intimidate": "^1.2.0",
+    "ip": "^0.3.3",
     "lodash": "^3.10.0",
     "mdns": "^2.2.9",
     "moment": "^2.10.3",

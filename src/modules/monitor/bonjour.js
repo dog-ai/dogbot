@@ -110,7 +110,7 @@ bonjour.prototype._discover = function () {
     });
 
     process.stderr.on('data', function (data) {
-        console.error(new Error(data));
+        //console.error(new Error(data));
     });
 };
 
@@ -122,7 +122,7 @@ bonjour.prototype._clean = function () {
         if (error !== null) {
             console.error(error.stack);
         } else {
-            self.moduleManager.emit('monitor:ipAddress:delete', bonjour.ip_address);
+            self.moduleManager.emit('monitor:bonjour:delete', bonjour.ip_address);
         }
     });
 };
@@ -141,7 +141,14 @@ bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, 
                 if (row === undefined) {
                     self._add(type, name, address, hostname, port, txt, function (error) {
                         if (error === null) {
-                            self.moduleManager.emit('monitor:bonjour:create', address);
+                            self.moduleManager.emit('monitor:bonjour:create', {
+                                type: type,
+                                name: name,
+                                hostname: hostname,
+                                ip_address: address,
+                                port: port,
+                                txt: txt
+                            });
                         }
 
                         if (callback !== undefined) {
@@ -151,7 +158,14 @@ bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, 
                 } else {
                     self._update(type, name, address, hostname, port, txt, function (error) {
                         if (error === null) {
-                            self.moduleManager.emit('monitor:bonjour:update', address);
+                            self.moduleManager.emit('monitor:bonjour:update', {
+                                type: type,
+                                name: name,
+                                hostname: hostname,
+                                ip_address: address,
+                                port: port,
+                                txt: txt
+                            });
                         }
 
                         if (callback !== undefined) {
