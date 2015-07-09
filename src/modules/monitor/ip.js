@@ -191,6 +191,10 @@ ip.prototype._add = function (ipAddress, callback) {
             ipAddress
         ],
         function (error) {
+            if (error !== null && error.indexOf('UNIQUE constraint failed') !== -1) {
+                error = null;
+            }
+
             if (callback !== undefined) {
                 callback(error);
             }

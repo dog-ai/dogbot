@@ -160,7 +160,7 @@ arp.prototype._resolve = function (ipAddress, callback) {
     });
 
     process.stderr.on('data', function (data) {
-        callback(new Error(data));
+        //callback(new Error(data));
     });
 };
 
@@ -207,6 +207,10 @@ arp.prototype._add = function (ipAddress, macAddress, callback) {
             macAddress
         ],
         function (error) {
+            if (error !== null && error.indexOf('UNIQUE constraint failed') !== -1) {
+                error = null;
+            }
+
             if (callback !== undefined) {
                 callback(error);
             }
