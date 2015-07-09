@@ -23,9 +23,9 @@ arp.prototype.load = function (moduleManager) {
 
     this.moduleManager = moduleManager;
 
-    /*if (process.platform !== 'linux') {
+    if (process.platform !== 'linux') {
         throw new Error(process.platform + ' platform is not supported');
-     }*/
+    }
 
     this.moduleManager.emit('database:monitor:setup',
         "CREATE TABLE IF NOT EXISTS arp (" +
@@ -103,7 +103,7 @@ arp.prototype.stop = function () {
 
 arp.prototype._discover = function () {
     var self = this;
-    /*
+
     var spawn = require('child_process').spawn,
         process = spawn('arp-scan', ['--interface=wlan0', '-lqNg', '-t 500', '-r 4']);
 
@@ -118,16 +118,16 @@ arp.prototype._discover = function () {
         var ipAddress = values[0];
         var macAddress = values[1];
 
-     self._addOrUpdate(ipAddress, macAddress, function(error) {
-     if (error !== null) {
-     console.error(error.stack);
-     }
-     });
+        self._addOrUpdate(ipAddress, macAddress, function (error) {
+            if (error !== null) {
+                console.error(error.stack);
+            }
+        });
     });
 
     process.stderr.on('data', function (data) {
-     console.error(new Error(data));
-     });    */
+        console.error(new Error(data));
+    });
 };
 
 arp.prototype._clean = function () {
