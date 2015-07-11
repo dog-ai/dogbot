@@ -12,7 +12,7 @@ function slack() {
     var autoReconnect = true;
     var autoMark = true;
     var defaultChannel = undefined;
-    var discoverInterval = undefined;
+    var timeout = undefined;
 
     events.EventEmitter.call(this);
 }
@@ -50,19 +50,11 @@ slack.prototype.unload = function () {
 slack.prototype.start = function () {
     var self = this;
 
-    this.discoverInterval = setInterval(function () {
-        try {
-            self._discoverUsers();
-        } catch (error) {
-            console.error(error);
-        }
-    }, 60 * 1000);
-
     this.client.on('open', function () {
     });
 
     this.client.on('close', function () {
-
+        self.client.reconnect();
     });
 
     this.client.on('message', function(message) {
@@ -77,11 +69,24 @@ slack.prototype.start = function () {
         console.error(error)
     });
 
+    var time = 60 * 1000;
+
+    function monitor() {
+        try {
+            self._discoverUsers();
+
+        } catch (error) {
+            console.error(error.stack);
+        }
+
+        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
+    }
+
     this.client.login();
 };
 
 slack.prototype.stop = function () {
-    clearInterval(this.discoverInterval);
+    clearTimeout(this.timeout);
 };
 
 slack.prototype.send = function(recipient, message) {

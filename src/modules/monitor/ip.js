@@ -7,8 +7,7 @@ var os = require('os');
 
 function ip() {
     var moduleManager = {};
-    var discoverInterval = undefined;
-    var cleanInterval = undefined;
+    var timeout = undefined;
 }
 
 ip.prototype.type = "MONITOR";
@@ -65,29 +64,28 @@ ip.prototype.start = function () {
         });
     });
 
-    this.discoverInterval = setInterval(function () {
-        try {
-            self._discover();
-        } catch (error) {
-            console.error(error.stack);
-        }
-    }, 60 * 1000);
+    var time = 60 * 1000;
 
-    this.cleanInterval = setInterval(function () {
+    function monitor() {
         try {
-            self._clean();
+            self._discover(function () {
+                self._clean();
+            });
         } catch (error) {
             console.error(error.stack);
         }
-    }, 2 * 60 * 1000);
+
+        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
+    }
+
+    monitor();
 };
 
 ip.prototype.stop = function () {
-    clearInterval(this.discoverInterval);
-    clearInterval(this.cleanInterval);
+    clearTimeout(this.timeout);
 };
 
-ip.prototype._discover = function () {
+ip.prototype._discover = function (callback) {
     var self = this;
 
     var networkInterfaces = os.networkInterfaces();
@@ -100,7 +98,7 @@ ip.prototype._discover = function () {
                     return;
                 }
 
-                var fping = require('child_process')
+                var process = require('child_process')
                     .spawn('fping', [
                         '-q',
                         '-c 1',
@@ -110,13 +108,13 @@ ip.prototype._discover = function () {
                         '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
                     ]);
 
-                fping.stdout.setEncoding('utf8');
+                process.stdout.setEncoding('utf8');
 
-                fping.stdout.pipe(require('split')()).on('data', function (line) {
+                process.stdout.pipe(require('split')()).on('data', function (line) {
 
                 });
 
-                fping.stderr.pipe(require('split')()).on('data', function (line) {
+                process.stderr.pipe(require('split')()).on('data', function (line) {
                     if (line.indexOf('min/avg/max') === -1) {
                         return;
                     }
@@ -130,6 +128,12 @@ ip.prototype._discover = function () {
                             console.error(error.stack);
                         }
                     });
+                });
+
+                process.on('close', function () {
+                    if (callback !== undefined) {
+                        callback();
+                    }
                 });
             }
         });
@@ -191,10 +195,6 @@ ip.prototype._add = function (ipAddress, callback) {
             ipAddress
         ],
         function (error) {
-            if (error !== null && error.indexOf('UNIQUE constraint failed') !== -1) {
-                error = null;
-            }
-
             if (callback !== undefined) {
                 callback(error);
             }

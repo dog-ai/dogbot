@@ -4,8 +4,7 @@
 
 function bonjour() {
     var moduleManager = {};
-    var discoverInterval = undefined;
-    var cleanInterval = undefined;
+    var timeout = undefined;
 }
 
 bonjour.prototype.type = "MONITOR";
@@ -55,29 +54,28 @@ bonjour.prototype.unload = function () {
 bonjour.prototype.start = function () {
     var self = this;
 
-    this.discoverInterval = setInterval(function () {
-        try {
-            self._discover();
-        } catch (error) {
-            console.error(error.stack);
-        }
-    }, 60 * 1000);
+    var time = 60 * 1000;
 
-    this.cleanInterval = setInterval(function () {
+    function monitor() {
         try {
-            self._clean();
+            self._discover(function () {
+                self._clean();
+            });
         } catch (error) {
             console.error(error.stack);
         }
-    }, 2 * 60 * 1000);
+
+        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
+    }
+
+    monitor();
 };
 
 bonjour.prototype.stop = function () {
-    clearInterval(this.discoverInterval);
-    clearInterval(this.cleanInterval);
+    clearTimeout(this.timeout);
 };
 
-bonjour.prototype._discover = function () {
+bonjour.prototype._discover = function (callback) {
     var self = this;
 
     var spawn = require('child_process').spawn,
@@ -111,6 +109,12 @@ bonjour.prototype._discover = function () {
 
     process.stderr.on('data', function (data) {
         //console.error(new Error(data));
+    });
+
+    process.on('close', function () {
+        if (callback !== undefined) {
+            callback();
+        }
     });
 };
 

@@ -4,8 +4,7 @@
 
 function arp() {
     var moduleManager = {};
-    var discoverInterval = undefined;
-    var cleanInterval = undefined;
+    var timeout = undefined;
 }
 
 arp.prototype.type = "MONITOR";
@@ -79,29 +78,28 @@ arp.prototype.start = function () {
         })
     });
 
-    this.discoverInterval = setInterval(function () {
-        try {
-            self._discover();
-        } catch (error) {
-            console.error(error.stack);
-        }
-    }, 60 * 1000);
+    var time = 60 * 1000;
 
-    this.cleanInterval = setInterval(function () {
+    function monitor() {
         try {
-            self._clean();
+            self._discover(function () {
+                self._clean();
+            });
         } catch (error) {
             console.error(error.stack);
         }
-    }, 2 * 60 * 1000);
+
+        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
+    }
+
+    monitor();
 };
 
 arp.prototype.stop = function () {
-    clearInterval(this.discoverInterval);
-    clearInterval(this.cleanInterval);
+    clearTimeout(this.timeout);
 };
 
-arp.prototype._discover = function () {
+arp.prototype._discover = function (callback) {
     var self = this;
 
     var spawn = require('child_process').spawn,
@@ -128,6 +126,12 @@ arp.prototype._discover = function () {
     process.stderr.on('data', function (data) {
         console.error(new Error(data));
     });
+
+    process.on('close', function () {
+        if (callback !== undefined) {
+            callback();
+        }
+    });
 };
 
 arp.prototype._clean = function () {
@@ -149,12 +153,17 @@ arp.prototype._resolve = function (ipAddress, callback) {
 
     process.stdout.setEncoding('utf8');
     process.stdout.pipe(require('split')()).on('data', function (line) {
-        if (line.indexOf('?') === -1) {
+        if (line !== null && line.length === 0 || line.lastIndexOf('A', 0) === 0) {
             return;
         }
-        var values = line.split(' ');
 
-        var macAddress = values[3];
+        var values = line.replace(/\s\s+/g, ' ').split(' ');
+
+        var macAddress = values[2];
+
+        if (!/^(([a-f0-9]{2}:){5}[a-f0-9]{2},?)+$/i.test(macAddress)) {
+            return;
+        }
 
         callback(null, macAddress);
     });
@@ -207,10 +216,6 @@ arp.prototype._add = function (ipAddress, macAddress, callback) {
             macAddress
         ],
         function (error) {
-            if (error !== null && error.indexOf('UNIQUE constraint failed') !== -1) {
-                error = null;
-            }
-
             if (callback !== undefined) {
                 callback(error);
             }
