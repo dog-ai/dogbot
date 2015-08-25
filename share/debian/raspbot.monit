@@ -1,3 +1,0 @@
-check process raspbot with pidfile /var/run/raspbot.pid
-   start program = "/etc/init.d/raspbot start"
-   stop  program = "/etc/init.d/raspbot stop"

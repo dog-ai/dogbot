@@ -1,0 +1,1 @@
+*/1 * * * * /etc/init.d/dogbot reload && /etc/init.d/dogbot restart

@@ -4,32 +4,32 @@
 
 var CronJob = require('cron').CronJob;
 
-function arp() {
+function presence() {
     var moduleManager = {};
     var cron = undefined;
 }
 
-arp.prototype.type = "PERFORMANCE";
+presence.prototype.type = "PERFORMANCE";
 
-arp.prototype.name = "arp";
+presence.prototype.name = "presence";
 
-arp.prototype.info = function () {
+presence.prototype.info = function () {
     return "*" + this.name + "* - " +
         "_" + this.name.toUpperCase() + " " +
         this.type.toLowerCase() + " module_";
 };
 
-arp.prototype.load = function (moduleManager) {
+presence.prototype.load = function (moduleManager) {
     this.moduleManager = moduleManager;
 
     this.start();
 };
 
-arp.prototype.unload = function () {
+presence.prototype.unload = function () {
     this.stop();
 };
 
-arp.prototype.start = function () {
+presence.prototype.start = function () {
     var self = this;
 
     this.cron = new CronJob('0 0 * * * *', function () {
@@ -39,11 +39,11 @@ arp.prototype.start = function () {
     }, null, true, "Europe/Stockholm");
 };
 
-arp.prototype.stop = function () {
+presence.prototype.stop = function () {
     this.cron.stop();
 };
 
-arp.prototype._sample = function (callback) {
+presence.prototype._sample = function (callback) {
     var self = this;
 
     var date = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
@@ -61,7 +61,7 @@ arp.prototype._sample = function (callback) {
     })
 };
 
-arp.prototype._add = function (date, value, callback) {
+presence.prototype._add = function (date, value, callback) {
     var self = this;
 
     this.moduleManager.emit('database:performance:create',
@@ -86,7 +86,7 @@ arp.prototype._add = function (date, value, callback) {
         });
 };
 
-arp.prototype._count = function (callback) {
+presence.prototype._count = function (callback) {
     this.moduleManager.emit('database:monitor:retrieveOne',
         "SELECT COUNT(*) as count FROM arp;", [],
         function (error, row) {
@@ -98,4 +98,4 @@ arp.prototype._count = function (callback) {
         });
 };
 
-module.exports = new arp();
+module.exports = new presence();

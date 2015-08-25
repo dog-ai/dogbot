@@ -58,6 +58,7 @@ modules.prototype._load = function (type, file, config) {
             module.load(self.communication, config);
 
             self.loaded.push(module);
+
             console.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
         } catch (error) {
             console.log('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
@@ -90,6 +91,9 @@ modules.prototype.unloadModule = function(module) {
 modules.prototype._unload = function(module) {
     try {
         module.unload();
+
+        _.remove(this.loaded, module);
+
         console.log('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
     } catch (exception) {
         console.log('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + exception.message);

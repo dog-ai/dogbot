@@ -1,12 +1,12 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          raspbot
+# Provides:          dogbot
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Raspberry Pi Bot
-# Description:       Raspberry Pi Bot
+# Short-Description: Dog Bot
+# Description:       Dog Bot
 ### END INIT INFO
 
 # Author: Hugo Freire <hfreire@exec.sh>
@@ -15,13 +15,13 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
-DESC="Raspberry Pi Bot"
-NAME=raspbot
+DESC="Dog Bot"
+NAME=dogbot
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-DAEMON=$RASPBOT_HOME/bin/app
+DAEMON=$DOGBOT_HOME/bin/app
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
@@ -44,15 +44,15 @@ nodemon=`which nodemon`
 
 do_start()
 {
-    cd $RASPBOT_HOME
+    cd $DOGBOT_HOME
 
     mkdir -p var/log > /dev/null 2>&1
     mkdir -p var/tmp > /dev/null 2>&1
 
     $forever start \
-    --append -l $RASPBOT_HOME/var/log/raspbot.log \
+    --append -l $DOGBOT_HOME/var/log/dogbot.log \
     --pidFile $PIDFILE \
-    --workingDir $RASPBOT_HOME \
+    --workingDir $DOGBOT_HOME \
     -c "$nodemon --exitcrash" $DAEMON
     RETVAL="$?"
 
@@ -82,7 +82,7 @@ do_reload() {
     #
     git=`which git`
 
-    cd $RASPBOT_HOME
+    cd $DOGBOT_HOME
 
     $git remote update > /dev/null 2>&1 && \
     $git status -uno | \
