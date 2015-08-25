@@ -30,8 +30,11 @@ stdin.prototype.load = function(moduleManager) {
         terminal: false
     });
 
-    rl.on('line', function(message){
+    rl.on('line', function (message) {
+
         if (message.charAt(0) === '!') {
+
+
             self.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function (module) {
                 try {
                     module.process(message, function (data) {
@@ -42,6 +45,7 @@ stdin.prototype.load = function(moduleManager) {
                     console.log(exception);
                 }
             });
+
         }
     })
 

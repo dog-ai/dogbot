@@ -3,69 +3,67 @@
  */
 
 var _ = require('lodash');
-var fs = require('fs');
+var Firebase = require('firebase');
+var firebase = new Firebase('https://dazzling-torch-7723.firebaseIO.com');
 
-var synchronization = {
-    configuration: {},
-    databases: {},
+function synchronization() {
+    var dogRef = undefined;
+}
 
-    getConfigurations: function () {
-        var self = this;
+synchronization.prototype.start = function (id, callback, moduleCallback, deviceCallback, employeeCallback) {
 
-        var confDir = __dirname + '/../../var/tmp/conf/';
-        fs.readdirSync(confDir).forEach(function (subDir) {
-            var that = self;
+    function handle(snapshot) {
+        var dog = snapshot.val();
+        if (dog !== undefined) {
 
-            fs.readdirSync(confDir + subDir).forEach(function (file) {
-                that.configuration[subDir] = (that.configuration[subDir] || {});
-                that.configuration[subDir][file.replace('.json', '')] = JSON.parse(fs.readFileSync(confDir + subDir + '/' + file, 'utf8'));
-            });
-        });
-
-        return this.configuration;
-    },
-
-    getDatabases: function () {
-        var self = this;
-
-        var confDir = __dirname + '/../../var/tmp/db/';
-        fs.readdirSync(confDir).forEach(function (subDir) {
-            var that = self;
-
-            fs.readdirSync(confDir + subDir).forEach(function (file) {
-                that.databases[subDir] = (that.databases[subDir] || {});
-                that.databases[subDir][file.replace('.json', '')] = JSON.parse(fs.readFileSync(confDir + subDir + '/' + file, 'utf8'));
-            });
-        });
-
-        return this.databases;
-    },
-
-    synchronizeDatabases: function (moduleManager) {
-        this.databases = this.getDatabases();
-
-        _.forEach(this.databases, function (database, databaseName) {
-            _.forEach(database, function (rows, table) {
-                _.forEach(rows, function (row) {
-                    var columnNames = _.keys(row);
-                    var values = _.values(row);
-
-                    moduleManager.emit('database:' + databaseName + ':create',
-                        'INSERT OR REPLACE INTO ' + table + ' (' + columnNames + ') VALUES (' + values.map(function () {
-                            return '?'
-                        }) + ')',
-                        values,
-                        function (error) {
-                            if (error) {
-                                throw error;
-                            }
-                        });
+            if (dog.modules !== undefined) {
+                _.forEach(dog.modules, function (modules, type) {
+                    _.forEach(modules, function (configuration, module) {
+                        moduleCallback(type, module, configuration);
+                    });
                 });
-            });
+            }
+
+            if (dog.company_id !== undefined) {
+
+                firebase.child('companies/' + dog.company_id + '/devices').once('value', function (snapshot) {
+                    snapshot.forEach(function (snapshot) {
+                        firebase.child('devices/' + snapshot.key()).once('value', function (snapshot) {
+                            deviceCallback(_.extend({id: snapshot.key()}, snapshot.val()));
+                        });
+                    });
+                });
+
+                firebase.child('companies/' + dog.company_id + '/employees').once('value', function (snapshot) {
+                    snapshot.forEach(function (snapshot) {
+                        firebase.child('employees/' + snapshot.key()).once('value', function (snapshot) {
+                            employeeCallback(_.extend({id: snapshot.key()}, snapshot.val()));
+                        });
+                    });
+                });
+
+            }
+        }
+
+    }
+
+    try {
+        this.dogRef = firebase.child('dogs/' + id);
+
+        this.dogRef.on('value', function (snapshot) {
+            handle(snapshot);
         });
 
-
+        callback(null);
+    } catch (error) {
+        callback(error);
     }
 };
 
-module.exports = synchronization;
+synchronization.prototype.stop = function () {
+    if (this.dogRef !== undefined && this.dogRef !== null) {
+        this.dogRef.off('value');
+    }
+};
+
+module.exports = new synchronization();

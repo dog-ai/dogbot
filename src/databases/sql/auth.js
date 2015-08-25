@@ -9,37 +9,23 @@ var file = path + "auth.db";
 var db = new sqlite3.Database(file);
 
 function auth() {
-    var moduleManager = {};
+    var databaseManager = {};
 }
 
-auth.prototype.type = "DATABASE";
+auth.prototype.type = 'SQL';
 
 auth.prototype.name = "auth";
 
-auth.prototype.info = function() {
-    return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
-};
+auth.prototype.start = function (databaseManager) {
+    this.databaseManager = databaseManager;
 
-auth.prototype.load = function(moduleManager) {
-    this.moduleManager = moduleManager;
-
-    this.start();
-};
-
-auth.prototype.unload = function () {
-    this.stop();
-};
-
-auth.prototype.start = function () {
-    this.moduleManager.on('database:auth:setup', this._run);
-    this.moduleManager.on('database:auth:create', this._run);
-    this.moduleManager.on('database:auth:retrieveOne', this._get);
-    this.moduleManager.on('database:auth:retrieveAll', this._all);
-    this.moduleManager.on('database:auth:retrieveOneByOne', this._each);
-    this.moduleManager.on('database:auth:update', this._run);
-    this.moduleManager.on('database:auth:delete', this._run);
+    this.databaseManager.on('database:auth:setup', this._run);
+    this.databaseManager.on('database:auth:create', this._run);
+    this.databaseManager.on('database:auth:retrieveOne', this._get);
+    this.databaseManager.on('database:auth:retrieveAll', this._all);
+    this.databaseManager.on('database:auth:retrieveOneByOne', this._each);
+    this.databaseManager.on('database:auth:update', this._run);
+    this.databaseManager.on('database:auth:delete', this._run);
 };
 
 auth.prototype.stop = function () {

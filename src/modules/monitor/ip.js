@@ -21,24 +21,9 @@ ip.prototype.info = function () {
 };
 
 ip.prototype.load = function (moduleManager) {
-    var self = this;
-
     this.moduleManager = moduleManager;
 
-    this.moduleManager.emit('database:monitor:setup',
-        "CREATE TABLE IF NOT EXISTS ip (" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "ip_address TEXT NOT NULL UNIQUE" +
-        ");", [],
-        function (error) {
-            if (error !== null) {
-                throw error;
-            } else {
-                self.start();
-            }
-        });
+    this.start();
 };
 
 ip.prototype.unload = function () {

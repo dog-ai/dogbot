@@ -5,48 +5,34 @@
 var sqlite3 = require("sqlite3").verbose();
 
 var path = __dirname + "/../../../var/db/";
-var file = path + "stats.db";
+var file = path + "performance.db";
 var db = new sqlite3.Database(file);
 
-function stats() {
-    var moduleManager = {};
+function performance() {
+    var databaseManager = {};
 }
 
-stats.prototype.type = "DATABASE";
+performance.prototype.type = 'SQL';
 
-stats.prototype.name = "stats";
+performance.prototype.name = "performance";
 
-stats.prototype.info = function () {
-    return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
+performance.prototype.start = function (databaseManager) {
+    this.databaseManager = databaseManager;
+
+    this.databaseManager.on('database:performance:setup', this._run);
+    this.databaseManager.on('database:performance:create', this._run);
+    this.databaseManager.on('database:performance:retrieveOne', this._get);
+    this.databaseManager.on('database:performance:retrieveAll', this._all);
+    this.databaseManager.on('database:performance:retrieveOneByOne', this._each);
+    this.databaseManager.on('database:performance:update', this._run);
+    this.databaseManager.on('database:performance:delete', this._run);
 };
 
-stats.prototype.load = function (moduleManager) {
-    this.moduleManager = moduleManager;
-
-    this.start();
-};
-
-stats.prototype.unload = function () {
-    this.stop();
-};
-
-stats.prototype.start = function () {
-    this.moduleManager.on('database:stats:setup', this._run);
-    this.moduleManager.on('database:stats:create', this._run);
-    this.moduleManager.on('database:stats:retrieveOne', this._get);
-    this.moduleManager.on('database:stats:retrieveAll', this._all);
-    this.moduleManager.on('database:stats:retrieveOneByOne', this._each);
-    this.moduleManager.on('database:stats:update', this._run);
-    this.moduleManager.on('database:stats:delete', this._run);
-};
-
-stats.prototype.stop = function () {
+performance.prototype.stop = function () {
     db.close();
 };
 
-stats.prototype._run = function (query, parameters, callback) {
+performance.prototype._run = function (query, parameters, callback) {
     var handler = function (error) {
         if (error) {
             if (callback) {
@@ -64,7 +50,7 @@ stats.prototype._run = function (query, parameters, callback) {
     }
 };
 
-stats.prototype._get = function (query, parameters, callback) {
+performance.prototype._get = function (query, parameters, callback) {
     var handler = function (error, row) {
         if (error) {
             if (callback) {
@@ -82,7 +68,7 @@ stats.prototype._get = function (query, parameters, callback) {
     }
 };
 
-stats.prototype._all = function (query, parameters, callback) {
+performance.prototype._all = function (query, parameters, callback) {
     var handler = function (error, row) {
         if (error) {
             if (callback) {
@@ -100,7 +86,7 @@ stats.prototype._all = function (query, parameters, callback) {
     }
 };
 
-stats.prototype._each = function (query, parameters, callback) {
+performance.prototype._each = function (query, parameters, callback) {
     var handler = function (error, row) {
         if (error) {
             if (callback) {
@@ -118,4 +104,4 @@ stats.prototype._each = function (query, parameters, callback) {
     }
 };
 
-module.exports = new stats();
+module.exports = new performance();

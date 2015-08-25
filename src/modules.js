@@ -3,22 +3,19 @@
  */
 
 var _ = require('lodash');
-var events = require('events');
 var path = require('path');
 var fs = require("fs");
 
 var modulesDir = path.join(__dirname, 'modules/');
 
 function modules() {
-    events.EventEmitter.call(this);
 }
 
-modules.prototype.__proto__ = events.EventEmitter.prototype;
-
 modules.prototype.loadAll = function (configs) {
-    var that = this;
+    var self = this;
+
     this.types.forEach(function(type) {
-        that._loadAllByType(type, configs && configs[type.toLowerCase()] || undefined);
+        self._loadAllByType(type, configs && configs[type.toLowerCase()] || undefined);
     });
 };
 
@@ -32,22 +29,33 @@ modules.prototype._loadAllByType = function (type, configs) {
     });
 };
 
-modules.prototype.loadModule = function (file, config) {
+modules.prototype.loadModule = function (type, moduleName, config, reload) {
+    reload = reload || false;
 
+    var loadedModule = this.findLoadedModuleByName(moduleName);
+    if (loadedModule) {
+        if (!reload) {
+            return;
+        }
+
+        this._unload(loadedModule);
+    }
+
+    this._load(type, moduleName + '.js', config);
 };
 
 modules.prototype._load = function (type, file, config) {
+    var self = this;
+
     if (file.charAt(0) === '.' || (config && !config.is_enabled)) {
         return;
     }
-
-    var self = this;
 
     _.defer(function () {
         try {
             var module = require('./modules/' + type.toLowerCase() + '/' + file);
 
-            module.load(self, config);
+            module.load(self.communication, config);
 
             self.loaded.push(module);
             console.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
@@ -57,15 +65,14 @@ modules.prototype._load = function (type, file, config) {
                 error.message.indexOf('invalid configuration') > -1)) {
                 console.error(error.stack);
             }
-            self.available.push(module);
         }
     });
 };
 
 modules.prototype.unloadAll = function() {
-    var that = this;
+    var self = this;
     this.types.reverse().forEach(function(type) {
-        that._unloadAllByType(type);
+        self._unloadAllByType(type);
     });
 };
 
@@ -100,7 +107,7 @@ modules.prototype.findAllLoadedModulesByType = function(type) {
 };
 
 modules.prototype.findLoadedModuleByName = function(name) {
-    var module = undefined;
+    var module = null;
     this.loaded.forEach(function(_module) {
         if (name === _module.name) {
             module = _module;
@@ -109,13 +116,16 @@ modules.prototype.findLoadedModuleByName = function(name) {
     return module;
 };
 
-var instance = new modules();
+module.exports = function (communication) {
+    var instance = new modules();
 
-instance.loaded = [];
-instance.available = [];
+    instance.communication = communication;
+    instance.loaded = [];
+    instance.available = [];
 
-instance.types = (fs.readdirSync(modulesDir) || []).map(function (type) {
-    return type.toUpperCase();
-});
+    instance.types = (fs.readdirSync(modulesDir) || []).map(function (type) {
+        return type.toUpperCase();
+    });
 
-module.exports = instance;
+    return instance;
+};

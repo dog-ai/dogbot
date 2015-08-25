@@ -20,6 +20,14 @@ web.prototype.info = function() {
 web.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
 
+    this.start();
+};
+
+web.prototype.unload = function () {
+    this.stop();
+};
+
+web.prototype.start = function () {
     server.use(express.static('public'));
     server.use(passport.initialize());
     server.use(passport.session());
@@ -39,7 +47,8 @@ web.prototype.load = function(moduleManager) {
     });
 };
 
-web.prototype.unload = function () {
+web.prototype.stop = function () {
+    server.close();
 };
 
 web.prototype.send = function (recipient, message) {

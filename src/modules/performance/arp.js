@@ -9,7 +9,7 @@ function arp() {
     var cron = undefined;
 }
 
-arp.prototype.type = "STATS";
+arp.prototype.type = "PERFORMANCE";
 
 arp.prototype.name = "arp";
 
@@ -20,25 +20,9 @@ arp.prototype.info = function () {
 };
 
 arp.prototype.load = function (moduleManager) {
-    var self = this;
-
     this.moduleManager = moduleManager;
 
-    this.moduleManager.emit('database:stats:setup',
-        "CREATE TABLE IF NOT EXISTS arp (" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "date DATETIME NOT NULL UNIQUE, " +
-        "value INTEGER NOT NULL" +
-        ");", [],
-        function (error) {
-            if (error) {
-                throw error;
-            } else {
-                self.start();
-            }
-        });
+    this.start();
 };
 
 arp.prototype.unload = function () {
@@ -80,7 +64,7 @@ arp.prototype._sample = function (callback) {
 arp.prototype._add = function (date, value, callback) {
     var self = this;
 
-    this.moduleManager.emit('database:stats:create',
+    this.moduleManager.emit('database:performance:create',
         "INSERT INTO arp (date, value) VALUES (?, ?);", [
             date,
             value
@@ -89,7 +73,7 @@ arp.prototype._add = function (date, value, callback) {
             if (error !== undefined && error !== null) {
                 console.error(error);
             } else {
-                self.moduleManager.emit('database:stats:delete',
+                self.moduleManager.emit('database:performance:delete',
                     'DELETE FROM arp WHERE id NOT IN (SELECT id FROM arp ORDER BY date DESC LIMIT 24)',
                     [], function (error) {
                         if (error) {

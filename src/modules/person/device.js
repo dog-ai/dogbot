@@ -17,26 +17,9 @@ device.prototype.info = function() {
 };
 
 device.prototype.load = function(moduleManager) {
-    var self = this;
-
     this.moduleManager = moduleManager;
 
-    this.moduleManager.emit('database:person:setup',
-        "CREATE TABLE IF NOT EXISTS device (" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "employee INTEGER REFERENCES employee(id), " +
-        "mac_address TEXT NOT NULL, " +
-        "UNIQUE(employee, mac_address)" +
-        ");", [],
-        function (error) {
-            if (error) {
-                throw error;
-            } else {
-                self.start();
-            }
-        });
+    this.start();
 };
 
 device.prototype.unload = function() {

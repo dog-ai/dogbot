@@ -19,25 +19,9 @@ employee.prototype.info = function () {
 };
 
 employee.prototype.load = function (moduleManager) {
-    var self = this;
-
     this.moduleManager = moduleManager;
 
-    this.moduleManager.emit('database:person:setup',
-        "CREATE TABLE IF NOT EXISTS employee (" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "name TEXT NOT NULL UNIQUE, " +
-        "slack_id TEXT" +
-        ");", [],
-        function (error) {
-            if (error) {
-                throw error;
-            } else {
-                self.start();
-            }
-        });
+    this.start();
 };
 
 employee.prototype.unload = function () {

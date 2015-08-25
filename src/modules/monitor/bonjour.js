@@ -26,25 +26,7 @@ bonjour.prototype.load = function (moduleManager) {
         throw new Error(process.platform + ' platform is not supported');
     }
 
-    this.moduleManager.emit('database:monitor:setup',
-        "CREATE TABLE IF NOT EXISTS bonjour (" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "type TEXT NOT NULL, " +
-        "name TEXT NOT NULL, " +
-        "hostname TEXT NOT NULL, " +
-        "ip_address TEXT NOT NULL, " +
-        "port INTEGER, " +
-        "txt TEXT NOT NULL, " +
-        "UNIQUE(type, name)" +
-        ");", [], function (error) {
-            if (error !== null) {
-                throw error;
-            } else {
-                self.start();
-            }
-        });
+    this.start();
 };
 
 bonjour.prototype.unload = function () {

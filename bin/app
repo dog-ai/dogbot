@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 process.on('SIGINT', function() {
-    raspbot.stop(function() {
+    dogbot.stop(function () {
         process.exit(0);
     });
 });
 
 process.once('SIGUSR2', function() {
-    raspbot.reload(function() {
+    dogbot.reload(function () {
         process.kill(process.pid, 'SIGUSR2');
     });
 });
@@ -17,13 +17,13 @@ process.on('exit', function() {
 
 process.on('uncaughtException', function(exception) {
     try {
-        raspbot.error(exception);
+        dogbot.error(exception);
     } catch (e) {
         console.error(exception.stack);
     }
 });
 
-var raspbot = require('../src/raspbot.js');
+var dogbot = require('../src/dogbot.js')('-JxUwB10Up0dRSKAyFtt');
 
-raspbot.start(function() {
+dogbot.start(function () {
 });

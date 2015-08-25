@@ -2,18 +2,6 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
-var sqlCreateTable = "CREATE TABLE IF NOT EXISTS google (" +
-  "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-  "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-  "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-  "user_id TEXT NOT NULL, " +
-  "name TEXT NOT NULL, " +
-  "email TEXT NOT NULL, " +
-  "access_token TEXT NOT NULL, " +
-  "expires_in INTEGER NOT NULL, " +
-  "refresh_token TEXT NOT NULL" +
-    ");";
-
 var sqlInsertEntryIntoTable = "INSERT INTO google (user_id, name, email, access_token, expires_in, refresh_token) VALUES (?, ?, ?, ?, ?, ?);";
 
 var sqlUpdateTableEntryByUserId = "UPDATE google SET updated_date = ?, name = ?, email = ?, access_token = ?, expires_in = ?, refresh_token = ? WHERE user_id = ? ;";
@@ -44,8 +32,6 @@ google.prototype.info = function() {
 };
 
 google.prototype.load = function (moduleManager, config) {
-  var self = this;
-
   this.moduleManager = moduleManager;
 
   this.authClientId = (config && config.auth && config.auth.client_id || undefined);
@@ -58,13 +44,7 @@ google.prototype.load = function (moduleManager, config) {
     throw new Error('invalid configuration: no client secret available');
   }
 
-  this.moduleManager.emit('database:auth:setup', sqlCreateTable, [], function(error) {
-    if (error !== undefined && error !== null) {
-      throw new Error(error);
-    } else {
-      self.start();
-    }
-  });
+  this.start();
 };
 
 google.prototype.unload = function () {

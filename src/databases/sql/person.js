@@ -9,37 +9,23 @@ var file = path + "person.db";
 var db = new sqlite3.Database(file);
 
 function person() {
-    var moduleManager = {};
+    var databaseManager = {};
 }
 
-person.prototype.type = "DATABASE";
+person.prototype.type = 'SQL';
 
 person.prototype.name = "person";
 
-person.prototype.info = function() {
-    return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
-};
+person.prototype.start = function (databaseManager) {
+    this.databaseManager = databaseManager;
 
-person.prototype.load = function(moduleManager) {
-    this.moduleManager = moduleManager;
-
-    this.start();
-};
-
-person.prototype.unload = function (moduleManager) {
-    this.stop();
-};
-
-person.prototype.start = function () {
-    this.moduleManager.on('database:person:setup', this._run);
-    this.moduleManager.on('database:person:create', this._run);
-    this.moduleManager.on('database:person:retrieveOne', this._get);
-    this.moduleManager.on('database:person:retrieveAll', this._all);
-    this.moduleManager.on('database:person:retrieveOneByOne', this._each);
-    this.moduleManager.on('database:person:update', this._run);
-    this.moduleManager.on('database:person:delete', this._run);
+    this.databaseManager.on('database:person:setup', this._run);
+    this.databaseManager.on('database:person:create', this._run);
+    this.databaseManager.on('database:person:retrieveOne', this._get);
+    this.databaseManager.on('database:person:retrieveAll', this._all);
+    this.databaseManager.on('database:person:retrieveOneByOne', this._each);
+    this.databaseManager.on('database:person:update', this._run);
+    this.databaseManager.on('database:person:delete', this._run);
 };
 
 person.prototype.stop = function () {

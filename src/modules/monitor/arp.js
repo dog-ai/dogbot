@@ -18,29 +18,13 @@ arp.prototype.info = function () {
 };
 
 arp.prototype.load = function (moduleManager) {
-    var self = this;
-
     this.moduleManager = moduleManager;
 
     if (process.platform !== 'linux') {
         throw new Error(process.platform + ' platform is not supported');
     }
 
-    this.moduleManager.emit('database:monitor:setup',
-        "CREATE TABLE IF NOT EXISTS arp (" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "ip_address TEXT NOT NULL UNIQUE, " +
-        "mac_address TEXT NOT NULL" +
-        ");", [],
-        function (error) {
-            if (error !== null) {
-                throw error;
-            } else {
-                self.start();
-            }
-        });
+    this.start();
 };
 
 arp.prototype.unload = function () {

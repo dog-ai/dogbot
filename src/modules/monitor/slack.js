@@ -18,26 +18,9 @@ slack.prototype.info = function () {
 };
 
 slack.prototype.load = function (moduleManager) {
-    var self = this;
-
     this.moduleManager = moduleManager;
 
-    this.moduleManager.emit('database:monitor:setup',
-        "CREATE TABLE IF NOT EXISTS slack (" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-        "slack_id TEXT NOT NULL UNIQUE, " +
-        "username TEXT NOT NULL, " +
-        "name TEXT NOT NULL" +
-        ");", [],
-        function (error) {
-            if (error !== undefined && error !== null) {
-                throw new Error(error);
-            } else {
-                self.start();
-            }
-        });
+    this.start();
 };
 
 slack.prototype.unload = function () {
