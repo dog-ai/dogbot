@@ -38,7 +38,7 @@ employee.prototype.start = function () {
             // only emit nearby if this is the only device online from the employee
             var self = that;
             that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
-                if (devices && devices.length == 1) {
+                if (devices && devices.length == 1 && !employee.is_present) {
                     self.moduleManager.emit('person:employee:nearby', employee);
                 }
             })
@@ -52,7 +52,7 @@ employee.prototype.start = function () {
             // only emit farway if the employee does not have any other device online
             var self = that;
             that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
-                if (!devices) {
+                if (!devices && employee.is_present) {
                     self.moduleManager.emit('person:employee:faraway', employee);
                 }
             })
