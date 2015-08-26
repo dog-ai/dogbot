@@ -34,7 +34,7 @@ employee.prototype.start = function () {
     this.moduleManager.on('person:device:online', function (device) {
         var that = self;
 
-        self._retrieveById(device.employee, function (employee) {
+        self._retrieveById(device.employee_id, function (employee) {
             // only emit nearby if this is the only device online from the employee
             var self = that;
             that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
@@ -48,7 +48,7 @@ employee.prototype.start = function () {
     this.moduleManager.on('person:device:offline', function (device) {
         var that = self;
 
-        self._retrieveById(device.employee, function (employee) {
+        self._retrieveById(device.employee_id, function (employee) {
             // only emit farway if the employee does not have any other device online
             var self = that;
             that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
