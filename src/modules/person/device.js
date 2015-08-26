@@ -32,17 +32,38 @@ device.prototype.start = function() {
     this.moduleManager.on('monitor:macAddress:create', function (macAddress) {
         var that = self;
 
-        self._retrieve(macAddress, function (device) {
-            that.moduleManager.emit('person:device:online', device);
+        self._retrieve(macAddress, function (error, device) {
+            if (error !== null) {
+                console.error(error.message);
+            } else {
+                that.moduleManager.emit('person:device:online', device);
+            }
+        });
+    });
+
+    this.moduleManager.on('monitor:macAddress:update', function (macAddress) {
+        var that = self;
+
+        self._retrieve(macAddress, function (error, device) {
+            if (error !== null) {
+                console.error(error.message);
+            } else {
+                if (!device.is_present) {
+                    that.moduleManager.emit('person:device:online', device);
+                }
+            }
         });
     });
 
     this.moduleManager.on('monitor:macAddress:delete', function (macAddress) {
         var that = self;
 
-
-        self._retrieve(macAddress, function (device) {
-            that.moduleManager.emit('person:device:offline', device);
+        self._retrieve(macAddress, function (error, device) {
+            if (error !== null) {
+                console.error(error.message);
+            } else {
+                that.moduleManager.emit('person:device:offline', device);
+            }
         });
     });
 };
@@ -55,10 +76,14 @@ device.prototype._retrieve = function (macAddress, callback) {
         "SELECT * FROM device WHERE mac_address = ?;", [macAddress],
         function (error, row) {
             if (error) {
-                throw error;
+                if (callback !== undefined) {
+                    callback(error);
+                }
             } else {
                 if (row) {
-                    callback(row);
+                    if (callback !== undefined) {
+                        callback(null, row);
+                    }
                 }
             }
         });
