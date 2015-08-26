@@ -30,72 +30,83 @@ presence.prototype.unload = function () {
 };
 
 presence.prototype.start = function () {
-    var self = this;
+    //var self = this;
 
-    this.cron = new CronJob('0 0 * * * *', function () {
-        self._sample(function (error) {
-            console.error(error);
-        });
-    }, null, true, "Europe/Stockholm");
+    //this.cron = new CronJob('0 */1 * * * *', function () {
+    //    self._detect();
+    //}, null, true, "Europe/Stockholm");
 };
 
 presence.prototype.stop = function () {
     this.cron.stop();
 };
 
-presence.prototype._sample = function (callback) {
+presence.prototype._detect = function () {
     var self = this;
 
-    var date = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-    this._count(function (error, value) {
+    this._findAllEmployeesPresence(function (error, employee) {
         if (error) {
-            throw error;
+            console.error(error);
         } else {
-            self._add(date, value, function (error) {
-                if (error) {
-                    throw error;
-                }
-            });
+
+            if (employee !== undefined) {
+                self._add(employee, function (error) {
+                    if (error) {
+                        console.error(error);
+                    }
+                })
+            }
         }
-    })
+    });
 };
 
-presence.prototype._add = function (date, value, callback) {
-    var self = this;
-
+presence.prototype._add = function (employee, callback) {
     this.moduleManager.emit('database:performance:create',
-        "INSERT INTO arp (date, value) VALUES (?, ?);", [
-            date,
-            value
+        "INSERT INTO presence (employee_id, is_present) VALUES (?, ?);", [
+            employee.id,
+            employee.is_present
         ],
         function (error) {
-            if (error !== undefined && error !== null) {
-                console.error(error);
+            if (error) {
+                if (callback !== undefined) {
+                    callback(error);
+                }
+            }
+        });
+};
+
+presence.prototype._findAllEmployeesPresence = function (callback) {
+    var self = this;
+
+    var updatedDate = (new Date(new Date().setMinutes(new Date().getMinutes() - 5))).toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
+    this.moduleManager.emit('database:person:retrieveOneByOne',
+        "SELECT d.mac_address, e.id FROM device d, employee e WHERE d.employee_id = e.id;", [],
+        function (error, row) {
+            if (error) {
+                if (callback !== undefined) {
+                    callback(error);
+                }
             } else {
-                self.moduleManager.emit('database:performance:delete',
-                    'DELETE FROM arp WHERE id NOT IN (SELECT id FROM arp ORDER BY date DESC LIMIT 24)',
-                    [], function (error) {
+                var employeeId = row.id;
+                self.moduleManager.emit('database:monitor:retrieveOne',
+                    'SELECT * FROM arp WHERE mac_address = ? and Datetime(?) < updated_date', [row.mac_address, updatedDate],
+                    function (error, row) {
+                        console.log("AQUI " + row);
                         if (error) {
                             callback(error);
                         } else {
-                            callback(null);
+                            if (callback !== undefined) {
+                                callback(null, {
+                                    id: employeeId,
+                                    is_present: row === undefined ? false : true
+                                });
+                            }
                         }
                     });
             }
         });
 };
 
-presence.prototype._count = function (callback) {
-    this.moduleManager.emit('database:monitor:retrieveOne',
-        "SELECT COUNT(*) as count FROM arp;", [],
-        function (error, row) {
-            if (error) {
-                callback(error);
-            } else {
-                callback(null, row.count);
-            }
-        });
-};
-
 module.exports = new presence();
+

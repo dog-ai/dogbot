@@ -108,6 +108,7 @@ var dogbot = {
                 "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "employee_id INTEGER REFERENCES employee(id), " +
                 "mac_address TEXT NOT NULL, " +
+                "is_present INTEGER NOT NULL DEFAULT 0, " +
                 "UNIQUE(employee_id, mac_address)" +
                 ");", [],
                 function (error) {
@@ -122,6 +123,7 @@ var dogbot = {
                 "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "name TEXT NOT NULL UNIQUE, " +
+                "is_present INTEGER NOT NULL DEFAULT 0, " +
                 "slack_id TEXT" +
                 ");", [],
                 function (error) {
@@ -131,12 +133,11 @@ var dogbot = {
                 });
 
             communication.emit('database:performance:setup',
-                "CREATE TABLE IF NOT EXISTS arp (" +
+                "CREATE TABLE IF NOT EXISTS presence (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                 "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "date DATETIME NOT NULL UNIQUE, " +
-                "value INTEGER NOT NULL" +
+                "employee_id TEXT NOT NULL, " +
+                "is_present INTEGER NOT NULL" +
                 ");", [],
                 function (error) {
                     if (error !== null) {

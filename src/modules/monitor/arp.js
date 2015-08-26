@@ -67,7 +67,7 @@ arp.prototype.start = function () {
     function monitor() {
         try {
             self._discover(function () {
-                self._clean();
+                //self._clean();
             });
         } catch (error) {
             console.error(error.stack);
