@@ -33,21 +33,8 @@ ip.prototype.unload = function () {
 ip.prototype.start = function () {
     var self = this;
 
-    this.moduleManager.on('monitor:bonjour:create', function (bonjour) {
-        self._addOrUpdate(bonjour.ip_address, function (error) {
-            if (error !== null) {
-                console.error(error.stack);
-            }
-        });
-    });
-
-    this.moduleManager.on('monitor:bonjour:update', function (bonjour) {
-        self._addOrUpdate(bonjour.ip_address, function (error) {
-            if (error !== null) {
-                console.error(error.stack);
-            }
-        });
-    });
+    this.moduleManager.on('monitor:bonjour:create', this._handleBonjour);
+    this.moduleManager.on('monitor:bonjour:update', this._handleBonjour);
 
     var time = 60 * 1000;
 
@@ -68,6 +55,18 @@ ip.prototype.start = function () {
 
 ip.prototype.stop = function () {
     clearTimeout(this.timeout);
+
+    this.moduleManager.removeListener('monitor:bonjour:create', this._handleBonjour);
+    this.moduleManager.removeListener('monitor:bonjour:update', this._handleBonjour);
+
+};
+
+ip.prototype._handleBonjour = function (bonjour) {
+    instance._addOrUpdate(bonjour.ip_address, function (error) {
+        if (error) {
+            console.error(error.stack);
+        }
+    });
 };
 
 ip.prototype._discover = function (callback) {
@@ -227,4 +226,6 @@ ip.prototype._delete = function (oldestDate, callback) {
         });
 };
 
-module.exports = new ip();
+var instance = new ip();
+
+module.exports = instance;

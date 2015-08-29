@@ -92,12 +92,17 @@ modules.prototype._unload = function(module) {
     try {
         module.unload();
 
-        _.remove(this.loaded, module);
+        delete require.cache[require.resolve('./modules/' + module.type.toLowerCase() + '/' + module.name + '.js')];
+
+        _.remove(this.loaded, function (_module) {
+            return _module.name == module.name;
+        });
 
         console.log('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
     } catch (exception) {
         console.log('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + exception.message);
     }
+
 };
 
 modules.prototype.findAllLoadedModulesByType = function(type) {

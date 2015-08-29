@@ -35,8 +35,8 @@ var dogbot = {
                 ");",
                 [],
                 function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
 
@@ -49,8 +49,8 @@ var dogbot = {
                 "mac_address TEXT NOT NULL" +
                 ");", [],
                 function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
 
@@ -67,8 +67,8 @@ var dogbot = {
                 "txt TEXT NOT NULL, " +
                 "UNIQUE(type, name)" +
                 ");", [], function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
 
@@ -80,8 +80,8 @@ var dogbot = {
                 "ip_address TEXT NOT NULL UNIQUE" +
                 ");", [],
                 function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
 
@@ -95,8 +95,8 @@ var dogbot = {
                 "name TEXT NOT NULL" +
                 ");", [],
                 function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
 
@@ -112,8 +112,8 @@ var dogbot = {
                 "UNIQUE(employee_id, mac_address)" +
                 ");", [],
                 function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
 
@@ -127,10 +127,11 @@ var dogbot = {
                 "slack_id TEXT" +
                 ");", [],
                 function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
+
 
             communication.emit('database:performance:setup',
                 "CREATE TABLE IF NOT EXISTS presence (" +
@@ -140,8 +141,8 @@ var dogbot = {
                 "is_present INTEGER NOT NULL" +
                 ");", [],
                 function (error) {
-                    if (error !== null) {
-                        throw error;
+                    if (error) {
+                        console.error(error);
                     }
                 });
         });
@@ -156,8 +157,8 @@ var dogbot = {
 
                 callback();
             },
-            function (type, module, configuration) {
-                modules.loadModule(type, module, configuration, true);
+            function (type, moduleName, configuration) {
+                modules.loadModule(type, moduleName, configuration, true);
             },
             function (device) {
                 communication.emit('database:person:retrieveAll', 'PRAGMA table_info(device)', [], function (error, rows) {
@@ -171,16 +172,19 @@ var dogbot = {
                     var values = _.values(device);
 
                     communication.emit('database:person:create',
-                        'INSERT OR REPLACE INTO device (' + keys + ') VALUES (' + values.map(function () {
+                        'INSERT OR REPLACE INTO device (' + _.union(keys, ['is_present']) + ') VALUES (' + values.map(function () {
                             return '?'
-                        }) + ')',
-                        values,
+                        }) + ',(SELECT is_present FROM employee WHERE id = ?))',
+                        values.concat([values[0]]),
                         function (error) {
                             if (error) {
                                 throw error;
                             }
                         });
                 });
+            },
+            function (device) {
+
             },
             function (employee) {
                 communication.emit('database:person:retrieveAll', 'PRAGMA table_info(employee)', [], function (error, rows) {
@@ -194,16 +198,19 @@ var dogbot = {
                     var values = _.values(employee);
 
                     communication.emit('database:person:create',
-                        'INSERT OR REPLACE INTO employee (' + keys + ') VALUES (' + values.map(function () {
+                        'INSERT OR REPLACE INTO employee (' + _.union(keys, ['is_present']) + ') VALUES (' + values.map(function () {
                             return '?'
-                        }) + ')',
-                        values,
+                        }) + ',(SELECT is_present FROM employee WHERE id = ?))',
+                        values.concat([values[0]]),
                         function (error) {
                             if (error) {
                                 throw error;
                             }
                         });
                 });
+            },
+            function (employee) {
+
             });
     },
 

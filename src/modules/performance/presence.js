@@ -6,7 +6,6 @@ var CronJob = require('cron').CronJob;
 
 function presence() {
     var moduleManager = {};
-    var cron = undefined;
 }
 
 presence.prototype.type = "PERFORMANCE";
@@ -30,83 +29,48 @@ presence.prototype.unload = function () {
 };
 
 presence.prototype.start = function () {
-    //var self = this;
-
-    //this.cron = new CronJob('0 */1 * * * *', function () {
-    //    self._detect();
-    //}, null, true, "Europe/Stockholm");
+    this.moduleManager.on('person:employee:nearby', this._handleEmployee);
+    this.moduleManager.on('person:employee:faraway', this._handleEmployee);
 };
 
 presence.prototype.stop = function () {
-    this.cron.stop();
+    this.moduleManager.removeListener('person:employee:nearby', this._handleEmployee);
+    this.moduleManager.removeListener('person:employee:faraway', this._handleEmployee);
 };
 
-presence.prototype._detect = function () {
-    var self = this;
-
-    this._findAllEmployeesPresence(function (error, employee) {
+presence.prototype._handleEmployee = function (employee) {
+    instance._findLatestById(employee.id, function (error, performance) {
         if (error) {
             console.error(error);
         } else {
-
-            if (employee !== undefined) {
-                self._add(employee, function (error) {
-                    if (error) {
-                        console.error(error);
-                    }
-                })
+            if (performance && performance.is_present == employee.is_present) {
+                return;
             }
+
+            instance._add(employee.id, employee.is_present, function (error) {
+                if (error) {
+                    console.error(error);
+                }
+            });
         }
     });
 };
 
-presence.prototype._add = function (employee, callback) {
+presence.prototype._add = function (id, is_present, callback) {
     this.moduleManager.emit('database:performance:create',
         "INSERT INTO presence (employee_id, is_present) VALUES (?, ?);", [
-            employee.id,
-            employee.is_present
-        ],
-        function (error) {
-            if (error) {
-                if (callback !== undefined) {
-                    callback(error);
-                }
-            }
-        });
+            id,
+            is_present
+        ], callback);
 };
 
-presence.prototype._findAllEmployeesPresence = function (callback) {
-    var self = this;
-
-    var updatedDate = (new Date(new Date().setMinutes(new Date().getMinutes() - 5))).toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-    this.moduleManager.emit('database:person:retrieveOneByOne',
-        "SELECT d.mac_address, e.id FROM device d, employee e WHERE d.employee_id = e.id;", [],
-        function (error, row) {
-            if (error) {
-                if (callback !== undefined) {
-                    callback(error);
-                }
-            } else {
-                var employeeId = row.id;
-                self.moduleManager.emit('database:monitor:retrieveOne',
-                    'SELECT * FROM arp WHERE mac_address = ? and Datetime(?) < updated_date', [row.mac_address, updatedDate],
-                    function (error, row) {
-                        console.log("AQUI " + row);
-                        if (error) {
-                            callback(error);
-                        } else {
-                            if (callback !== undefined) {
-                                callback(null, {
-                                    id: employeeId,
-                                    is_present: row === undefined ? false : true
-                                });
-                            }
-                        }
-                    });
-            }
-        });
+presence.prototype._findLatestById = function (id, callback) {
+    this.moduleManager.emit('database:performance:retrieveOne',
+        "SELECT * from presence WHERE employee_id = ? ORDER BY created_date DESC;",
+        [id], callback);
 };
 
-module.exports = new presence();
+var instance = new presence();
+
+module.exports = instance;
 

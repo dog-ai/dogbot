@@ -27,54 +27,60 @@ device.prototype.unload = function() {
 };
 
 device.prototype.start = function() {
-    var self = this;
+    this.moduleManager.on('monitor:arp:create', this._handleArpCreateOrUpdate);
+    this.moduleManager.on('monitor:arp:update', this._handleArpCreateOrUpdate);
+    this.moduleManager.on('monitor:arp:delete', this._handleArpDelete);
+};
 
-    this.moduleManager.on('monitor:macAddress:create', function (macAddress) {
-        var that = self;
+device.prototype.stop = function () {
+    this.moduleManager.removeListener('monitor:arp:create', this._handleArpCreateOrUpdate);
+    this.moduleManager.removeListener('monitor:arp:update', this._handleArpCreateOrUpdate);
+    this.moduleManager.removeListener('monitor:arp:delete', this._handleArpDelete);
+};
 
-        self._retrieve(macAddress, function (error, device) {
-            if (error !== null) {
-                console.error(error.message);
-            } else {
-                that.moduleManager.emit('person:device:online', device);
+device.prototype._handleArpCreateOrUpdate = function (mac_address) {
+    instance._findByMacAddress(mac_address, function (error, device) {
+
+        if (error !== null) {
+            console.error(error);
+        } else {
+            if (!device.is_present) {
+                device.is_present = true;
+
+                instance._updateById(device.id, device.is_present, function (error) {
+                    if (error) {
+                        console.error(error);
+                    } else {
+                        instance.moduleManager.emit('person:device:online', device);
+                    }
+                });
             }
-        });
+        }
     });
+};
 
-    this.moduleManager.on('monitor:macAddress:update', function (macAddress) {
-        var that = self;
+device.prototype._handleArpDelete = function (mac_address) {
+    instance._findByMacAddress(mac_address, function (error, device) {
 
-        self._retrieve(macAddress, function (error, device) {
-            if (error !== null) {
-                console.error(error.message);
-            } else {
-                if (!device.is_present) {
-                    that.moduleManager.emit('person:device:online', device);
+        if (error !== null) {
+            console.error(error.message);
+        } else {
+            device.is_present = false;
+
+            instance._updateById(device.id, device.is_present, function (error) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    instance.moduleManager.emit('person:device:offline', device);
                 }
-            }
-        });
-    });
-
-    this.moduleManager.on('monitor:macAddress:delete', function (macAddress) {
-        var that = self;
-
-        self._retrieve(macAddress, function (error, device) {
-            if (error !== null) {
-                console.error(error.message);
-            } else {
-                that.moduleManager.emit('person:device:offline', device);
-            }
-        });
+            });
+        }
     });
 };
 
-device.prototype.stop = function() {
-};
-
-device.prototype._retrieve = function (macAddress, callback) {
+device.prototype._findByMacAddress = function (mac_address, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
-        "SELECT * FROM device WHERE mac_address = ?;", [macAddress],
-        function (error, row) {
+        "SELECT * FROM device WHERE mac_address = ?;", [mac_address], function (error, row) {
             if (error) {
                 if (callback !== undefined) {
                     callback(error);
@@ -82,11 +88,25 @@ device.prototype._retrieve = function (macAddress, callback) {
             } else {
                 if (row) {
                     if (callback !== undefined) {
-                        callback(null, row);
+                        callback(error, row);
                     }
                 }
             }
         });
 };
 
-module.exports = new device();
+device.prototype._updateById = function (id, is_present, callback) {
+    var updated_date = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
+    this.moduleManager.emit('database:person:update',
+        "UPDATE device SET updated_date = ?, is_present = ? WHERE id = ?;",
+        [updated_date, is_present, id], function (error) {
+            if (callback !== undefined) {
+                callback(error);
+            }
+        });
+};
+
+var instance = new device();
+
+module.exports = instance;

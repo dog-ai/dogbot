@@ -20,10 +20,6 @@ arp.prototype.info = function () {
 arp.prototype.load = function (moduleManager) {
     this.moduleManager = moduleManager;
 
-    if (process.platform !== 'linux') {
-        throw new Error(process.platform + ' platform is not supported');
-    }
-
     this.start();
 };
 
@@ -34,40 +30,14 @@ arp.prototype.unload = function () {
 arp.prototype.start = function () {
     var self = this;
 
-    this.moduleManager.on('monitor:ipAddress:create', function (ipAddress) {
-        self._resolve(ipAddress, function (error, macAddress) {
-            if (error !== null) {
-                console.error(error.stack);
-            } else {
-                self._addOrUpdate(ipAddress, macAddress, function (error) {
-                    if (error !== null) {
-                        console.error(error.stack);
-                    }
-                });
-            }
-        })
-    });
-
-    this.moduleManager.on('monitor:ipAddress:update', function (ipAddress) {
-        self._resolve(ipAddress, function (error, macAddress) {
-            if (error !== null) {
-                console.error(error.stack);
-            } else {
-                self._addOrUpdate(ipAddress, macAddress, function (error) {
-                    if (error !== null) {
-                        console.error(error.stack);
-                    }
-                });
-            }
-        })
-    });
+    this.moduleManager.on('monitor:ipAddress:create', this._handleIpAddress);
+    this.moduleManager.on('monitor:ipAddress:update', this._handleIpAddress);
 
     var time = 60 * 1000;
-
     function monitor() {
         try {
             self._discover(function () {
-                //self._clean();
+                self._clean();
             });
         } catch (error) {
             console.error(error.stack);
@@ -81,16 +51,35 @@ arp.prototype.start = function () {
 
 arp.prototype.stop = function () {
     clearTimeout(this.timeout);
+
+    this.moduleManager.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+    this.moduleManager.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+};
+
+arp.prototype._handleIpAddress = function (ipAddress) {
+    instance._resolve(ipAddress, function (error, macAddress) {
+        if (error) {
+            console.error(error.stack);
+        } else {
+            instance._addOrUpdate(ipAddress, macAddress, function (error) {
+                if (error) {
+                    console.error(error.stack);
+                }
+            });
+        }
+    })
 };
 
 arp.prototype._discover = function (callback) {
     var self = this;
 
-    var spawn = require('child_process').spawn,
-        process = spawn('arp-scan', ['--interface=wlan0', '-lqNg', '-t 500', '-r 4']);
+    var _interface = process.platform === 'linux' ? "wlan0" : "en0";
 
-    process.stdout.setEncoding('utf8');
-    process.stdout.pipe(require('split')()).on('data', function (line) {
+    var spawn = require('child_process').spawn;
+    var _process = spawn('arp-scan', ['--interface=' + _interface, '-lqNg', '-t 500', '-r 4']);
+
+    _process.stdout.setEncoding('utf8');
+    _process.stdout.pipe(require('split')()).on('data', function (line) {
         if (line.indexOf('\t') === -1) {
             return;
         }
@@ -107,11 +96,11 @@ arp.prototype._discover = function (callback) {
         });
     });
 
-    process.stderr.on('data', function (data) {
+    _process.stderr.on('data', function (data) {
         console.error(new Error(data));
     });
 
-    process.on('close', function () {
+    _process.on('close', function () {
         if (callback !== undefined) {
             callback();
         }
@@ -122,21 +111,21 @@ arp.prototype._clean = function () {
     var self = this;
 
     var currentDate = new Date();
-    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error, arp) {
+    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error, arp) {
         if (error !== null) {
             console.error(error.stack);
         } else {
-            self.moduleManager.emit('monitor:macAddress:delete', arp.mac_address);
+            self.moduleManager.emit('monitor:arp:delete', arp.mac_address);
         }
     });
 };
 
 arp.prototype._resolve = function (ipAddress, callback) {
     var spawn = require('child_process').spawn,
-        process = spawn('arp', ['-n', ipAddress]);
+        _process = spawn('arp', ['-n', ipAddress]);
 
-    process.stdout.setEncoding('utf8');
-    process.stdout.pipe(require('split')()).on('data', function (line) {
+    _process.stdout.setEncoding('utf8');
+    _process.stdout.pipe(require('split')()).on('data', function (line) {
         if (line !== null && line.length === 0 || line.lastIndexOf('A', 0) === 0) {
             return;
         }
@@ -152,7 +141,7 @@ arp.prototype._resolve = function (ipAddress, callback) {
         callback(null, macAddress);
     });
 
-    process.stderr.on('data', function (data) {
+    _process.stderr.on('data', function (data) {
         //callback(new Error(data));
     });
 };
@@ -169,9 +158,10 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
                 }
             } else {
                 if (row === undefined) {
+
                     self._add(ipAddress, macAddress, function (error) {
-                        if (error !== null) {
-                            self.moduleManager.emit('monitor:macAddress:create', macAddress);
+                        if (!error) {
+                            self.moduleManager.emit('monitor:arp:create', macAddress);
                         }
 
                         if (callback !== undefined) {
@@ -179,9 +169,10 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
                         }
                     });
                 } else {
+
                     self._update(ipAddress, macAddress, function (error) {
-                        if (error === null) {
-                            self.moduleManager.emit('monitor:macAddress:update', macAddress);
+                        if (!error) {
+                            self.moduleManager.emit('monitor:arp:update', macAddress);
                         }
 
                         if (callback !== undefined) {
@@ -230,7 +221,7 @@ arp.prototype._delete = function (oldestDate, callback) {
     this.moduleManager.emit('database:monitor:retrieveOneByOne',
         "SELECT * FROM arp WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, row) {
-            if (error !== null) {
+            if (error) {
                 if (callback !== undefined) {
                     callback(error.stack);
                 }
@@ -246,4 +237,6 @@ arp.prototype._delete = function (oldestDate, callback) {
         });
 };
 
-module.exports = new arp();
+var instance = new arp();
+
+module.exports = instance;

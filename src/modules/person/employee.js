@@ -29,62 +29,85 @@ employee.prototype.unload = function () {
 };
 
 employee.prototype.start = function () {
-    var self = this;
+    this.moduleManager.on('person:device:online', this._handleDeviceOnline);
+    this.moduleManager.on('person:device:offline', this._handleDeviceOffline);
+    this.moduleManager.on('person:slack:active', this._handleSlackActive);
+    this.moduleManager.on('person:slack:away', this._handleSlackAway);
+};
 
-    this.moduleManager.on('person:device:online', function (device) {
-        var that = self;
-
-        self._retrieveById(device.employee_id, function (employee) {
-            // only emit nearby if this is the only device online from the employee
-            var self = that;
-            that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
-                if (devices && devices.length == 1 && !employee.is_present) {
-                    self.moduleManager.emit('person:employee:nearby', employee);
-                }
-            })
-        });
+employee.prototype._handleSlackAway = function (slack) {
+    instance._retrieveByName(slack.name, function (employee) {
+        instance.moduleManager.emit('person:employee:offline', employee);
     });
+};
 
-    this.moduleManager.on('person:device:offline', function (device) {
-        var that = self;
-
-        self._retrieveById(device.employee_id, function (employee) {
-            // only emit farway if the employee does not have any other device online
-            var self = that;
-            that._retrieveAllOnlineDevicesById(employee.id, function (devices) {
-                if (!devices && employee.is_present) {
-                    self.moduleManager.emit('person:employee:faraway', employee);
-                }
-            })
-        });
+employee.prototype._handleSlackActive = function (slack) {
+    instance._retrieveByName(slack.name, function (employee) {
+        if (employee === undefined || employee === null) {
+            self._add(slack.name, slack.slack_id, function (employee) {
+                self.moduleManager.emit('person:employee:online', employee);
+            });
+        } else {
+            self.moduleManager.emit('person:employee:online', employee);
+        }
     });
+};
 
-    this.moduleManager.on('person:slack:active', function (slack) {
-        var that = self;
-
-        self._retrieveByName(slack.name, function (employee) {
-            var self = that;
-
-            if (employee === undefined || employee === null) {
-                that._add(slack.name, slack.slack_id, function (employee) {
-                    self.moduleManager.emit('person:employee:online', employee);
-                });
+employee.prototype._handleDeviceOnline = function (device) {
+    instance._retrieveById(device.employee_id, function (employee) {
+        // only emit nearby if this is the only device online from the employee
+        instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
+            if (error) {
+                console.error(error);
             } else {
-                that.moduleManager.emit('person:employee:online', employee);
+                if (devices && devices.length == 1 && !employee.is_present) {
+                    employee.is_present = true;
+
+                    instance._updateById(employee.id, employee.is_present, function (error) {
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            instance.moduleManager.emit('person:employee:nearby', employee);
+                        }
+                    });
+                }
             }
-        });
+        })
     });
+};
 
-    this.moduleManager.on('person:slack:away', function (slack) {
-        var that = self;
+employee.prototype._handleDeviceOffline = function (device) {
+    instance._retrieveById(device.employee_id, function (employee) {
+        // only emit farway if the employee does not have any other device online
 
-        self._retrieveByName(slack.name, function (employee) {
-            that.moduleManager.emit('person:employee:offline', employee);
-        });
+        instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
+
+            if (error) {
+                console.error(error);
+            } else {
+
+                if (devices && devices.length == 0 && employee.is_present) {
+
+                    employee.is_present = false;
+
+                    instance._updateById(employee.id, employee.is_present, function (error) {
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            instance.moduleManager.emit('person:employee:faraway', employee);
+                        }
+                    });
+                }
+            }
+        })
     });
 };
 
 employee.prototype.stop = function () {
+    this.moduleManager.removeListener('person:device:online', this._handleDeviceOnline);
+    this.moduleManager.removeListener('person:device:offline', this._handleDeviceOffline);
+    this.moduleManager.removeListener('person:slack:active', this._handleSlackActive);
+    this.moduleManager.removeListener('person:slack:away', this._handleSlackAway);
 };
 
 employee.prototype._add = function (name, slackId, callback) {
@@ -126,30 +149,41 @@ employee.prototype._retrieveByName = function (name, callback) {
         });
 };
 
-employee.prototype._retrieveAllOnlineDevicesById = function (id, callback) {
-    var self = this;
-
+employee.prototype._retrieveAllOnlineDevicesByEmployeeId = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveAll',
-        'SELECT * FROM device WHERE employee = ?;', [id],
+        'SELECT * FROM device WHERE employee_id = ? AND is_present = 1;', [id],
         function (error, rows) {
             if (error) {
                 callback(error);
             } else {
-                if (rows) {
-                    var macAddresses = _.pluck(rows, 'mac_address');
-                    self.moduleManager.emit('database:monitor:retrieveAll',
-                        'SELECT * FROM arp WHERE mac_address IS IN (' + macAddresses + ');',
-                        [],
-                        function (error, rows) {
-                            if (error) {
-                                callback(error);
-                            } else {
-                                callback(null, rows);
-                            }
-                        });
+                callback(null, rows);
+            }
+        });
+};
+
+employee.prototype._updateById = function (id, is_present, callback) {
+    var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
+    this.moduleManager.emit('database:person:update',
+        "UPDATE employee SET updated_date = ?, is_present = ? WHERE id = ?;",
+        [
+            updatedDate,
+            is_present,
+            id
+        ],
+        function (error) {
+            if (error) {
+                if (callback !== undefined) {
+                    callback(error);
+                }
+            } else {
+                if (callback !== undefined) {
+                    callback(null);
                 }
             }
         });
 };
 
-module.exports = new employee();
+var instance = new employee();
+
+module.exports = instance;

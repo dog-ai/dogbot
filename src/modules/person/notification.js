@@ -27,25 +27,35 @@ notification.prototype.unload = function () {
 };
 
 notification.prototype.start = function () {
-
-    this.moduleManager.on('person:employee:nearby', function (employee) {
-        console.log(new Date() + ' ' + employee.name + ' is nearby');
-    });
-
-    this.moduleManager.on('person:employee:faraway', function (employee) {
-        console.log(new Date() + ' ' + employee.name + ' is faraway');
-    });
-
-    this.moduleManager.on('person:employee:online', function (employee) {
-        console.log(new Date() + ' ' + employee.name + ' is online');
-    });
-
-    this.moduleManager.on('person:employee:offline', function (employee) {
-        console.log(new Date() + ' ' + employee.name + ' is offline');
-    });
+    this.moduleManager.on('person:employee:nearby', this._handleEmployeeNearby);
+    this.moduleManager.on('person:employee:faraway', this._handleEmployeeFaraway);
+    this.moduleManager.on('person:employee:online', this._handleEmployeeOnline);
+    this.moduleManager.on('person:employee:offline', this._handleEmployeeOffline);
 };
 
 notification.prototype.stop = function () {
+    this.moduleManager.removeListener('person:employee:nearby', this._handleEmployeeNearby);
+    this.moduleManager.removeListener('person:employee:faraway', this._handleEmployeeFaraway);
+    this.moduleManager.removeListener('person:employee:online', this._handleEmployeeOnline);
+    this.moduleManager.removeListener('person:employee:offline', this._handleEmployeeOffline);
 };
 
-module.exports = new notification();
+notification.prototype._handleEmployeeNearby = function (employee) {
+    console.log(new Date() + ' ' + employee.name + ' is nearby');
+};
+
+notification.prototype._handleEmployeeFaraway = function (employee) {
+    console.log(new Date() + ' ' + employee.name + ' is faraway');
+};
+
+notification.prototype._handleEmployeeOnline = function (employee) {
+    console.log(new Date() + ' ' + employee.name + ' is online');
+};
+
+notification.prototype._handleEmployeeOffline = function (employee) {
+    console.log(new Date() + ' ' + employee.name + ' is offline');
+};
+
+var instance = new notification();
+
+module.exports = instance;
