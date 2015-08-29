@@ -77,7 +77,7 @@ synchronization.prototype.start = function (id, callback,
 
         function synchronize() {
             try {
-                self._push();
+                self._synchronize();
             } catch (error) {
                 console.error(error.stack);
             }
@@ -93,7 +93,7 @@ synchronization.prototype.start = function (id, callback,
     }
 };
 
-synchronization.prototype._push = function () {
+synchronization.prototype._synchronize = function () {
 
     this.employeePerformancePushCallback(function (error, employeeId, type, performance, onComplete) {
         if (error) {
@@ -102,7 +102,7 @@ synchronization.prototype._push = function () {
             performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
 
             var date = moment(performance.created_date);
-            performance.created_date = date.format();
+            performance.created_date = date.utc().format();
 
             firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
         }
