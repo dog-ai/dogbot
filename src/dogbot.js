@@ -17,7 +17,8 @@ var dogbot = {
     id: undefined,
 
     start: function (callback) {
-        databases.startAll();
+        databases.startAll(function () {
+        });
 
         _.defer(function () {
 
@@ -138,7 +139,8 @@ var dogbot = {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                 "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "employee_id TEXT NOT NULL, " +
-                "is_present INTEGER NOT NULL" +
+                "is_present INTEGER NOT NULL, " +
+                "is_synced INTEGER NOT NULL DEFAULT 0" +
                 ");", [],
                 function (error) {
                     if (error) {
@@ -211,6 +213,28 @@ var dogbot = {
             },
             function (employee) {
 
+            },
+            function (callback) {
+                communication.emit('database:performance:retrieveOneByOne',
+                    'SELECT * FROM presence WHERE is_synced = 0', [], function (error, row) {
+                        if (!error && row !== undefined) {
+                            row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                            row.is_present = row.is_present == 1 ? true : false;
+                        }
+
+                        callback(error, row.employee_id, 'presence', row, function (error) {
+                            if (error) {
+                                console.error(error)
+                            } else {
+                                communication.emit('database:performance:update',
+                                    'UPDATE presence SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
+                                        if (error) {
+                                            console.error(error);
+                                        }
+                                    });
+                            }
+                        });
+                    });
             });
     },
 

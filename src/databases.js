@@ -11,39 +11,40 @@ var databasesDir = path.join(__dirname, 'databases/');
 function databases() {
 }
 
-databases.prototype.startAll = function () {
+databases.prototype.startAll = function (callback) {
     var self = this;
 
-    this.types.forEach(function (type) {
+    self.types.forEach(function (type) {
         self._startAllByType(type);
     });
+
+    callback();
 };
 
 databases.prototype._startAllByType = function (type) {
-    var that = this;
+    var self = this;
+
 
     var dir = path.join(databasesDir + type.toLowerCase());
 
     fs.readdirSync(dir).forEach(function (file) {
-        that._start(type, file);
+        self._start(type, file);
     });
 };
 
 databases.prototype._start = function (type, file) {
     var self = this;
 
-    _.defer(function () {
-        try {
-            var database = require(databasesDir + type.toLowerCase() + '/' + file);
+    try {
+        var database = require(databasesDir + type.toLowerCase() + '/' + file);
 
-            database.start(self.communication);
-            self.started.push(database);
+        database.start(self.communication);
+        self.started.push(database);
 
-            console.log('Started ' + type.toLowerCase() + ' database: ' + database.name);
-        } catch (error) {
-            console.log('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message);
-        }
-    });
+        console.log('Started ' + type.toLowerCase() + ' database: ' + database.name);
+    } catch (error) {
+        console.log('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message);
+    }
 };
 
 databases.prototype.stopAll = function () {

@@ -3,15 +3,25 @@
  */
 
 var _ = require('lodash');
+var moment = require('moment');
 var Firebase = require('firebase');
 var firebase = new Firebase('https://dazzling-torch-7723.firebaseIO.com');
 
 function synchronization() {
     var dogId = undefined;
 
+    var moduleUpdateCallback;
+    var deviceCreateOrUpdateCallback;
+    var deviceDeleteCallback;
+    var employeeCreateOrUpdateCallback;
+    var employeeDeleteCallback;
+
+    var employeePerformancePushCallback;
+
     var dogRef = undefined;
     var companyRef = undefined;
 
+    var timeout = undefined;
 }
 
 synchronization.prototype.start = function (id, callback,
@@ -19,47 +29,19 @@ synchronization.prototype.start = function (id, callback,
                                             deviceCreateOrUpdateCallback,
                                             deviceDeleteCallback,
                                             employeeCreateOrUpdateCallback,
-                                            employeeDeleteCallback) {
+                                            employeeDeleteCallback,
+                                            employeePerformancePushCallback) {
     var self = this;
 
     this.dogId = id;
 
-    function handleModuleUpdate(snapshot) {
-        var modules = snapshot.val();
-        var type = snapshot.key();
+    this.moduleUpdateCallback = moduleUpdateCallback;
+    this.deviceCreateOrUpdateCallback = deviceCreateOrUpdateCallback;
+    this.deviceDeleteCallback = deviceDeleteCallback;
+    this.employeeCreateOrUpdateCallback = employeeCreateOrUpdateCallback;
+    this.employeeDeleteCallback = employeeDeleteCallback;
 
-        _.forEach(modules, function (moduleConfiguration, moduleName) {
-            moduleUpdateCallback(type, moduleName, moduleConfiguration);
-        });
-    }
-
-    function handleDeviceAdded(snapshot) {
-        var deviceId = snapshot.key();
-
-        firebase.child('devices/' + deviceId).on('value', function (snapshot) {
-            deviceCreateOrUpdateCallback(_.extend({id: snapshot.key()}, snapshot.val()));
-        });
-    }
-
-    function handleDeviceChanged(snapshot) {
-    }
-
-    function handleDeviceRemoved(snapshot) {
-    }
-
-    function handleEmployeeAdded(snapshot) {
-        var employeeId = snapshot.key();
-
-        firebase.child('employees/' + employeeId).on('value', function (snapshot) {
-            employeeCreateOrUpdateCallback(_.extend({id: snapshot.key()}, snapshot.val()));
-        });
-    }
-
-    function handleEmployeeChanged(snapshot) {
-    }
-
-    function handleEmployeeRemoved(snapshot) {
-    }
+    this.employeePerformancePushCallback = employeePerformancePushCallback;
 
     try {
         this.dogRef = firebase.child('dogs/' + this.dogId);
@@ -70,7 +52,7 @@ synchronization.prototype.start = function (id, callback,
 
                 if (dog.modules !== undefined) {
 
-                    self.dogRef.child('modules').on('child_changed', handleModuleUpdate);
+                    self.dogRef.child('modules').on('child_changed', self._handleModuleUpdate);
                     _.forEach(dog.modules, function (modules, type) {
                         _.forEach(modules, function (moduleConfiguration, moduleName) {
                             moduleUpdateCallback(type, moduleName, moduleConfiguration);
@@ -81,20 +63,50 @@ synchronization.prototype.start = function (id, callback,
                 if (dog.company_id !== undefined) {
                     self.companyRef = firebase.child('companies/' + dog.company_id);
 
-                    self.companyRef.child('/devices').on('child_added', handleDeviceAdded);
-                    self.companyRef.child('/devices').on('child_changed', handleDeviceChanged);
-                    self.companyRef.child('/devices').on('child_removed', handleDeviceRemoved);
-                    self.companyRef.child('/employees').on('child_added', handleEmployeeAdded);
-                    self.companyRef.child('/employees').on('child_changed', handleEmployeeChanged);
-                    self.companyRef.child('/employees').on('child_removed', handleEmployeeRemoved);
+                    self.companyRef.child('/devices').on('child_added', self._handleDeviceAdded);
+                    self.companyRef.child('/devices').on('child_changed', self._handleDeviceChanged);
+                    self.companyRef.child('/devices').on('child_removed', self._handleDeviceRemoved);
+                    self.companyRef.child('/employees').on('child_added', self._handleEmployeeAdded);
+                    self.companyRef.child('/employees').on('child_changed', self._handleEmployeeChanged);
+                    self.companyRef.child('/employees').on('child_removed', self._handleEmployeeRemoved);
                 }
             }
         });
+
+        var time = 2 * 60 * 1000;
+
+        function synchronize() {
+            try {
+                self._push();
+            } catch (error) {
+                console.error(error.stack);
+            }
+
+            self.timeout = setTimeout(synchronize, time * (1 + Math.random()));
+        }
+
+        synchronize();
 
         callback(null);
     } catch (error) {
         callback(error);
     }
+};
+
+synchronization.prototype._push = function () {
+
+    this.employeePerformancePushCallback(function (error, employeeId, type, performance, onComplete) {
+        if (error) {
+            console.error(error);
+        } else {
+            performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
+
+            var date = moment(performance.created_date);
+            performance.created_date = date.format();
+
+            firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
+        }
+    });
 };
 
 synchronization.prototype.stop = function () {
@@ -127,4 +139,43 @@ synchronization.prototype.stop = function () {
     }
 };
 
-module.exports = new synchronization();
+synchronization.prototype._handleModuleUpdate = function (snapshot) {
+    var modules = snapshot.val();
+    var type = snapshot.key();
+
+    _.forEach(modules, function (moduleConfiguration, moduleName) {
+        instance.moduleUpdateCallback(type, moduleName, moduleConfiguration);
+    });
+};
+
+synchronization.prototype._handleDeviceAdded = function (snapshot) {
+    var deviceId = snapshot.key();
+
+    firebase.child('devices/' + deviceId).on('value', function (snapshot) {
+        instance.deviceCreateOrUpdateCallback(_.extend({id: snapshot.key()}, snapshot.val()));
+    });
+};
+
+synchronization.prototype._handleDeviceChanged = function (snapshot) {
+};
+
+synchronization.prototype._handleDeviceRemoved = function (snapshot) {
+};
+
+synchronization.prototype._handleEmployeeAdded = function (snapshot) {
+    var employeeId = snapshot.key();
+
+    firebase.child('employees/' + employeeId).on('value', function (snapshot) {
+        instance.employeeCreateOrUpdateCallback(_.extend({id: snapshot.key()}, snapshot.val()));
+    });
+};
+
+synchronization.prototype._handleEmployeeChanged = function (snapshot) {
+};
+
+synchronization.prototype._handleEmployeeRemoved = function (snapshot) {
+};
+
+var instance = new synchronization();
+
+module.exports = instance;
