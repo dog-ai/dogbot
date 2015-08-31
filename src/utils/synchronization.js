@@ -17,6 +17,7 @@ function synchronization() {
     var employeeDeleteCallback;
 
     var employeePerformancePushCallback;
+    var employeePerformancePullCallback;
 
     var dogRef = undefined;
     var companyRef = undefined;
@@ -30,7 +31,8 @@ synchronization.prototype.start = function (id, callback,
                                             deviceDeleteCallback,
                                             employeeCreateOrUpdateCallback,
                                             employeeDeleteCallback,
-                                            employeePerformancePushCallback) {
+                                            employeePerformancePushCallback,
+                                            employeePerformancePullCallback) {
     var self = this;
 
     this.dogId = id;
@@ -42,6 +44,7 @@ synchronization.prototype.start = function (id, callback,
     this.employeeDeleteCallback = employeeDeleteCallback;
 
     this.employeePerformancePushCallback = employeePerformancePushCallback;
+    this.employeePerformancePullCallback = employeePerformancePullCallback;
 
     try {
         this.dogRef = firebase.child('dogs/' + this.dogId);
@@ -93,22 +96,6 @@ synchronization.prototype.start = function (id, callback,
     }
 };
 
-synchronization.prototype._synchronize = function () {
-
-    this.employeePerformancePushCallback(function (error, employeeId, type, performance, onComplete) {
-        if (error) {
-            console.error(error);
-        } else {
-            performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
-
-            var date = moment(performance.created_date);
-            performance.created_date = date.utc().format();
-
-            firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
-        }
-    });
-};
-
 synchronization.prototype.stop = function () {
     this.dogId = undefined;
 
@@ -139,6 +126,22 @@ synchronization.prototype.stop = function () {
     }
 };
 
+synchronization.prototype._synchronize = function () {
+
+    this.employeePerformancePushCallback(function (error, employeeId, type, performance, onComplete) {
+        if (error) {
+            console.error(error);
+        } else {
+            performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
+
+            var date = moment(performance.created_date).utc();
+            performance.created_date = date.format();
+
+            firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
+        }
+    });
+};
+
 synchronization.prototype._handleModuleUpdate = function (snapshot) {
     var modules = snapshot.val();
     var type = snapshot.key();
@@ -152,7 +155,16 @@ synchronization.prototype._handleDeviceAdded = function (snapshot) {
     var deviceId = snapshot.key();
 
     firebase.child('devices/' + deviceId).on('value', function (snapshot) {
-        instance.deviceCreateOrUpdateCallback(_.extend({id: snapshot.key()}, snapshot.val()));
+        var device = snapshot.val();
+
+        if (device.created_date !== undefined && device.created_date !== null) {
+            device.created_date = new Date(device.created_date);
+        }
+        if (device.updated_date !== undefined && device.updated_date !== null) {
+            device.updated_date = new Date(device.updated_date);
+        }
+
+        instance.deviceCreateOrUpdateCallback(_.extend({id: snapshot.key()}, device));
     });
 };
 
@@ -166,7 +178,65 @@ synchronization.prototype._handleEmployeeAdded = function (snapshot) {
     var employeeId = snapshot.key();
 
     firebase.child('employees/' + employeeId).on('value', function (snapshot) {
-        instance.employeeCreateOrUpdateCallback(_.extend({id: snapshot.key()}, snapshot.val()));
+        var employee = snapshot.val();
+
+        if (employee.created_date !== undefined && employee.created_date !== null) {
+            employee.created_date = new Date(employee.created_date);
+        }
+        if (employee.updated_date !== undefined && employee.updated_date !== null) {
+            employee.updated_date = new Date(employee.updated_date);
+        }
+
+        instance.employeeCreateOrUpdateCallback(_.extend({id: snapshot.key()}, employee));
+    });
+
+    var performanceNames = ['presence'];
+
+    var today = moment().utc();
+    _.forEach(performanceNames, function (performanceName) {
+        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
+            if (snapshot.val() === null) {
+                firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'days').format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
+                    if (snapshot.val() === null) {
+                        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(2, 'days').format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
+                            if (snapshot.val() === null) {
+                                // stop here
+                            } else {
+                                _.forEach(snapshot.val(), function (performance, id) {
+                                    if (performance.created_date !== undefined && performance.created_date !== null) {
+                                        performance.created_date = new Date(performance.created_date);
+                                    }
+                                    instance.employeePerformancePullCallback(performanceName, _.extend({
+                                        employee_id: employeeId,
+                                        is_synced: true
+                                    }, performance));
+                                })
+                            }
+                        });
+                    } else {
+                        _.forEach(snapshot.val(), function (performance, id) {
+                            if (performance.created_date !== undefined && performance.created_date !== null) {
+                                performance.created_date = new Date(performance.created_date);
+                            }
+                            instance.employeePerformancePullCallback(performanceName, _.extend({
+                                employee_id: employeeId,
+                                is_synced: true
+                            }, performance));
+                        })
+                    }
+                });
+            } else {
+                _.forEach(snapshot.val(), function (performance, id) {
+                    if (performance.created_date !== undefined && performance.created_date !== null) {
+                        performance.created_date = new Date(performance.created_date);
+                    }
+                    instance.employeePerformancePullCallback(performanceName, _.extend({
+                        employee_id: employeeId,
+                        is_synced: true
+                    }, performance));
+                })
+            }
+        });
     });
 };
 

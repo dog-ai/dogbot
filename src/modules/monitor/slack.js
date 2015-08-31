@@ -46,7 +46,7 @@ slack.prototype.start = function () {
         var name = user.profile.real_name;
         self._retrieve(id, function (user) {
             if (user === undefined || user === null) {
-                that._add(id, username, name);
+                that._addPresence(id, username, name);
             } else {
                 that._update(id, username, name);
             }
@@ -66,7 +66,7 @@ slack.prototype.start = function () {
         var name = user.profile.real_name;
         self._retrieve(id, function (user) {
             if (user === undefined || user === null) {
-                that._add(id, username, name);
+                that._addPresence(id, username, name);
             } else {
                 that._update(id, username, name);
             }
@@ -102,7 +102,7 @@ slack.prototype._retrieve = function (slackId, callback) {
         });
 };
 
-slack.prototype._add = function (slackId, username, name) {
+slack.prototype._addPresence = function (slackId, username, name) {
     var self = this;
 
     this.moduleManager.emit('database:monitor:create',

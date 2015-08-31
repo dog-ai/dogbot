@@ -159,7 +159,7 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
             } else {
                 if (row === undefined) {
 
-                    self._add(ipAddress, macAddress, function (error) {
+                    self._addPresence(ipAddress, macAddress, function (error) {
                         if (!error) {
                             self.moduleManager.emit('monitor:arp:create', macAddress);
                         }
@@ -184,7 +184,7 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
         });
 };
 
-arp.prototype._add = function (ipAddress, macAddress, callback) {
+arp.prototype._addPresence = function (ipAddress, macAddress, callback) {
     this.moduleManager.emit('database:monitor:create',
         "INSERT INTO arp (ip_address, mac_address) VALUES (?, ?);", [
             ipAddress,

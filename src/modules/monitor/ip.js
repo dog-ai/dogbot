@@ -149,7 +149,7 @@ ip.prototype._addOrUpdate = function (ipAddress, callback) {
                 }
             } else {
                 if (row === undefined) {
-                    self._add(ipAddress, function (error) {
+                    self._addPresence(ipAddress, function (error) {
                         if (error === null) {
                             self.moduleManager.emit('monitor:ipAddress:create', ipAddress);
                         }
@@ -173,7 +173,7 @@ ip.prototype._addOrUpdate = function (ipAddress, callback) {
         });
 };
 
-ip.prototype._add = function (ipAddress, callback) {
+ip.prototype._addPresence = function (ipAddress, callback) {
     this.moduleManager.emit('database:monitor:create',
         "INSERT INTO ip (ip_address) VALUES (?);", [
             ipAddress

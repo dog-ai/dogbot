@@ -125,7 +125,7 @@ bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, 
                 }
             } else {
                 if (row === undefined) {
-                    self._add(type, name, address, hostname, port, txt, function (error) {
+                    self._addPresence(type, name, address, hostname, port, txt, function (error) {
                         if (error === null) {
                             self.moduleManager.emit('monitor:bonjour:create', {
                                 type: type,
@@ -163,7 +163,7 @@ bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, 
         });
 };
 
-bonjour.prototype._add = function (type, name, address, hostname, port, txt, callback) {
+bonjour.prototype._addPresence = function (type, name, address, hostname, port, txt, callback) {
     this.moduleManager.emit('database:monitor:create',
         "INSERT INTO bonjour (type, name, ip_address, hostname, port, txt) VALUES (?, ?, ?, ?, ?, ?);",
         [

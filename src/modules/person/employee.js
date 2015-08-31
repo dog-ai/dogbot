@@ -3,6 +3,7 @@
  */
 
 var _ = require('lodash');
+var moment = require('moment');
 
 function employee() {
     var moduleManager = {};
@@ -33,6 +34,8 @@ employee.prototype.start = function () {
     this.moduleManager.on('person:device:offline', this._handleDeviceOffline);
     this.moduleManager.on('person:slack:active', this._handleSlackActive);
     this.moduleManager.on('person:slack:away', this._handleSlackAway);
+    this.moduleManager.on('synchronization:person:employee', this._handleEmployeeSynchronization);
+    this.moduleManager.on('person:employee:is_present', this._isPresent);
 };
 
 employee.prototype._handleSlackAway = function (slack) {
@@ -44,7 +47,7 @@ employee.prototype._handleSlackAway = function (slack) {
 employee.prototype._handleSlackActive = function (slack) {
     instance._retrieveByName(slack.name, function (employee) {
         if (employee === undefined || employee === null) {
-            self._add(slack.name, slack.slack_id, function (employee) {
+            self._addPresence(slack.name, slack.slack_id, function (employee) {
                 self.moduleManager.emit('person:employee:online', employee);
             });
         } else {
@@ -103,14 +106,86 @@ employee.prototype._handleDeviceOffline = function (device) {
     });
 };
 
+employee.prototype._handleEmployeeSynchronization = function (employee) {
+    instance.moduleManager.emit('database:person:retrieveAll', 'PRAGMA table_info(employee)', [], function (error, rows) {
+        if (error !== null) {
+            throw error();
+        }
+
+        employee = _.pick(employee, _.pluck(rows, 'name'));
+
+        if (employee.created_date !== undefined && employee.created_date !== null) {
+            employee.created_date = employee.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+        }
+        if (employee.updated_date !== undefined && employee.updated_date !== null) {
+            employee.updated_date = employee.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+        }
+
+        var keys = _.keys(employee);
+        var values = _.values(employee);
+
+        instance.moduleManager.emit('database:person:retrieveOne',
+            'SELECT * FROM employee WHERE id = ?',
+            [employee.id],
+            function (error, row) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    if (row !== undefined) {
+
+                        keys = _.keys(_.omit(employee, 'is_present'));
+                        values = _.values(_.omit(employee, 'is_present'));
+
+                        instance.moduleManager.emit('database:person:update',
+                            'INSERT OR REPLACE INTO employee (' + keys + ') VALUES (' + values.map(function () {
+                                return '?';
+                            }) + ');',
+                            values,
+                            function (error) {
+                                if (error) {
+                                    console.error(error);
+                                }
+                            });
+                    } else {
+
+                        instance.moduleManager.emit('database:person:create',
+                            'INSERT OR REPLACE INTO employee (' + keys + ') VALUES (' + values.map(function () {
+                                return '?';
+                            }) + ');',
+                            values,
+                            function (error) {
+                                if (error) {
+                                    console.error(error);
+                                } else {
+                                    instance.moduleManager.emit('person:employee:is_present', employee.id, function (is_present) {
+                                        if (employee.is_present != is_present) {
+                                            instance._updateById(employee.id, is_present, function (error) {
+                                                console.error(error);
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                    }
+                }
+            });
+    });
+};
+
+employee.prototype._isPresent = function (id, callback) {
+    console.log("AQUI: Tens que acabar este método e fazer o mesmo para o device");
+};
+
 employee.prototype.stop = function () {
     this.moduleManager.removeListener('person:device:online', this._handleDeviceOnline);
     this.moduleManager.removeListener('person:device:offline', this._handleDeviceOffline);
     this.moduleManager.removeListener('person:slack:active', this._handleSlackActive);
     this.moduleManager.removeListener('person:slack:away', this._handleSlackAway);
+    this.moduleManager.removeListener('synchronization:person:employee', this._handleEmployeeSynchronization);
+    this.moduleManager.removeListener('person:employee:is_present', this._isPresent);
 };
 
-employee.prototype._add = function (name, slackId, callback) {
+employee.prototype._addPresence = function (name, slackId, callback) {
     this.moduleManager.emit('database:person:create',
         "INSERT INTO employee (name, slack_id) VALUES (?, ?);", [
             name,

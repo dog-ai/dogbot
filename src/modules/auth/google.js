@@ -68,7 +68,7 @@ google.prototype.start = function() {
             console.error(error);
           } else {
             if (row === undefined) {
-              self._add(profile.id, profile.displayName, profile.emails[0].value, accessToken, params.expires_in, refreshToken);
+              self._addPresence(profile.id, profile.displayName, profile.emails[0].value, accessToken, params.expires_in, refreshToken);
             } else {
               self._update(profile.id, profile.displayName, profile.emails[0].value, accessToken, params.expires_in, refreshToken);
             }
@@ -123,7 +123,7 @@ google.prototype.refreshAuth = function(accountId, callback) {
     });
 };
 
-google.prototype._add = function(userId, name, email, accessToken, expiresIn, refreshToken) {
+google.prototype._addPresence = function (userId, name, email, accessToken, expiresIn, refreshToken) {
 
   this.moduleManager.emit('database:auth:create', sqlInsertEntryIntoTable, [
       userId,

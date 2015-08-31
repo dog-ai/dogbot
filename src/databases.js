@@ -24,7 +24,6 @@ databases.prototype.startAll = function (callback) {
 databases.prototype._startAllByType = function (type) {
     var self = this;
 
-
     var dir = path.join(databasesDir + type.toLowerCase());
 
     fs.readdirSync(dir).forEach(function (file) {
@@ -50,11 +49,8 @@ databases.prototype._start = function (type, file) {
 databases.prototype.stopAll = function () {
     var self = this;
 
-    _.defer(function () {
-
-        self.started.forEach(function (database) {
-            self._stop(database);
-        });
+    self.started.forEach(function (database) {
+        self._stop(database);
     });
 };
 

@@ -58,7 +58,7 @@ device.prototype.process = function(message, callback) {
           return callback('Please, give me a proper MAC address, i.e. ce:48:d2:28:e4:56');
         }
 
-        this._add(name, slackId, macAddress, callback);
+        this._addPresence(name, slackId, macAddress, callback);
       } else if (operation === 'rem' && fields.length == 4) {
         fields[2] = fields[2].replace(/"/g, '');
 
@@ -86,7 +86,7 @@ device.prototype.process = function(message, callback) {
   }
 };
 
-device.prototype._add = function (name, slackId, macAddress, callback) {
+device.prototype._addPresence = function (name, slackId, macAddress, callback) {
   var self = this;
 
   this.moduleManager.emit('database:person:retrieveOne',

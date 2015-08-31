@@ -2,6 +2,10 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var _ = require('lodash');
+
+var moment = require('moment');
+
 var CronJob = require('cron').CronJob;
 
 function presence() {
@@ -29,17 +33,19 @@ presence.prototype.unload = function () {
 };
 
 presence.prototype.start = function () {
-    this.moduleManager.on('person:employee:nearby', this._handleEmployee);
-    this.moduleManager.on('person:employee:faraway', this._handleEmployee);
+    this.moduleManager.on('person:employee:nearby', this._handleEmployeeMovement);
+    this.moduleManager.on('person:employee:faraway', this._handleEmployeeMovement);
+    this.moduleManager.on('synchronization:performance:presence', this._handlePresenceSynchronization)
 };
 
 presence.prototype.stop = function () {
-    this.moduleManager.removeListener('person:employee:nearby', this._handleEmployee);
-    this.moduleManager.removeListener('person:employee:faraway', this._handleEmployee);
+    this.moduleManager.removeListener('person:employee:nearby', this._handleEmployeeMovement);
+    this.moduleManager.removeListener('person:employee:faraway', this._handleEmployeeMovement);
+    this.moduleManager.removeListener('synchronization:performance:presence', this._handlePresenceSynchronization);
 };
 
-presence.prototype._handleEmployee = function (employee) {
-    instance._findLatestById(employee.id, function (error, performance) {
+presence.prototype._handleEmployeeMovement = function (employee) {
+    instance._findLatestPresenceByEmployeeId(employee.id, function (error, performance) {
         if (error) {
             console.error(error);
         } else {
@@ -47,7 +53,7 @@ presence.prototype._handleEmployee = function (employee) {
                 return;
             }
 
-            instance._add(employee.id, employee.is_present, function (error) {
+            instance._addPresence({employee_id: employee.id, is_present: employee.is_present}, function (error) {
                 if (error) {
                     console.error(error);
                 }
@@ -56,18 +62,55 @@ presence.prototype._handleEmployee = function (employee) {
     });
 };
 
-presence.prototype._add = function (id, is_present, callback) {
-    this.moduleManager.emit('database:performance:create',
-        "INSERT INTO presence (employee_id, is_present) VALUES (?, ?);", [
-            id,
-            is_present
-        ], callback);
+presence.prototype._handlePresenceSynchronization = function (syncingPresence) {
+    instance._findLatestPresenceByEmployeeId(syncingPresence.employee_id, function (error, presence) {
+        if (error) {
+            console.error(error);
+        } else {
+            if (presence === undefined) {
+                instance._addPresence(syncingPresence, function (error) {
+                    if (error) {
+                        console.error(error);
+                    }
+                });
+            } else {
+                if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
+                    instance._addPresence(syncingPresence, function (error) {
+                        if (error) {
+                            console.error(error);
+                        }
+                    });
+                }
+            }
+        }
+    });
 };
 
-presence.prototype._findLatestById = function (id, callback) {
+presence.prototype._addPresence = function (presence, callback) {
+    if (presence.created_date !== undefined && presence.created_date !== null) {
+        presence.created_date = presence.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    var keys = _.keys(presence);
+    var values = _.values(presence);
+
+    this.moduleManager.emit('database:performance:create',
+        "INSERT INTO presence (" + keys + ") VALUES (" + values.map(function () {
+            return '?';
+        }) + ");",
+        values, callback);
+};
+
+presence.prototype._findLatestPresenceByEmployeeId = function (id, callback) {
     this.moduleManager.emit('database:performance:retrieveOne',
         "SELECT * from presence WHERE employee_id = ? ORDER BY created_date DESC;",
-        [id], callback);
+        [id], function (error, row) {
+            if (row !== undefined) {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+            }
+
+            callback(error, row);
+        });
 };
 
 var instance = new presence();
