@@ -148,7 +148,10 @@ synchronization.prototype._synchronize = function () {
 };
 
 synchronization.prototype._handleDeviceIsPresent = function (device) {
-    firebase.child('devices/' + device.id + '/is_present').set(device.is_present, function (error) {
+    firebase.child('devices/' + device.id).update({
+        updated_date: moment().utc().format(),
+        is_present: device.is_present
+    }, function (error) {
         if (error) {
             console.error(error);
         }
@@ -156,7 +159,10 @@ synchronization.prototype._handleDeviceIsPresent = function (device) {
 };
 
 synchronization.prototype._handleEmployeeIsPresent = function (employee) {
-    firebase.child('employees/' + employee.id + '/is_present').set(employee.is_present, function (error) {
+    firebase.child('employees/' + employee.id).update({
+        updated_date: moment().utc().format(),
+        is_present: employee.is_present
+    }, function (error) {
         if (error) {
             console.error(error);
         }
