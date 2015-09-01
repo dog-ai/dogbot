@@ -165,34 +165,7 @@ var dogbot = {
                 modules.loadModule(type, moduleName, configuration, true);
             },
             function (device) {
-                communication.emit('database:person:retrieveAll', 'PRAGMA table_info(device)', [], function (error, rows) {
-                    if (error !== null) {
-                        throw error();
-                    }
-
-                    device = _.pick(device, _.pluck(rows, 'name'));
-
-                    if (device.created_date !== undefined && device.created_date !== null) {
-                        device.created_date = device.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-                    }
-                    if (device.updated_date !== undefined && device.updated_date !== null) {
-                        device.updated_date = device.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-                    }
-
-                    var keys = _.keys(device);
-                    var values = _.values(device);
-
-                    communication.emit('database:person:create',
-                        'INSERT OR REPLACE INTO device (' + _.union(keys, ['is_present']) + ') VALUES (' + values.map(function () {
-                            return '?'
-                        }) + ',(SELECT is_present FROM employee WHERE id = ?))',
-                        values.concat([values[0]]),
-                        function (error) {
-                            if (error) {
-                                throw error;
-                            }
-                        });
-                });
+                communication.emit('synchronization:person:device', device);
             },
             function (device) {
 
@@ -230,6 +203,14 @@ var dogbot = {
             },
             function (performanceName, performance) {
                 communication.emit('synchronization:performance:' + performanceName, performance);
+            },
+            function (callback) {
+                communication.on('person:device:online', callback);
+                communication.on('person:device:offline', callback);
+            },
+            function (callback) {
+                communication.on('person:employee:online', callback);
+                communication.on('person:employee:offline', callback);
             }
         );
     },

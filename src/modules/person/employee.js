@@ -35,7 +35,6 @@ employee.prototype.start = function () {
     this.moduleManager.on('person:slack:active', this._handleSlackActive);
     this.moduleManager.on('person:slack:away', this._handleSlackAway);
     this.moduleManager.on('synchronization:person:employee', this._handleEmployeeSynchronization);
-    this.moduleManager.on('person:employee:is_present', this._isPresent);
 };
 
 employee.prototype._handleSlackAway = function (slack) {
@@ -156,14 +155,6 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
                             function (error) {
                                 if (error) {
                                     console.error(error);
-                                } else {
-                                    instance.moduleManager.emit('person:employee:is_present', employee.id, function (is_present) {
-                                        if (employee.is_present != is_present) {
-                                            instance._updateById(employee.id, is_present, function (error) {
-                                                console.error(error);
-                                            });
-                                        }
-                                    });
                                 }
                             });
                     }
@@ -172,9 +163,7 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
     });
 };
 
-employee.prototype._isPresent = function (id, callback) {
-    console.log("AQUI: Tens que acabar este método e fazer o mesmo para o device");
-};
+employee.prototype._;
 
 employee.prototype.stop = function () {
     this.moduleManager.removeListener('person:device:online', this._handleDeviceOnline);
@@ -182,7 +171,6 @@ employee.prototype.stop = function () {
     this.moduleManager.removeListener('person:slack:active', this._handleSlackActive);
     this.moduleManager.removeListener('person:slack:away', this._handleSlackAway);
     this.moduleManager.removeListener('synchronization:person:employee', this._handleEmployeeSynchronization);
-    this.moduleManager.removeListener('person:employee:is_present', this._isPresent);
 };
 
 employee.prototype._addPresence = function (name, slackId, callback) {

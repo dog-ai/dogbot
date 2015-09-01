@@ -36,8 +36,13 @@ arp.prototype.start = function () {
     var time = 60 * 1000;
     function monitor() {
         try {
+            self.moduleManager.emit('monitor:arp:discover:begin');
+
             self._discover(function () {
-                self._clean();
+                self._clean(function () {
+
+                    self.moduleManager.emit('monitor:arp:discover:finish');
+                });
             });
         } catch (error) {
             console.error(error.stack);
@@ -107,16 +112,20 @@ arp.prototype._discover = function (callback) {
     });
 };
 
-arp.prototype._clean = function () {
+arp.prototype._clean = function (callback) {
     var self = this;
 
     var currentDate = new Date();
-    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error, arp) {
-        if (error !== null) {
-            console.error(error.stack);
-        } else {
-            self.moduleManager.emit('monitor:arp:delete', arp.mac_address);
+    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error) {
+        if (error) {
+            console.error(error);
         }
+
+        if (callback !== undefined) {
+            callback();
+        }
+    }, function (arp) {
+        self.moduleManager.emit('monitor:arp:delete', arp.mac_address);
     });
 };
 
@@ -213,26 +222,35 @@ arp.prototype._update = function (ipAddress, macAddress, callback) {
         });
 };
 
-arp.prototype._delete = function (oldestDate, callback) {
+arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
     var self = this;
 
-    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:retrieveOneByOne',
+    this.moduleManager.emit('database:monitor:retrieveAll',
         "SELECT * FROM arp WHERE updated_date < Datetime(?);", [updatedDate],
-        function (error, row) {
-            if (error) {
-                if (callback !== undefined) {
-                    callback(error.stack);
-                }
-            } else {
-                self.moduleManager.emit('database:monitor:delete',
-                    "DELETE FROM arp WHERE id = ?;", [row.id],
-                    function (error) {
-                        if (callback !== undefined) {
-                            callback(error, row);
-                        }
+        function (error, rows) {
+            if (!error) {
+                if (rows !== undefined) {
+
+                    rows.forEach(function (row) {
+                        self.moduleManager.emit('database:monitor:delete',
+                            "DELETE FROM arp WHERE id = ?;", [row.id],
+                            function (error) {
+                                if (error) {
+                                    console.error(error);
+                                } else {
+                                    if (onDelete !== undefined) {
+                                        onDelete(row);
+                                    }
+                                }
+                            });
                     });
+                }
+
+                if (callback !== undefined) {
+                    callback(error);
+                }
             }
         });
 };

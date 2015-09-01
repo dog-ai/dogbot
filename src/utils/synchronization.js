@@ -26,25 +26,27 @@ function synchronization() {
 }
 
 synchronization.prototype.start = function (id, callback,
-                                            moduleUpdateCallback,
-                                            deviceCreateOrUpdateCallback,
-                                            deviceDeleteCallback,
-                                            employeeCreateOrUpdateCallback,
-                                            employeeDeleteCallback,
-                                            employeePerformancePushCallback,
-                                            employeePerformancePullCallback) {
+                                            onModuleUpdate,
+                                            onDeviceCreateOrUpdate,
+                                            onDeviceDelete,
+                                            onEmployeeCreateOrUpdate,
+                                            onEmployeeDelete,
+                                            onPerformancePush,
+                                            onPerformancePull,
+                                            onDeviceIsPresent,
+                                            onEmployeeIsPresent) {
     var self = this;
 
     this.dogId = id;
 
-    this.moduleUpdateCallback = moduleUpdateCallback;
-    this.deviceCreateOrUpdateCallback = deviceCreateOrUpdateCallback;
-    this.deviceDeleteCallback = deviceDeleteCallback;
-    this.employeeCreateOrUpdateCallback = employeeCreateOrUpdateCallback;
-    this.employeeDeleteCallback = employeeDeleteCallback;
+    this.onModuleUpdate = onModuleUpdate;
+    this.onDeviceCreateOrUpdate = onDeviceCreateOrUpdate;
+    this.onDeviceDelete = onDeviceDelete;
+    this.onEmployeeCreateOrUpdate = onEmployeeCreateOrUpdate;
+    this.onEmployeeDelete = onEmployeeDelete;
 
-    this.employeePerformancePushCallback = employeePerformancePushCallback;
-    this.employeePerformancePullCallback = employeePerformancePullCallback;
+    this.onPerformancePush = onPerformancePush;
+    this.onPerformancePull = onPerformancePull;
 
     try {
         this.dogRef = firebase.child('dogs/' + this.dogId);
@@ -58,7 +60,7 @@ synchronization.prototype.start = function (id, callback,
                     self.dogRef.child('modules').on('child_changed', self._handleModuleUpdate);
                     _.forEach(dog.modules, function (modules, type) {
                         _.forEach(modules, function (moduleConfiguration, moduleName) {
-                            moduleUpdateCallback(type, moduleName, moduleConfiguration);
+                            onModuleUpdate(type, moduleName, moduleConfiguration);
                         });
                     });
                 }
@@ -75,6 +77,9 @@ synchronization.prototype.start = function (id, callback,
                 }
             }
         });
+
+        onDeviceIsPresent(this._handleDeviceIsPresent);
+        onEmployeeIsPresent(this._handleEmployeeIsPresent);
 
         var time = 2 * 60 * 1000;
 
@@ -128,7 +133,7 @@ synchronization.prototype.stop = function () {
 
 synchronization.prototype._synchronize = function () {
 
-    this.employeePerformancePushCallback(function (error, employeeId, type, performance, onComplete) {
+    this.onPerformancePush(function (error, employeeId, type, performance, onComplete) {
         if (error) {
             console.error(error);
         } else {
@@ -142,12 +147,28 @@ synchronization.prototype._synchronize = function () {
     });
 };
 
+synchronization.prototype._handleDeviceIsPresent = function (device) {
+    firebase.child('devices/' + device.id + '/is_present').set(device.is_present, function (error) {
+        if (error) {
+            console.error(error);
+        }
+    });
+};
+
+synchronization.prototype._handleEmployeeIsPresent = function (employee) {
+    firebase.child('employees/' + employee.id + '/is_present').set(employee.is_present, function (error) {
+        if (error) {
+            console.error(error);
+        }
+    });
+};
+
 synchronization.prototype._handleModuleUpdate = function (snapshot) {
     var modules = snapshot.val();
     var type = snapshot.key();
 
     _.forEach(modules, function (moduleConfiguration, moduleName) {
-        instance.moduleUpdateCallback(type, moduleName, moduleConfiguration);
+        instance.onModuleUpdate(type, moduleName, moduleConfiguration);
     });
 };
 
@@ -164,7 +185,7 @@ synchronization.prototype._handleDeviceAdded = function (snapshot) {
             device.updated_date = new Date(device.updated_date);
         }
 
-        instance.deviceCreateOrUpdateCallback(_.extend({id: snapshot.key()}, device));
+        instance.onDeviceCreateOrUpdate(_.extend({id: snapshot.key()}, device));
     });
 };
 
@@ -187,7 +208,7 @@ synchronization.prototype._handleEmployeeAdded = function (snapshot) {
             employee.updated_date = new Date(employee.updated_date);
         }
 
-        instance.employeeCreateOrUpdateCallback(_.extend({id: snapshot.key()}, employee));
+        instance.onEmployeeCreateOrUpdate(_.extend({id: snapshot.key()}, employee));
     });
 
     var performanceNames = ['presence'];
@@ -206,7 +227,7 @@ synchronization.prototype._handleEmployeeAdded = function (snapshot) {
                                     if (performance.created_date !== undefined && performance.created_date !== null) {
                                         performance.created_date = new Date(performance.created_date);
                                     }
-                                    instance.employeePerformancePullCallback(performanceName, _.extend({
+                                    instance.onPerformancePull(performanceName, _.extend({
                                         employee_id: employeeId,
                                         is_synced: true
                                     }, performance));
@@ -218,7 +239,7 @@ synchronization.prototype._handleEmployeeAdded = function (snapshot) {
                             if (performance.created_date !== undefined && performance.created_date !== null) {
                                 performance.created_date = new Date(performance.created_date);
                             }
-                            instance.employeePerformancePullCallback(performanceName, _.extend({
+                            instance.onPerformancePull(performanceName, _.extend({
                                 employee_id: employeeId,
                                 is_synced: true
                             }, performance));
@@ -230,7 +251,7 @@ synchronization.prototype._handleEmployeeAdded = function (snapshot) {
                     if (performance.created_date !== undefined && performance.created_date !== null) {
                         performance.created_date = new Date(performance.created_date);
                     }
-                    instance.employeePerformancePullCallback(performanceName, _.extend({
+                    instance.onPerformancePull(performanceName, _.extend({
                         employee_id: employeeId,
                         is_synced: true
                     }, performance));

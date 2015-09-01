@@ -104,7 +104,7 @@ bonjour.prototype._clean = function () {
     var self = this;
 
     var currentDate = new Date();
-    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error, bonjour) {
+    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error, bonjour) {
         if (error !== null) {
             console.error(error.stack);
         } else {
@@ -202,7 +202,7 @@ bonjour.prototype._update = function (type, name, address, hostname, port, txt, 
         });
 };
 
-bonjour.prototype._delete = function (oldestDate, callback) {
+bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     var self = this;
 
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');

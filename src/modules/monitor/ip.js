@@ -128,7 +128,7 @@ ip.prototype._clean = function () {
     var self = this;
 
     var currentDate = new Date();
-    this._delete(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error, ip) {
+    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error, ip) {
         if (error !== null) {
             console.error(error.stack);
         } else {
@@ -200,7 +200,7 @@ ip.prototype._update = function (ipAddress, callback) {
         });
 };
 
-ip.prototype._delete = function (oldestDate, callback) {
+ip.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     var self = this;
 
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');

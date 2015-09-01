@@ -55,7 +55,7 @@ slack.prototype.start = function () {
 
     this.moduleManager.on('io:slack:userIsAlreadyAway', function (user) {
         var id = user.id;
-        self._delete(id);
+        self._deleteAllBeforeDate(id);
     });
 
     this.moduleManager.on('io:slack:userIsNowActive', function (user) {
@@ -75,7 +75,7 @@ slack.prototype.start = function () {
 
     this.moduleManager.on('io:slack:userIsNowAway', function (user) {
         var id = user.id;
-        self._delete(id);
+        self._deleteAllBeforeDate(id);
     });
 };
 
@@ -137,7 +137,7 @@ slack.prototype._update = function (slackId, username, name) {
         });
 };
 
-slack.prototype._delete = function (slackId) {
+slack.prototype._deleteAllBeforeDate = function (slackId) {
     var self = this;
     this.moduleManager.emit('database:monitor:retrieveOne',
         "SELECT * FROM slack WHERE slack_id LIKE ?;", [slackId],
