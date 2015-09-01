@@ -209,8 +209,8 @@ var dogbot = {
                 communication.on('person:device:offline', callback);
             },
             function (callback) {
-                communication.on('person:employee:online', callback);
-                communication.on('person:employee:offline', callback);
+                communication.on('person:employee:nearby', callback);
+                communication.on('person:employee:faraway', callback);
             }
         );
     },

@@ -57,24 +57,17 @@ employee.prototype._handleSlackActive = function (slack) {
 
 employee.prototype._handleDeviceOnline = function (device) {
     instance._retrieveById(device.employee_id, function (employee) {
-        // only emit nearby if this is the only device online from the employee
-        instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
-            if (error) {
-                console.error(error);
-            } else {
-                if (devices && devices.length == 1 && !employee.is_present) {
-                    employee.is_present = true;
+        if (!employee.is_present) {
+            employee.is_present = true;
 
-                    instance._updateById(employee.id, employee.is_present, function (error) {
-                        if (error) {
-                            console.error(error);
-                        } else {
-                            instance.moduleManager.emit('person:employee:nearby', employee);
-                        }
-                    });
+            instance._updateById(employee.id, employee.is_present, function (error) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    instance.moduleManager.emit('person:employee:nearby', employee);
                 }
-            }
-        })
+            });
+        }
     });
 };
 
@@ -228,19 +221,20 @@ employee.prototype._updateById = function (id, is_present, callback) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     this.moduleManager.emit('database:person:update',
-        "UPDATE employee SET updated_date = ?, is_present = ? WHERE id = ?;",
+        "UPDATE employee SET updated_date = ?, is_present = ? WHERE id = ? AND is_present != ?;",
         [
             updatedDate,
             is_present,
-            id
+            id,
+            is_present
         ],
-        function (error) {
+        function (error, id, changes) {
             if (error) {
                 if (callback !== undefined) {
                     callback(error);
                 }
             } else {
-                if (callback !== undefined) {
+                if (changes > 0 && callback !== undefined) { // quick fix for racing condition of two consecutive updates
                     callback(null);
                 }
             }
