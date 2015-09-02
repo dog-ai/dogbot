@@ -10,5 +10,4 @@ function communication() {
 
 communication.prototype.__proto__ = events.EventEmitter.prototype;
 
-
 module.exports = new communication();

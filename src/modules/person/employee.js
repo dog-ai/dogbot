@@ -56,7 +56,7 @@ employee.prototype._handleSlackActive = function (slack) {
 };
 
 employee.prototype._handleDeviceOnline = function (device) {
-    instance._retrieveById(device.employee_id, function (employee) {
+    instance._retrieveById(device.employee_id, function (error, employee) {
         if (!employee.is_present) {
             employee.is_present = true;
 
@@ -72,7 +72,7 @@ employee.prototype._handleDeviceOnline = function (device) {
 };
 
 employee.prototype._handleDeviceOffline = function (device) {
-    instance._retrieveById(device.employee_id, function (employee) {
+    instance._retrieveById(device.employee_id, function (error, employee) {
         // only emit farway if the employee does not have any other device online
 
         instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
@@ -116,43 +116,27 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
         var keys = _.keys(employee);
         var values = _.values(employee);
 
-        instance.moduleManager.emit('database:person:retrieveOne',
-            'SELECT * FROM employee WHERE id = ?',
-            [employee.id],
-            function (error, row) {
-                if (error) {
-                    console.error(error);
-                } else {
-                    if (row !== undefined) {
-
-                        keys = _.keys(_.omit(employee, 'is_present'));
-                        values = _.values(_.omit(employee, 'is_present'));
-
-                        instance.moduleManager.emit('database:person:update',
-                            'INSERT OR REPLACE INTO employee (' + keys + ') VALUES (' + values.map(function () {
-                                return '?';
-                            }) + ');',
-                            values,
-                            function (error) {
-                                if (error) {
-                                    console.error(error);
-                                }
-                            });
-                    } else {
-
-                        instance.moduleManager.emit('database:person:create',
-                            'INSERT OR REPLACE INTO employee (' + keys + ') VALUES (' + values.map(function () {
-                                return '?';
-                            }) + ');',
-                            values,
-                            function (error) {
-                                if (error) {
-                                    console.error(error);
-                                }
-                            });
-                    }
+        instance._retrieveById(employee.id, function (error, row) {
+            if (error) {
+                console.error(error);
+            } else {
+                if (row !== undefined && moment(employee.updated_date).isAfter(row.updated_date)) {
+                    keys = _.keys(_.omit(employee, 'is_present'));
+                    values = _.values(_.omit(employee, 'is_present'));
                 }
-            });
+
+                instance.moduleManager.emit('database:person:create',
+                    'INSERT OR REPLACE INTO employee (' + keys + ') VALUES (' + values.map(function () {
+                        return '?';
+                    }) + ');',
+                    values,
+                    function (error) {
+                        if (error) {
+                            console.error(error);
+                        }
+                    });
+            }
+        });
     });
 };
 
@@ -188,7 +172,12 @@ employee.prototype._retrieveById = function (id, callback) {
             if (error) {
                 callback(error);
             } else {
-                callback(row);
+                if (row !== undefined) {
+                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                    row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                }
+
+                callback(error, row);
             }
         });
 };
