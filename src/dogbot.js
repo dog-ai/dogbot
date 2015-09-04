@@ -15,9 +15,10 @@ var databases = require('./databases.js')(communication);
 var modules = require('./modules.js')(communication);
 
 var dogbot = {
-    id: undefined,
+    token: undefined,
 
     start: function (callback) {
+
         databases.startAll(function () {
         });
 
@@ -152,8 +153,8 @@ var dogbot = {
         });
 
 
-        synchronization.start(this.id, function (error) {
-                if (error !== null) {
+        synchronization.start(this.token, function (error) {
+                if (error) {
                     console.error(error.message);
 
                     modules.loadAll();
@@ -263,7 +264,7 @@ var dogbot = {
     }
 };
 
-module.exports = function (id) {
-    dogbot.id = id;
+module.exports = function (token) {
+    dogbot.token = token;
     return dogbot;
 };

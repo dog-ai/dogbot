@@ -3,7 +3,7 @@
  */
 
 var _ = require('lodash');
-var moment = require('moment');
+var moment = require('moment-timezone');
 var Firebase = require('firebase');
 var firebase = new Firebase('https://dazzling-torch-7723.firebaseIO.com');
 
@@ -25,7 +25,7 @@ function synchronization() {
     var timeout = undefined;
 }
 
-synchronization.prototype.start = function (id, callback,
+synchronization.prototype.start = function (token, callback,
                                             onModuleUpdate,
                                             onDeviceCreateOrUpdate,
                                             onDeviceDelete,
@@ -37,8 +37,6 @@ synchronization.prototype.start = function (id, callback,
                                             onEmployeeIsPresent) {
     var self = this;
 
-    this.dogId = id;
-
     this.onModuleUpdate = onModuleUpdate;
     this.onDeviceCreateOrUpdate = onDeviceCreateOrUpdate;
     this.onDeviceDelete = onDeviceDelete;
@@ -48,57 +46,20 @@ synchronization.prototype.start = function (id, callback,
     this.onPerformancePush = onPerformancePush;
     this.onPerformancePull = onPerformancePull;
 
-    try {
-        this.dogRef = firebase.child('dogs/' + this.dogId);
+    onDeviceIsPresent(this._handleDeviceIsPresent);
+    onEmployeeIsPresent(this._handleEmployeeIsPresent);
 
-        this.dogRef.once('value', function (snapshot) {
-            var dog = snapshot.val();
-            if (dog !== undefined) {
+    firebase.authWithCustomToken(token, function (error, authData) {
+        if (error) {
+            callback(error);
+        } else {
+            self.dogId = authData.uid;
 
-                if (dog.modules !== undefined) {
-
-                    self.dogRef.child('modules').on('child_changed', self._handleModuleUpdate);
-                    _.forEach(dog.modules, function (modules, type) {
-                        _.forEach(modules, function (moduleConfiguration, moduleName) {
-                            onModuleUpdate(type, moduleName, moduleConfiguration);
-                        });
-                    });
-                }
-
-                if (dog.company_id !== undefined) {
-                    self.companyRef = firebase.child('companies/' + dog.company_id);
-
-                    self.companyRef.child('/devices').on('child_added', self._handleDeviceAdded);
-                    self.companyRef.child('/devices').on('child_changed', self._handleDeviceChanged);
-                    self.companyRef.child('/devices').on('child_removed', self._handleDeviceRemoved);
-                    self.companyRef.child('/employees').on('child_added', self._handleEmployeeAdded);
-                    self.companyRef.child('/employees').on('child_changed', self._handleEmployeeChanged);
-                    self.companyRef.child('/employees').on('child_removed', self._handleEmployeeRemoved);
-                }
-            }
-        });
-
-        onDeviceIsPresent(this._handleDeviceIsPresent);
-        onEmployeeIsPresent(this._handleEmployeeIsPresent);
-
-        var time = 2 * 60 * 1000;
-
-        function synchronize() {
-            try {
-                self._synchronize();
-            } catch (error) {
-                console.error(error.stack);
-            }
-
-            self.timeout = setTimeout(synchronize, time * (1 + Math.random()));
+            self._init(callback);
         }
+    });
 
-        synchronize();
 
-        callback(null);
-    } catch (error) {
-        callback(error);
-    }
 };
 
 synchronization.prototype.stop = function () {
@@ -131,6 +92,81 @@ synchronization.prototype.stop = function () {
     }
 };
 
+synchronization.prototype._init = function (callback) {
+    var self = this;
+
+    try {
+        this.dogRef = firebase.child('dogs/' + this.dogId);
+
+        this.dogRef.once('value', function (snapshot) {
+            var dog = snapshot.val();
+            if (dog !== undefined) {
+
+                if (dog.timezone !== undefined && dog.timezone !== null) {
+                    moment.tz.setDefault(dog.timezone);
+                }
+
+                self.dogRef.update({updated_date: moment().format()});
+
+                if (dog.modules !== undefined) {
+
+                    self.dogRef.child('modules').on('child_changed', self._handleModuleUpdate, function (error) {
+                        console.error(error);
+                    });
+                    _.forEach(dog.modules, function (modules, type) {
+                        _.forEach(modules, function (moduleConfiguration, moduleName) {
+                            self.onModuleUpdate(type, moduleName, moduleConfiguration);
+                        });
+                    });
+                }
+
+                if (dog.company_id !== undefined) {
+                    self.companyRef = firebase.child('companies/' + dog.company_id);
+
+                    self.companyRef.child('/devices').on('child_added', self._handleDeviceAdded, function (error) {
+                        console.error("devices child_added" + error);
+                    });
+                    self.companyRef.child('/devices').on('child_changed', self._handleDeviceChanged, function (error) {
+                        console.error("devices child_changed" + error);
+                    });
+                    self.companyRef.child('/devices').on('child_removed', self._handleDeviceRemoved, function (error) {
+                        console.error("devices child_removed" + error);
+                    });
+                    self.companyRef.child('/employees').on('child_added', self._handleEmployeeAdded, function (error) {
+                        console.error("employees child_added" + error);
+                    });
+                    self.companyRef.child('/employees').on('child_changed', self._handleEmployeeChanged, function (error) {
+                        console.error("employees child_changed" + error);
+                    });
+                    self.companyRef.child('/employees').on('child_removed', self._handleEmployeeRemoved, function (error) {
+                        console.error("employees child_removed" + error);
+                    });
+                }
+            }
+        }, function (error) {
+            console.log(error);
+        });
+
+        var time = 2 * 60 * 1000;
+
+        function synchronize() {
+            try {
+                self._synchronize();
+            } catch (error) {
+                console.error(error.stack);
+            }
+
+            self.timeout = setTimeout(synchronize, time * (1 + Math.random()));
+        }
+
+        synchronize();
+
+        callback(null);
+    } catch (error) {
+        callback(error);
+    }
+};
+
 synchronization.prototype._synchronize = function () {
 
     this.onPerformancePush(function (error, employeeId, type, performance, onComplete) {
@@ -139,7 +175,7 @@ synchronization.prototype._synchronize = function () {
         } else {
             performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
 
-            var date = moment(performance.created_date).utc();
+            var date = moment(performance.created_date);
             performance.created_date = date.format();
 
             firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
@@ -149,7 +185,7 @@ synchronization.prototype._synchronize = function () {
 
 synchronization.prototype._handleDeviceIsPresent = function (device) {
     firebase.child('devices/' + device.id).update({
-        updated_date: moment().utc().format(),
+        updated_date: moment().format(),
         is_present: device.is_present
     }, function (error) {
         if (error) {
@@ -160,7 +196,7 @@ synchronization.prototype._handleDeviceIsPresent = function (device) {
 
 synchronization.prototype._handleEmployeeIsPresent = function (employee) {
     firebase.child('employees/' + employee.id).update({
-        updated_date: moment().utc().format(),
+        updated_date: moment().format(),
         is_present: employee.is_present
     }, function (error) {
         if (error) {
@@ -219,7 +255,7 @@ synchronization.prototype._handleEmployeeAdded = function (snapshot) {
 
     var performanceNames = ['presence'];
 
-    var today = moment().utc();
+    var today = moment();
     _.forEach(performanceNames, function (performanceName) {
         firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
             if (snapshot.val() === null) {
@@ -271,6 +307,16 @@ synchronization.prototype._handleEmployeeChanged = function (snapshot) {
 };
 
 synchronization.prototype._handleEmployeeRemoved = function (snapshot) {
+};
+
+synchronization.prototype._createToken = function () {
+    var FirebaseTokenGenerator = require("firebase-token-generator");
+    var tokenGenerator = new FirebaseTokenGenerator("XRslnfTztm7ItZ7LELZhCB3IoS20WNekEH6inN0g");
+    var token = tokenGenerator.createToken(
+        {uid: "-JxUwB10Up0dRSKAyFtt"},
+        {expires: 4597064530}
+    );
+    console.log(token);
 };
 
 var instance = new synchronization();

@@ -23,7 +23,9 @@ process.on('uncaughtException', function(exception) {
     }
 });
 
-var dogbot = require('../src/dogbot.js')('-JxUwB10Up0dRSKAyFtt');
+var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjQ1OTcwNjQ1MzAsInYiOjAsImQiOnsidWlkIjoiLUp4VXdCMTBVcDBkUlNLQXlGdHQifSwiaWF0IjoxNDQxMzkxMDg0fQ.qAS5ZRHypw8PgrpQ3E2kcjeO16NH3nS_Ln9BNgz_jIM";
+
+var dogbot = require('../src/dogbot.js')(token);
 
 dogbot.start(function () {
 });
