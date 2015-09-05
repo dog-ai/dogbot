@@ -5,7 +5,6 @@
 var _ = require('lodash');
 
 var stackTrace = require('stack-trace');
-var moment = require('moment');
 
 var communication = require('./utils/communication.js');
 var revision = require('./utils/revision.js');
@@ -103,6 +102,21 @@ var dogbot = {
                     }
                 });
 
+            communication.emit('database:person:setup',
+                "CREATE TABLE IF NOT EXISTS mac_address (" +
+                "id TEXT PRIMARY KEY NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "is_present INTEGER NOT NULL DEFAULT 0, " +
+                "last_presence_date DATETIME DEFAULT NULL," +
+                "is_synced INTEGER NOT NULL DEFAULT 0" +
+                ");", [],
+                function (error) {
+                    if (error) {
+                        console.error(error);
+                    }
+                });
+
 
             communication.emit('database:person:setup',
                 "CREATE TABLE IF NOT EXISTS device (" +
@@ -175,6 +189,37 @@ var dogbot = {
                 communication.emit('synchronization:person:employee', employee);
             },
             function (employee) {
+            },
+            function (callback) {
+                communication.emit('database:person:retrieveOneByOne',
+                    'SELECT * FROM mac_address WHERE is_synced = 0', [], function (error, row) {
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            if (row !== undefined) {
+                                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                                row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                                row.is_present = row.is_present == 1 ? true : false;
+
+                                callback(error, row, function (error) {
+                                    if (error) {
+                                        console.error(error)
+                                    } else {
+                                        communication.emit('database:person:update',
+                                            'UPDATE mac_address SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
+                                                if (error) {
+                                                    console.error(error);
+                                                }
+                                            });
+                                    }
+                                });
+                            }
+                        }
+                    });
+            },
+            function (mac_address) {
+                communication.emit('synchronization:person:mac_address', mac_address);
             },
             function (callback) {
                 communication.emit('database:performance:retrieveOneByOne',

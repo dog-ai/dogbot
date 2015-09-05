@@ -56,7 +56,7 @@ employee.prototype._handleSlackActive = function (slack) {
 };
 
 employee.prototype._handleDeviceOnline = function (device) {
-    instance._retrieveById(device.employee_id, function (error, employee) {
+    instance._findById(device.employee_id, function (error, employee) {
         if (!employee.is_present) {
             employee.is_present = true;
 
@@ -72,7 +72,7 @@ employee.prototype._handleDeviceOnline = function (device) {
 };
 
 employee.prototype._handleDeviceOffline = function (device) {
-    instance._retrieveById(device.employee_id, function (error, employee) {
+    instance._findById(device.employee_id, function (error, employee) {
         // only emit farway if the employee does not have any other device online
 
         instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
@@ -116,7 +116,7 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
         var keys = _.keys(employee);
         var values = _.values(employee);
 
-        instance._retrieveById(employee.id, function (error, row) {
+        instance._findById(employee.id, function (error, row) {
             if (error) {
                 console.error(error);
             } else {
@@ -165,7 +165,7 @@ employee.prototype._addPresence = function (name, slackId, callback) {
         });
 };
 
-employee.prototype._retrieveById = function (id, callback) {
+employee.prototype._findById = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM employee WHERE id = ?;", [id],
         function (error, row) {

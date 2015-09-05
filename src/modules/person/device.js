@@ -30,17 +30,16 @@ device.prototype.unload = function () {
 };
 
 device.prototype.start = function () {
-    this.moduleManager.on('monitor:arp:create', this._handleArpCreateOrUpdate);
-    this.moduleManager.on('monitor:arp:update', this._handleArpCreateOrUpdate);
-    this.moduleManager.on('monitor:arp:delete', this._handleArpDelete);
-    this.moduleManager.on('synchronization:person:device', this._handleDeviceSynchronization);
+    this.moduleManager.on('person:mac_address:online', this._onMacAddressOnline);
+    this.moduleManager.on('person:mac_address:offline', this._onMacAddressOffline);
+    this.moduleManager.on('synchronization:person:device', this._onDeviceSynchronization);
     this.moduleManager.on('person:device:is_present', this._isPresent);
 };
 
 device.prototype.stop = function () {
-    this.moduleManager.removeListener('monitor:arp:create', this._handleArpCreateOrUpdate);
-    this.moduleManager.removeListener('monitor:arp:update', this._handleArpCreateOrUpdate);
-    this.moduleManager.removeListener('monitor:arp:delete', this._handleArpDelete);
+    this.moduleManager.removeListener('person:mac_address:online', this._onMacAddressOnline);
+    this.moduleManager.removeListener('person:mac_address:offline', this._onMacAddressOffline);
+    this.moduleManager.removeListener('synchronization:person:device', this._onDeviceSynchronization);
     this.moduleManager.removeListener('person:device:is_present', this._isPresent);
 };
 
@@ -63,7 +62,7 @@ device.prototype._isPresent = function (device, callback) {
     instance.moduleManager.on('monitor:arp:discover:finish', handleArpDiscover);
 };
 
-device.prototype._handleDeviceSynchronization = function (device) {
+device.prototype._onDeviceSynchronization = function (device) {
     instance.moduleManager.emit('database:person:retrieveAll', 'PRAGMA table_info(device)', [], function (error, rows) {
         if (error !== null) {
             throw error();
@@ -81,7 +80,7 @@ device.prototype._handleDeviceSynchronization = function (device) {
         var keys = _.keys(device);
         var values = _.values(device);
 
-        instance._retrieveById(device.id, function (error, row) {
+        instance._findById(device.id, function (error, row) {
             if (error) {
                 console.error(error);
             } else {
@@ -137,8 +136,8 @@ device.prototype._handleDeviceSynchronization = function (device) {
     });
 };
 
-device.prototype._handleArpCreateOrUpdate = function (mac_address) {
-    instance._findByMacAddress(mac_address, function (error, device) {
+device.prototype._onMacAddressOnline = function (mac_address) {
+    instance._findByMacAddress(mac_address.id, function (error, device) {
 
         if (error !== null) {
             console.error(error);
@@ -158,8 +157,8 @@ device.prototype._handleArpCreateOrUpdate = function (mac_address) {
     });
 };
 
-device.prototype._handleArpDelete = function (mac_address) {
-    instance._findByMacAddress(mac_address, function (error, device) {
+device.prototype._onMacAddressOffline = function (mac_address) {
+    instance._findByMacAddress(mac_address.id, function (error, device) {
 
         if (error !== null) {
             console.error(error.message);
@@ -177,7 +176,7 @@ device.prototype._handleArpDelete = function (mac_address) {
     });
 };
 
-device.prototype._retrieveById = function (id, callback) {
+device.prototype._findById = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM device WHERE id = ?;", [id],
         function (error, row) {

@@ -3,7 +3,7 @@
  */
 
 function arp() {
-    var moduleManager = {};
+    var communication = {};
     var timeout = undefined;
 }
 
@@ -17,8 +17,8 @@ arp.prototype.info = function () {
         this.type.toLowerCase() + " module_";
 };
 
-arp.prototype.load = function (moduleManager) {
-    this.moduleManager = moduleManager;
+arp.prototype.load = function (communication) {
+    this.communication = communication;
 
     this.start();
 };
@@ -30,18 +30,18 @@ arp.prototype.unload = function () {
 arp.prototype.start = function () {
     var self = this;
 
-    this.moduleManager.on('monitor:ipAddress:create', this._handleIpAddress);
-    this.moduleManager.on('monitor:ipAddress:update', this._handleIpAddress);
+    this.communication.on('monitor:ipAddress:create', this._handleIpAddress);
+    this.communication.on('monitor:ipAddress:update', this._handleIpAddress);
 
     var time = 60 * 1000;
     function monitor() {
         try {
-            self.moduleManager.emit('monitor:arp:discover:begin');
+            self.communication.emit('monitor:arp:discover:begin');
 
             self._discover(function () {
                 self._clean(function () {
 
-                    self.moduleManager.emit('monitor:arp:discover:finish');
+                    self.communication.emit('monitor:arp:discover:finish');
                 });
             });
         } catch (error) {
@@ -57,8 +57,8 @@ arp.prototype.start = function () {
 arp.prototype.stop = function () {
     clearTimeout(this.timeout);
 
-    this.moduleManager.removeListener('monitor:ipAddress:create', this._handleIpAddress);
-    this.moduleManager.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
 };
 
 arp.prototype._handleIpAddress = function (ipAddress) {
@@ -125,7 +125,7 @@ arp.prototype._clean = function (callback) {
             callback();
         }
     }, function (arp) {
-        self.moduleManager.emit('monitor:arp:delete', arp.mac_address);
+        self.communication.emit('monitor:arp:delete', arp.mac_address);
     });
 };
 
@@ -158,7 +158,7 @@ arp.prototype._resolve = function (ipAddress, callback) {
 arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
     var self = this;
 
-    this.moduleManager.emit('database:monitor:retrieveOne',
+    this.communication.emit('database:monitor:retrieveOne',
         "SELECT * FROM arp WHERE ip_address = ?;", [ipAddress],
         function (error, row) {
             if (error !== null) {
@@ -170,7 +170,7 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
 
                     self._addPresence(ipAddress, macAddress, function (error) {
                         if (!error) {
-                            self.moduleManager.emit('monitor:arp:create', macAddress);
+                            self.communication.emit('monitor:arp:create', macAddress);
                         }
 
                         if (callback !== undefined) {
@@ -181,7 +181,7 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
 
                     self._update(ipAddress, macAddress, function (error) {
                         if (!error) {
-                            self.moduleManager.emit('monitor:arp:update', macAddress);
+                            self.communication.emit('monitor:arp:update', macAddress);
                         }
 
                         if (callback !== undefined) {
@@ -194,7 +194,7 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
 };
 
 arp.prototype._addPresence = function (ipAddress, macAddress, callback) {
-    this.moduleManager.emit('database:monitor:create',
+    this.communication.emit('database:monitor:create',
         "INSERT INTO arp (ip_address, mac_address) VALUES (?, ?);", [
             ipAddress,
             macAddress
@@ -209,7 +209,7 @@ arp.prototype._addPresence = function (ipAddress, macAddress, callback) {
 arp.prototype._update = function (ipAddress, macAddress, callback) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:update',
+    this.communication.emit('database:monitor:update',
         "UPDATE arp SET updated_date = ?, mac_address = ? WHERE ip_address = ?;", [
             updatedDate,
             macAddress,
@@ -227,14 +227,14 @@ arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
 
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:retrieveAll',
+    this.communication.emit('database:monitor:retrieveAll',
         "SELECT * FROM arp WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, rows) {
             if (!error) {
                 if (rows !== undefined) {
 
                     rows.forEach(function (row) {
-                        self.moduleManager.emit('database:monitor:delete',
+                        self.communication.emit('database:monitor:delete',
                             "DELETE FROM arp WHERE id = ?;", [row.id],
                             function (error) {
                                 if (error) {
