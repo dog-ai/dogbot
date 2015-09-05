@@ -207,6 +207,9 @@ synchronization.prototype._synchronize = function () {
         if (error) {
             console.error(error);
         } else {
+
+            performance = _.omit(mac_address, ['id', 'is_synced', 'employee_id']);
+
             var date = moment(performance.created_date);
             performance.created_date = date.format();
 
