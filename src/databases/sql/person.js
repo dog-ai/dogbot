@@ -6,7 +6,7 @@ var sqlite3 = require("sqlite3").verbose();
 
 var path = __dirname + "/../../../var/db/";
 var file = path + "person.db";
-var db = new sqlite3.Database(file);
+var db = new sqlite3.Database(':memory:');
 
 function person() {
     var databaseManager = {};
