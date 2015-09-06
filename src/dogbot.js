@@ -139,7 +139,7 @@ var dogbot = {
                 "id TEXT PRIMARY KEY NOT NULL, " +
                 "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "name TEXT NOT NULL UNIQUE, " +
+                "full_name TEXT NOT NULL UNIQUE, " +
                 "is_present INTEGER NOT NULL DEFAULT 0, " +
                 "slack_id TEXT" +
                 ");", [],

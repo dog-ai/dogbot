@@ -251,7 +251,6 @@ synchronization.prototype._handleModuleUpdate = function (snapshot) {
 
 synchronization.prototype._handleDeviceAdded = function (snapshot) {
     var deviceId = snapshot.key();
-
     firebase.child('devices/' + deviceId).on('value', function (snapshot) {
         var device = snapshot.val();
 
@@ -263,6 +262,8 @@ synchronization.prototype._handleDeviceAdded = function (snapshot) {
         }
 
         instance.onDeviceCreateOrUpdate(_.extend({id: snapshot.key()}, device));
+    }, function (error) {
+        console.error("device " + error);
     });
 };
 
@@ -286,6 +287,8 @@ synchronization.prototype._handleEmployeeAdded = function (snapshot) {
         }
 
         instance.onEmployeeCreateOrUpdate(_.extend({id: snapshot.key()}, employee));
+    }, function (error) {
+        console.error("employee " + error);
     });
 
     var performanceNames = ['presence'];
