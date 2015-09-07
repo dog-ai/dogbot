@@ -83,6 +83,10 @@ synchronization.prototype.stop = function () {
 
         this.companyRef = undefined;
     }
+
+    if (this.timeout !== undefined && this.timeout !== null) {
+        clearTimeout(this.timeout);
+    }
 };
 
 synchronization.prototype._init = function (callback) {
@@ -201,21 +205,27 @@ synchronization.prototype._synchronize = function () {
                 macAddressRef.update(mac_address, onComplete);
             }
         });
+
+        this.onPerformancePush(function (error, employeeId, type, performance, onComplete) {
+            if (error) {
+                console.error(error);
+            } else {
+
+                performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
+
+                var date = moment(performance.created_date);
+                performance.created_date = date.format();
+
+                firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
+            }
+        });
+
+        var now = moment().format();
+        self.dogRef.update({
+            last_seen_date: now,
+            updated_date: now
+        });
     }
-
-    this.onPerformancePush(function (error, employeeId, type, performance, onComplete) {
-        if (error) {
-            console.error(error);
-        } else {
-
-            performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
-
-            var date = moment(performance.created_date);
-            performance.created_date = date.format();
-
-            firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
-        }
-    });
 };
 
 synchronization.prototype._handleDeviceIsPresent = function (device) {
