@@ -12,6 +12,7 @@ function synchronization() {
 
     var dogRef = undefined;
     var companyRef = undefined;
+    var companyMacAddressesRef = undefined;
 
     var timeout = undefined;
 }
@@ -142,7 +143,9 @@ synchronization.prototype._init = function (callback) {
                     console.error("employees child_removed" + error);
                 });
 
-                self.companyRef.child('/modules/person/mac_address').once('value', function (snapshot) {
+                self.companyMacAddressesRef = firebase.child('company_mac_addresses/' + dog.company_id);
+                self.companyMacAddressesRef.once('value', function (snapshot) {
+
                     _.forEach(snapshot.val(), function (mac_address, id) {
                         if (mac_address.created_date !== undefined && mac_address.created_date !== null) {
                             mac_address.created_date = new Date(mac_address.created_date);
@@ -194,7 +197,7 @@ synchronization.prototype._synchronize = function () {
                 console.error(error);
             } else {
 
-                var macAddressRef = self.companyRef.child('modules/person/mac_address/' + mac_address.id);
+                var macAddressRef = self.companyMacAddressesRef.child(mac_address.id);
 
                 mac_address = _.omit(mac_address, ['id', 'is_synced', 'is_present']);
 
