@@ -161,23 +161,35 @@ device.prototype._onMacAddressOnline = function (mac_address) {
 
 device.prototype._onMacAddressOffline = function (mac_address) {
     if (mac_address.device_id !== null) {
-        instance._findById(mac_address.device_id, function (error, device) {
-
-            if (error !== null) {
-                console.error(error.message);
+        instance._findMacAddressesById(mac_address.device_id, function (error, mac_addresses) {
+            if (error) {
+                console.error(error.stack);
             } else {
-                device.is_present = false;
+                mac_addresses = _.filter(mac_addresses, _.matches({'is_present': true}));
 
-                instance._updateById(device.id, device.is_present, function (error) {
-                    if (error) {
-                        console.error(error.stack);
-                    } else {
-                        instance.moduleManager.emit('person:device:offline', device);
-                    }
-                });
+                if (mac_addresses.length == 0) {
+                    instance._findById(mac_address.device_id, function (error, device) {
+
+                        if (error !== null) {
+                            console.error(error.stack);
+                        } else {
+                            device.is_present = false;
+
+                            instance._updateById(device.id, device.is_present, function (error) {
+                                if (error) {
+                                    console.error(error.stack);
+                                } else {
+                                    instance.moduleManager.emit('person:device:offline', device);
+                                }
+                            });
+                        }
+                    });
+                }
             }
+
         });
     }
+
 };
 
 device.prototype._findMacAddressesById = function (id, callback) {
