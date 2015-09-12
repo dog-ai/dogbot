@@ -17,21 +17,22 @@ calendar.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 calendar.prototype.help = function() {
   var help = '';
 
-  help += '*!calendar* - _Show calendar events for today_'
+  help += '*!calendar* - _Show calendar events for today_';
 
   return help;
-}
+};
 
 calendar.prototype.load = function(moduleManager) {
   this.moduleManager = moduleManager;
-}
+};
 
-calendar.prototype.unload = function() {}
+calendar.prototype.unload = function () {
+};
 
 calendar.prototype.process = function(message, callback) {
   var self = this;
@@ -41,7 +42,7 @@ calendar.prototype.process = function(message, callback) {
     var google = this.moduleManager.findLoadedModuleByName('google');
     google.getAccounts(function(error, accounts) {
       if (error !== undefined && error !== null) {
-        console.error(error);
+        console.error(error.stack);
       } else {
         accounts.forEach(function(account) {
 
@@ -67,7 +68,7 @@ calendar.prototype.process = function(message, callback) {
                   response += attendee.displayName + ', ';
 
                 });
-                response = response.substring(0, response.length - 2)
+                response = response.substring(0, response.length - 2);
                 response += '\n\n';
               }
 
@@ -79,7 +80,7 @@ calendar.prototype.process = function(message, callback) {
       }
     });
   }
-}
+};
 
 calendar.prototype.retrieveEventListForToday = function(userId, accessToken, callback, retry) {
   var self = this;
@@ -116,6 +117,6 @@ calendar.prototype.retrieveEventListForToday = function(userId, accessToken, cal
 
       }
     });
-}
+};
 
 module.exports = new calendar();

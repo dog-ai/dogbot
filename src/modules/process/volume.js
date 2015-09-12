@@ -14,15 +14,15 @@ volume.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 volume.prototype.help = function() {
   var help = '';
 
-  help += '*!volume* [0-100%] - _Set loud speaker volume_'
+  help += '*!volume* [0-100%] - _Set loud speaker volume_';
 
   return help;
-}
+};
 
 volume.prototype.load = function(moduleManager) {
   this.moduleManager = moduleManager;
@@ -30,9 +30,10 @@ volume.prototype.load = function(moduleManager) {
   if (process.platform !== 'linux') {
     throw new Error(process.platform + ' platform is not supported');
   }
-}
+};
 
-volume.prototype.unload = function() {}
+volume.prototype.unload = function () {
+};
 
 volume.prototype.process = function(message, callback) {
 
@@ -44,7 +45,7 @@ volume.prototype.process = function(message, callback) {
         .exec('amixer -c 1 set Headphone ' + percentage,
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-              console.error(error);
+              console.error(error.stack);
             }
           });
     } else {
@@ -52,13 +53,13 @@ volume.prototype.process = function(message, callback) {
         .exec("amixer -c 1 get Headphone | tail -n 1 | cut -d ' ' -f 7",
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-              console.error(error);
+              console.error(error.stack);
             } else {
               callback(stdout.replace('[', '').replace(']', ''));
             }
           });
     }
   }
-}
+};
 
 module.exports = new volume();

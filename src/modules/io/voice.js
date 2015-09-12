@@ -102,7 +102,7 @@ voice.prototype._play = function(urls, current, total, callback) {
                 }
             });
     } catch (error) {
-        console.error(error);
+        console.error(error.stack);
     }
 };
 

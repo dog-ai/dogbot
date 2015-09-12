@@ -62,7 +62,7 @@ employee.prototype._handleDeviceOnline = function (device) {
 
             instance._updateById(employee.id, employee.is_present, function (error) {
                 if (error) {
-                    console.error(error);
+                    console.error(error.stack);
                 } else {
                     instance.moduleManager.emit('person:employee:nearby', employee);
                 }
@@ -78,7 +78,7 @@ employee.prototype._handleDeviceOffline = function (device) {
         instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
 
             if (error) {
-                console.error(error);
+                console.error(error.stack);
             } else {
 
                 if (devices && devices.length == 0 && employee.is_present) {
@@ -87,7 +87,7 @@ employee.prototype._handleDeviceOffline = function (device) {
 
                     instance._updateById(employee.id, employee.is_present, function (error) {
                         if (error) {
-                            console.error(error);
+                            console.error(error.stack);
                         } else {
                             instance.moduleManager.emit('person:employee:faraway', employee);
                         }
@@ -118,7 +118,7 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
 
         instance._findById(employee.id, function (error, row) {
             if (error) {
-                console.error(error);
+                console.error(error.stack);
             } else {
                 if (row !== undefined && moment(employee.updated_date).isAfter(row.updated_date)) {
                     keys = _.keys(_.omit(employee, 'is_present'));
@@ -132,7 +132,7 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
                     values,
                     function (error) {
                         if (error) {
-                            console.error(error);
+                            console.error(error.stack);
                         }
                     });
             }

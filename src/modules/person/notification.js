@@ -41,19 +41,19 @@ notification.prototype.stop = function () {
 };
 
 notification.prototype._handleEmployeeNearby = function (employee) {
-    console.log(new Date() + ' ' + employee.name + ' is nearby');
+    console.log(new Date() + ' ' + employee.full_name + ' is nearby');
 };
 
 notification.prototype._handleEmployeeFaraway = function (employee) {
-    console.log(new Date() + ' ' + employee.name + ' is faraway');
+    console.log(new Date() + ' ' + employee.full_name + ' is faraway');
 };
 
 notification.prototype._handleEmployeeOnline = function (employee) {
-    console.log(new Date() + ' ' + employee.name + ' is online');
+    console.log(new Date() + ' ' + employee.full_name + ' is online');
 };
 
 notification.prototype._handleEmployeeOffline = function (employee) {
-    console.log(new Date() + ' ' + employee.name + ' is offline');
+    console.log(new Date() + ' ' + employee.full_name + ' is offline');
 };
 
 var instance = new notification();

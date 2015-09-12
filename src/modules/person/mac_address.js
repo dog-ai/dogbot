@@ -8,7 +8,7 @@ function mac_address() {
     var communication = {};
 }
 
-mac_address.prototype.type = "MONITOR";
+mac_address.prototype.type = "PERSON";
 
 mac_address.prototype.name = "mac_address";
 
@@ -46,7 +46,7 @@ mac_address.prototype._onMacAddressOnline = function (mac_address) {
     instance._findById(mac_address, function (error, row) {
 
         if (error) {
-            console.error(error);
+            console.error(error.stack);
         } else {
 
             if (row !== undefined) {
@@ -59,7 +59,7 @@ mac_address.prototype._onMacAddressOnline = function (mac_address) {
 
                 instance._update(row.id, row.updated_date, row.is_present, row.last_presence_date, row.is_synced, function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     } else {
                         instance.communication.emit('person:mac_address:online', row);
                     }
@@ -71,7 +71,7 @@ mac_address.prototype._onMacAddressOnline = function (mac_address) {
 
                 instance._add(mac_address, now, now, is_present, now, is_synced, function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     } else {
                         instance.communication.emit('person:mac_address:online', {
                             id: mac_address,
@@ -91,7 +91,7 @@ mac_address.prototype._onMacAddressOnline = function (mac_address) {
 mac_address.prototype._onMacAddressOffline = function (mac_address) {
     instance._findById(mac_address, function (error, row) {
         if (error) {
-            console.error(error);
+            console.error(error.stack);
         } else {
 
             if (row !== undefined) {
@@ -103,7 +103,7 @@ mac_address.prototype._onMacAddressOffline = function (mac_address) {
 
                 instance._updateWithoutLastPresenceDate(row.id, row.updated_date, row.is_present, row.is_synced, function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     } else {
                         instance.communication.emit('person:mac_address:offline', row);
                     }
@@ -117,7 +117,7 @@ mac_address.prototype._onMacAddressOffline = function (mac_address) {
 mac_address.prototype._onMacAddressSynchronization = function (mac_address) {
     instance.communication.emit('database:person:retrieveAll', 'PRAGMA table_info(mac_address)', [], function (error, rows) {
         if (error) {
-            console.error(error);
+            console.error(error.stack);
         } else {
 
             mac_address = _.pick(mac_address, _.pluck(rows, 'name'));
@@ -145,7 +145,7 @@ mac_address.prototype._onMacAddressSynchronization = function (mac_address) {
                 values,
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     } else {
 
                     }

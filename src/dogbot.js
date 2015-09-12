@@ -38,7 +38,7 @@ var dogbot = {
                 [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -52,7 +52,7 @@ var dogbot = {
                 ");", [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -70,7 +70,7 @@ var dogbot = {
                 "UNIQUE(type, name)" +
                 ");", [], function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -83,7 +83,7 @@ var dogbot = {
                 ");", [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -98,7 +98,7 @@ var dogbot = {
                 ");", [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -107,13 +107,15 @@ var dogbot = {
                 "id TEXT PRIMARY KEY NOT NULL, " +
                 "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "device_id TEXT DEFAULT NULL, " +
+                "vendor TEXT DEFAULT NULL, " +
                 "is_present INTEGER NOT NULL DEFAULT 0, " +
                 "last_presence_date DATETIME DEFAULT NULL," +
                 "is_synced INTEGER NOT NULL DEFAULT 0" +
                 ");", [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -124,13 +126,11 @@ var dogbot = {
                 "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "employee_id INTEGER REFERENCES employee(id), " +
-                "mac_address TEXT NOT NULL, " +
-                "is_present INTEGER NOT NULL DEFAULT 0, " +
-                "UNIQUE(employee_id, mac_address)" +
+                "is_present INTEGER NOT NULL DEFAULT 0" +
                 ");", [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -145,7 +145,7 @@ var dogbot = {
                 ");", [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
 
@@ -161,7 +161,7 @@ var dogbot = {
                 ");", [],
                 function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
         });
@@ -194,7 +194,7 @@ var dogbot = {
                 communication.emit('database:person:retrieveOneByOne',
                     'SELECT * FROM mac_address WHERE is_synced = 0', [], function (error, row) {
                         if (error) {
-                            console.error(error);
+                            console.error(error.stack);
                         } else {
                             if (row !== undefined) {
                                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -209,7 +209,7 @@ var dogbot = {
                                         communication.emit('database:person:update',
                                             'UPDATE mac_address SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
                                                 if (error) {
-                                                    console.error(error);
+                                                    console.error(error.stack);
                                                 }
                                             });
                                     }
@@ -225,7 +225,7 @@ var dogbot = {
                 communication.emit('database:performance:retrieveOneByOne',
                     'SELECT * FROM presence WHERE is_synced = 0', [], function (error, row) {
                         if (error) {
-                            console.error(error);
+                            console.error(error.stack);
                         } else {
                             if (row !== undefined) {
                                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -238,7 +238,7 @@ var dogbot = {
                                         communication.emit('database:performance:update',
                                             'UPDATE presence SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
                                                 if (error) {
-                                                    console.error(error);
+                                                    console.error(error.stack);
                                                 }
                                             });
                                     }
@@ -276,7 +276,7 @@ var dogbot = {
 
         revision.hasRevisionChanged(function (error, changed, revision) {
             if (error) {
-                console.error(error);
+                console.error(error.stack);
             } else {
                 /*if (changed) {
                  console.log('Detected new code revision: ' + revision);

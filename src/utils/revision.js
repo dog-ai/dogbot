@@ -38,7 +38,7 @@ var revision = {
 
 revision.loadRevision(function(error, _revision) {
     if (error !== undefined) {
-        console.error(error);
+        console.error(error.stack);
     } else {
         revision.current = _revision;
     }

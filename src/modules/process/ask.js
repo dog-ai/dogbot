@@ -51,7 +51,7 @@ ask.prototype.process = function(message, callback) {
 
       this.wolfram.query(question, function (error, result) {
         if (error !== undefined && error !== null) {
-          console.error(error);
+          console.error(error.stack);
           callback("Can you repeat that again?");
         } else if (result !== undefined && result !== null) {
 

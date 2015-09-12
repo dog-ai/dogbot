@@ -45,18 +45,29 @@ device.prototype.stop = function () {
 
 device.prototype._isPresent = function (device, callback) {
     function handleArpDiscover() {
-        instance.moduleManager.emit('database:monitor:retrieveOne',
-            'SELECT * FROM arp WHERE mac_address = ?',
-            [device.mac_address],
-            function (error, row) {
-                if (error) {
-                    console.error(error);
-                } else {
-                    callback(row !== undefined);
-                }
-            });
-
         instance.moduleManager.removeListener('monitor:arp:discover:finish', handleArpDiscover);
+
+        instance._findMacAddressesById(device.id, function (error, mac_addresses) {
+            if (error) {
+                console.error(error.stack);
+            } else {
+                if (mac_addresses !== undefined) {
+                    var values = _.pluck(mac_addresses, 'id');
+                    instance.moduleManager.emit('database:monitor:retrieveAll',
+                        'SELECT * FROM arp WHERE mac_address IN (' + values.map(function () {
+                            return '?';
+                        }) + ');',
+                        values,
+                        function (error, rows) {
+                            if (error) {
+                                console.error(error.stack);
+                            } else {
+                                callback(rows !== undefined && rows !== null && rows.length > 0);
+                            }
+                        });
+                }
+            }
+        });
     }
 
     instance.moduleManager.on('monitor:arp:discover:finish', handleArpDiscover);
@@ -70,40 +81,29 @@ device.prototype._onDeviceSynchronization = function (device) {
 
         device = _.pick(device, _.pluck(rows, 'name'));
 
-        if (device.created_date !== undefined && device.created_date !== null) {
-            device.created_date = device.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-        }
-        if (device.updated_date !== undefined && device.updated_date !== null) {
-            device.updated_date = device.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-        }
-
-        var keys = _.keys(device);
-        var values = _.values(device);
-
         instance._findById(device.id, function (error, row) {
             if (error) {
-                console.error(error);
+                console.error(error.stack);
             } else {
                 if (row !== undefined) {
-                    if (moment(new Date(device.updated_date.replace(' ', 'T'))).isAfter(row.updated_date)) {
-                        keys = _.keys(_.omit(device, 'is_present'));
-                        values = _.values(_.omit(device, 'is_present'));
-                    } else if (moment(new Date(device.updated_date.replace(' ', 'T'))).isSame(row.updated_date)) {
 
-                    } else {
+                    if (moment(device.updated_date).isBefore(row.updated_date)) {
                         return;
+                    }
+
+                    if (moment(device.updated_date).isAfter(row.updated_date)) {
+                        // device has been updated in firebase 'is_present' should not be overridden
+                        device = _.omit(device, 'is_present');
+
                     }
                 }
 
-                instance.moduleManager.emit('database:person:create',
-                    'INSERT OR REPLACE INTO device (' + keys + ') VALUES (' + values.map(function () {
-                        return '?';
-                    }) + ');',
-                    values,
-                    function (error) {
-                        if (error) {
-                            console.error(error);
-                        } else {
+                instance._upsert(device, function (error) {
+                    if (error) {
+                        console.error(error.stack);
+                    } else {
+                        if (device.is_present !== undefined) {
+
                             instance.moduleManager.emit('person:device:is_present', device, function (is_present) {
 
                                 if (device.is_present != is_present) {
@@ -112,7 +112,7 @@ device.prototype._onDeviceSynchronization = function (device) {
                                     if (device.is_present) {
                                         instance._updateById(device.id, device.is_present, function (error) {
                                             if (error) {
-                                                console.error(error);
+                                                console.error(error.stack);
                                             } else {
                                                 instance.moduleManager.emit('person:device:online', device);
                                             }
@@ -120,7 +120,7 @@ device.prototype._onDeviceSynchronization = function (device) {
                                     } else {
                                         instance._updateById(device.id, device.is_present, function (error) {
                                             if (error) {
-                                                console.error(error);
+                                                console.error(error.stack);
                                             } else {
                                                 instance.moduleManager.emit('person:device:offline', device);
                                             }
@@ -129,7 +129,8 @@ device.prototype._onDeviceSynchronization = function (device) {
                                 }
                             });
                         }
-                    });
+                    }
+                });
 
             }
         });
@@ -137,75 +138,95 @@ device.prototype._onDeviceSynchronization = function (device) {
 };
 
 device.prototype._onMacAddressOnline = function (mac_address) {
-    instance._findByMacAddress(mac_address.id, function (error, device) {
+    if (mac_address.device_id !== null) {
+        instance._findById(mac_address.device_id, function (error, device) {
+            if (error !== null) {
+                console.error(error.stack);
+            } else {
+                if (!device.is_present) {
+                    device.is_present = true;
 
-        if (error !== null) {
-            console.error(error);
-        } else {
-            if (!device.is_present) {
-                device.is_present = true;
-
-                instance._updateById(device.id, device.is_present, function (error) {
-                    if (error) {
-                        console.error(error);
-                    } else {
-                        instance.moduleManager.emit('person:device:online', device);
-                    }
-                });
+                    instance._updateById(device.id, device.is_present, function (error) {
+                        if (error) {
+                            console.error(error.stack);
+                        } else {
+                            instance.moduleManager.emit('person:device:online', device);
+                        }
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 };
 
 device.prototype._onMacAddressOffline = function (mac_address) {
-    instance._findByMacAddress(mac_address.id, function (error, device) {
+    if (mac_address.device_id !== null) {
+        instance._findById(mac_address.device_id, function (error, device) {
 
-        if (error !== null) {
-            console.error(error.message);
-        } else {
-            device.is_present = false;
+            if (error !== null) {
+                console.error(error.message);
+            } else {
+                device.is_present = false;
 
-            instance._updateById(device.id, device.is_present, function (error) {
-                if (error) {
-                    console.error(error);
-                } else {
-                    instance.moduleManager.emit('person:device:offline', device);
-                }
-            });
-        }
-    });
+                instance._updateById(device.id, device.is_present, function (error) {
+                    if (error) {
+                        console.error(error.stack);
+                    } else {
+                        instance.moduleManager.emit('person:device:offline', device);
+                    }
+                });
+            }
+        });
+    }
+};
+
+device.prototype._findMacAddressesById = function (id, callback) {
+    this.moduleManager.emit('database:person:retrieveAll',
+        "SELECT * FROM mac_address WHERE device_id = ?;", [id],
+        function (error, rows) {
+            if (rows !== undefined) {
+                rows.forEach(function (row) {
+                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                    row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                });
+            }
+
+            callback(error, rows);
+        });
 };
 
 device.prototype._findById = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM device WHERE id = ?;", [id],
         function (error, row) {
-            if (error) {
-                callback(error);
-            } else {
-                if (row !== undefined) {
-                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
-                    row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
-                }
-
-                callback(error, row);
+            if (row !== undefined) {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
             }
+
+            callback(error, row);
         });
 };
 
-device.prototype._findByMacAddress = function (mac_address, callback) {
-    this.moduleManager.emit('database:person:retrieveOne',
-        "SELECT * FROM device WHERE mac_address = ?;", [mac_address], function (error, row) {
-            if (error) {
-                if (callback !== undefined) {
-                    callback(error);
-                }
-            } else {
-                if (row) {
-                    if (callback !== undefined) {
-                        callback(error, row);
-                    }
-                }
+device.prototype._upsert = function (device, callback) {
+    if (device.created_date !== undefined && device.created_date !== null) {
+        device.created_date = device.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+    if (device.updated_date !== undefined && device.updated_date !== null) {
+        device.updated_date = device.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    var keys = _.keys(device);
+    var values = _.values(device);
+
+    instance.moduleManager.emit('database:person:create',
+        'INSERT OR REPLACE INTO device (' + keys + ') VALUES (' + values.map(function () {
+            return '?';
+        }) + ');',
+        values,
+        function (error) {
+            if (callback !== undefined) {
+                callback(error);
             }
         });
 };

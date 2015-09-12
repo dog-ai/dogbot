@@ -18,7 +18,7 @@ eventreminder.prototype.name = 'eventreminder';
 
 eventreminder.prototype.info = function() {
     return '*' + this.name + '* - _Remind calendar events schedule module_';
-}
+};
 
 eventreminder.prototype.cron = "0 */5 * * * *";
 
@@ -26,9 +26,10 @@ eventreminder.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
 
     this.schedule();
-}
+};
 
-eventreminder.prototype.unload = function() {}
+eventreminder.prototype.unload = function () {
+};
 
 eventreminder.prototype.schedule = function() {
     var self = this;
@@ -39,7 +40,7 @@ eventreminder.prototype.schedule = function() {
             console.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
-}
+};
 
 eventreminder.prototype.process = function() {
     var self = this;
@@ -47,7 +48,7 @@ eventreminder.prototype.process = function() {
     var google = this.moduleManager.findLoadedModuleByName('google');
     google.getAccounts(function(error, accounts) {
         if (error !== undefined && error !== null) {
-            console.error(error);
+            console.error(error.stack);
         } else {
             var calendar = self.moduleManager.findLoadedModuleByName('calendar');
 
@@ -55,7 +56,7 @@ eventreminder.prototype.process = function() {
 
                 calendar.retrieveEventListForToday(account.user_id, account.access_token, function(error, eventList) {
                     if (error !== undefined && error !== null) {
-                        console.error(error);
+                        console.error(error.stack);
                     } else {
                         eventList.items.forEach(function(event) {
                             var reminder = _.find(reminders, function(r) {
@@ -104,7 +105,7 @@ eventreminder.prototype.process = function() {
             });
         }
     });
-}
+};
 
 eventreminder.prototype._remind = function(reminder) {
     var outputs = {
@@ -123,7 +124,7 @@ eventreminder.prototype._remind = function(reminder) {
     _.remove(reminders, function(r) {
         return r.event.id === reminder.event.id;
     });
-}
+};
 
 eventreminder.prototype._advertise = function(outputs) {
     this.moduleManager.findAllLoadedModulesByType('IO').forEach(function(module) {
@@ -132,6 +133,6 @@ eventreminder.prototype._advertise = function(outputs) {
             module.send(output.recipient, output.message);
         }
     });
-}
+};
 
 module.exports = new eventreminder();

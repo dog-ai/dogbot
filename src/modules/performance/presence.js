@@ -47,7 +47,7 @@ presence.prototype.stop = function () {
 presence.prototype._handleEmployeeMovement = function (employee) {
     instance._findLatestPresenceByEmployeeId(employee.id, function (error, performance) {
         if (error) {
-            console.error(error);
+            console.error(error.stack);
         } else {
             if (performance && performance.is_present == employee.is_present) {
                 return;
@@ -55,7 +55,7 @@ presence.prototype._handleEmployeeMovement = function (employee) {
 
             instance._addPresence({employee_id: employee.id, is_present: employee.is_present}, function (error) {
                 if (error) {
-                    console.error(error);
+                    console.error(error.stack);
                 }
             });
         }
@@ -65,19 +65,19 @@ presence.prototype._handleEmployeeMovement = function (employee) {
 presence.prototype._handlePresenceSynchronization = function (syncingPresence) {
     instance._findLatestPresenceByEmployeeId(syncingPresence.employee_id, function (error, presence) {
         if (error) {
-            console.error(error);
+            console.error(error.stack);
         } else {
             if (presence === undefined) {
                 instance._addPresence(syncingPresence, function (error) {
                     if (error) {
-                        console.error(error);
+                        console.error(error.stack);
                     }
                 });
             } else {
                 if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
                     instance._addPresence(syncingPresence, function (error) {
                         if (error) {
-                            console.error(error);
+                            console.error(error.stack);
                         }
                     });
                 }

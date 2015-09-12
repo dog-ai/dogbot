@@ -118,7 +118,7 @@ arp.prototype._clean = function (callback) {
     var currentDate = new Date();
     this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error) {
         if (error) {
-            console.error(error);
+            console.error(error.stack);
         }
 
         if (callback !== undefined) {
@@ -238,7 +238,7 @@ arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
                             "DELETE FROM arp WHERE id = ?;", [row.id],
                             function (error) {
                                 if (error) {
-                                    console.error(error);
+                                    console.error(error.stack);
                                 } else {
                                     if (onDelete !== undefined) {
                                         onDelete(row);
