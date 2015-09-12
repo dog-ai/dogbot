@@ -2,7 +2,13 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var debug = require('debug')('dogbot:databases');
+debug.log = console.info.bind(console);
+
+var async = require('async');
+
 var _ = require('lodash');
+
 var path = require('path');
 var fs = require("fs");
 
@@ -18,7 +24,131 @@ databases.prototype.startAll = function (callback) {
         self._startAllByType(type);
     });
 
-    callback();
+    async.series([
+        function (callback) {
+            self.communication.emit('database:auth:setup',
+                "CREATE TABLE IF NOT EXISTS google (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "user_id TEXT NOT NULL, " +
+                "name TEXT NOT NULL, " +
+                "email TEXT NOT NULL, " +
+                "access_token TEXT NOT NULL, " +
+                "expires_in INTEGER NOT NULL, " +
+                "refresh_token TEXT NOT NULL" +
+                ");",
+                [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:monitor:setup',
+                "CREATE TABLE IF NOT EXISTS arp (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "ip_address TEXT NOT NULL UNIQUE, " +
+                "mac_address TEXT NOT NULL" +
+                ");",
+                [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:monitor:setup',
+                "CREATE TABLE IF NOT EXISTS bonjour (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "type TEXT NOT NULL, " +
+                "name TEXT NOT NULL, " +
+                "hostname TEXT NOT NULL, " +
+                "ip_address TEXT NOT NULL, " +
+                "port INTEGER, " +
+                "txt TEXT NOT NULL, " +
+                "UNIQUE(type, name)" +
+                ");", [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:monitor:setup',
+                "CREATE TABLE IF NOT EXISTS ip (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "ip_address TEXT NOT NULL UNIQUE" +
+                ");", [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:monitor:setup',
+                "CREATE TABLE IF NOT EXISTS slack (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "slack_id TEXT NOT NULL UNIQUE, " +
+                "username TEXT NOT NULL, " +
+                "name TEXT NOT NULL" +
+                ");", [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:person:setup',
+                "CREATE TABLE IF NOT EXISTS mac_address (" +
+                "id TEXT PRIMARY KEY NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "device_id TEXT DEFAULT NULL, " +
+                "vendor TEXT DEFAULT NULL, " +
+                "is_present INTEGER NOT NULL DEFAULT 0, " +
+                "last_presence_date DATETIME DEFAULT NULL," +
+                "is_synced INTEGER NOT NULL DEFAULT 0" +
+                ");", [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:person:setup',
+                "CREATE TABLE IF NOT EXISTS device (" +
+                "id TEXT PRIMARY KEY NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "employee_id INTEGER REFERENCES employee(id), " +
+                "is_present INTEGER NOT NULL DEFAULT 0" +
+                ");", [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:person:setup',
+                "CREATE TABLE IF NOT EXISTS employee (" +
+                "id TEXT PRIMARY KEY NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "full_name TEXT NOT NULL UNIQUE, " +
+                "is_present INTEGER NOT NULL DEFAULT 0, " +
+                "slack_id TEXT" +
+                ");", [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:person:setup',
+                "CREATE TABLE IF NOT EXISTS employee (" +
+                "id TEXT PRIMARY KEY NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "full_name TEXT NOT NULL UNIQUE, " +
+                "is_present INTEGER NOT NULL DEFAULT 0, " +
+                "slack_id TEXT" +
+                ");", [], callback);
+        },
+        function (callback) {
+            self.communication.emit('database:performance:setup',
+                "CREATE TABLE IF NOT EXISTS presence (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "employee_id TEXT NOT NULL, " +
+                "is_present INTEGER NOT NULL, " +
+                "is_synced INTEGER NOT NULL DEFAULT 0, " +
+                "UNIQUE(created_date, employee_id)" +
+                ");", [], callback);
+        }
+    ], function (error) {
+        if (error) {
+            debug(error.stack);
+        }
+
+        callback();
+    });
 };
 
 databases.prototype._startAllByType = function (type) {
@@ -64,7 +194,7 @@ databases.prototype._stop = function (database) {
 };
 
 module.exports = function (communication) {
-    var instance = new databases(communication);
+    var instance = new databases();
 
     instance.communication = communication;
     instance.started = [];

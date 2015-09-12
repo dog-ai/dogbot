@@ -2,6 +2,9 @@
  * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
  */
 
+var debug = require('debug')('dogbot:synchronization');
+debug.log = console.info.bind(console);
+
 var _ = require('lodash');
 var moment = require('moment-timezone');
 var Firebase = require('firebase');
@@ -150,23 +153,11 @@ synchronization.prototype._init = function (callback) {
 
                 // listen for company devices events
                 self.companyMacAddressesRef = firebase.child('company_mac_addresses/' + dog.company_id);
-                self.companyMacAddressesRef.once('value', function (snapshot) {
-
-                    _.forEach(snapshot.val(), function (mac_address, id) {
-                        if (mac_address.created_date !== undefined && mac_address.created_date !== null) {
-                            mac_address.created_date = new Date(mac_address.created_date);
-                        }
-                        if (mac_address.updated_date !== undefined && mac_address.updated_date !== null) {
-                            mac_address.updated_date = new Date(mac_address.updated_date);
-                        }
-                        if (mac_address.last_presence_date !== undefined && mac_address.last_presence_date !== null) {
-                            mac_address.last_presence_date = new Date(mac_address.last_presence_date);
-                        }
-                        instance.onMacAddressPull(_.extend({
-                            id: id,
-                            is_synced: true
-                        }, mac_address));
-                    });
+                self.companyMacAddressesRef.on('child_added', self._onCompanyMacAddressAddedOrChanged, function (error) {
+                    console.error("company_mac_addresses" + error);
+                });
+                self.companyMacAddressesRef.on('child_changed', self._onCompanyMacAddressAddedOrChanged, function (error) {
+                    console.error("company_mac_addresses" + error);
                 });
             }
         }
@@ -264,18 +255,7 @@ synchronization.prototype._onCompanyDeviceRemoved = function (snapshot) {
 synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
     var employeeId = snapshot.key();
 
-    firebase.child('employees/' + employeeId).on('value', function (snapshot) {
-        var employee = snapshot.val();
-
-        if (employee.created_date !== undefined && employee.created_date !== null) {
-            employee.created_date = new Date(employee.created_date);
-        }
-        if (employee.updated_date !== undefined && employee.updated_date !== null) {
-            employee.updated_date = new Date(employee.updated_date);
-        }
-
-        instance.onEmployeeCreateOrUpdate(_.extend({id: snapshot.key()}, employee));
-    }, function (error) {
+    firebase.child('employees/' + employeeId).on('value', instance._onEmployeeChanged, function (error) {
         console.error("employee " + error);
     });
 
@@ -334,7 +314,7 @@ synchronization.prototype._onCompanyEmployeeRemoved = function (snapshot) {
 
 
 synchronization.prototype._onDeviceIsPresent = function (device) {
-    console.log("Device from client: " + JSON.stringify(device));
+    debug('sending device: %s', JSON.stringify(device));
 
     firebase.child('devices/' + device.id).update({
         updated_date: moment().format(),
@@ -357,11 +337,10 @@ synchronization.prototype._onEmployeeIsPresent = function (employee) {
     });
 };
 
-
 synchronization.prototype._onDeviceChanged = function (snapshot) {
     var device = snapshot.val();
 
-    console.log("Device from server: " + JSON.stringify(device));
+    debug('received device: %s', JSON.stringify(device));
 
     if (device.created_date !== undefined && device.created_date !== null) {
         device.created_date = new Date(device.created_date);
@@ -373,6 +352,38 @@ synchronization.prototype._onDeviceChanged = function (snapshot) {
     instance.onDeviceCreateOrUpdate(_.extend({id: snapshot.key()}, device));
 };
 
+synchronization.prototype._onEmployeeChanged = function (snapshot) {
+    var employee = snapshot.val();
+
+    debug('received employee: %s', JSON.stringify(employee));
+
+    if (employee.created_date !== undefined && employee.created_date !== null) {
+        employee.created_date = new Date(employee.created_date);
+    }
+    if (employee.updated_date !== undefined && employee.updated_date !== null) {
+        employee.updated_date = new Date(employee.updated_date);
+    }
+
+    instance.onEmployeeCreateOrUpdate(_.extend({id: snapshot.key()}, employee));
+};
+
+synchronization.prototype._onCompanyMacAddressAddedOrChanged = function (snapshot) {
+    var mac_address = snapshot.val();
+
+    if (mac_address.created_date !== undefined && mac_address.created_date !== null) {
+        mac_address.created_date = new Date(mac_address.created_date);
+    }
+    if (mac_address.updated_date !== undefined && mac_address.updated_date !== null) {
+        mac_address.updated_date = new Date(mac_address.updated_date);
+    }
+    if (mac_address.last_presence_date !== undefined && mac_address.last_presence_date !== null) {
+        mac_address.last_presence_date = new Date(mac_address.last_presence_date);
+    }
+    instance.onMacAddressPull(_.extend({
+        id: snapshot.key(),
+        is_synced: true
+    }, mac_address));
+};
 
 synchronization.prototype._createToken = function () {
     var FirebaseTokenGenerator = require("firebase-token-generator");
