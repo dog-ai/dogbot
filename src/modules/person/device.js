@@ -165,7 +165,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
             if (error) {
                 console.error(error.stack);
             } else {
-                mac_addresses = _.filter(mac_addresses, _.matches({'is_present': true}));
+                mac_addresses = _.filter(mac_addresses, _.matches({'is_present': 1}));
 
                 if (mac_addresses.length == 0) {
                     instance._findById(mac_address.device_id, function (error, device) {
