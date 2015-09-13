@@ -216,10 +216,11 @@ mac_address.prototype._onMacAddressOutgoingSynchronization = function (callback)
                     row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
                     row.is_present = row.is_present == 1;
 
-                    callback(error, row, function (error) {
+                    callback(error, row, function (error, mac_address) {
                         if (error) {
                             console.error(error)
                         } else {
+                            row.id = mac_address.id;
                             row.is_synced = true;
 
                             instance._updateByAddress(row.address, row, function (error) {

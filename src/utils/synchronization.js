@@ -202,14 +202,19 @@ synchronization.prototype._synchronize = function () {
                 var macAddressRef;
                 if (mac_address.id !== undefined && mac_address.id !== null) {
                     macAddressRef = firebase.child('mac_addresses/' + mac_address.id);
-                    macAddressRef.update(val, onComplete);
+                    macAddressRef.update(val, function (error) {
+                        onComplete(error, mac_address);
+                    });
                 } else {
                     var macAddressesRef = firebase.child('mac_addresses');
                     macAddressRef = macAddressesRef.push(val, function (error) {
                         if (error) {
                             console.error(error);
                         } else {
-                            self.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, onComplete);
+                            self.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, function (error) {
+                                mac_address.id = macAddressRef.key();
+                                onComplete(error, mac_address);
+                            });
                         }
                     });
                 }
