@@ -56,11 +56,11 @@ employee.prototype._handleSlackActive = function (slack) {
 };
 
 employee.prototype._handleDeviceOnline = function (device) {
-    instance._findById(device.employee_id, function (error, employee) {
+    instance._findByAddress(device.employee_id, function (error, employee) {
         if (!employee.is_present) {
             employee.is_present = true;
 
-            instance._updateById(employee.id, employee.is_present, function (error) {
+            instance._updateByAddress(employee.id, employee.is_present, function (error) {
                 if (error) {
                     console.error(error.stack);
                 } else {
@@ -72,7 +72,7 @@ employee.prototype._handleDeviceOnline = function (device) {
 };
 
 employee.prototype._handleDeviceOffline = function (device) {
-    instance._findById(device.employee_id, function (error, employee) {
+    instance._findByAddress(device.employee_id, function (error, employee) {
         // only emit farway if the employee does not have any other device online
 
         instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
@@ -85,7 +85,7 @@ employee.prototype._handleDeviceOffline = function (device) {
 
                     employee.is_present = false;
 
-                    instance._updateById(employee.id, employee.is_present, function (error) {
+                    instance._updateByAddress(employee.id, employee.is_present, function (error) {
                         if (error) {
                             console.error(error.stack);
                         } else {
@@ -116,7 +116,7 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
         var keys = _.keys(employee);
         var values = _.values(employee);
 
-        instance._findById(employee.id, function (error, row) {
+        instance._findByAddress(employee.id, function (error, row) {
             if (error) {
                 console.error(error.stack);
             } else {
@@ -165,7 +165,7 @@ employee.prototype._addPresence = function (name, slackId, callback) {
         });
 };
 
-employee.prototype._findById = function (id, callback) {
+employee.prototype._findByAddress = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM employee WHERE id = ?;", [id],
         function (error, row) {
@@ -206,7 +206,7 @@ employee.prototype._retrieveAllOnlineDevicesByEmployeeId = function (id, callbac
         });
 };
 
-employee.prototype._updateById = function (id, is_present, callback) {
+employee.prototype._updateByAddress = function (id, is_present, callback) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     this.moduleManager.emit('database:person:update',

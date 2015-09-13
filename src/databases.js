@@ -26,110 +26,148 @@ databases.prototype.startAll = function (callback) {
 
     async.series([
         function (callback) {
-            self.communication.emit('database:auth:setup',
-                "CREATE TABLE IF NOT EXISTS google (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "user_id TEXT NOT NULL, " +
-                "name TEXT NOT NULL, " +
-                "email TEXT NOT NULL, " +
-                "access_token TEXT NOT NULL, " +
-                "expires_in INTEGER NOT NULL, " +
-                "refresh_token TEXT NOT NULL" +
-                ");",
-                [], callback);
+            self.communication.emit('database:auth:setup', 'DROP TABLE IF EXISTS google', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:auth:setup',
+                        "CREATE TABLE IF NOT EXISTS google (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "user_id TEXT NOT NULL, " +
+                        "name TEXT NOT NULL, " +
+                        "email TEXT NOT NULL, " +
+                        "access_token TEXT NOT NULL, " +
+                        "expires_in INTEGER NOT NULL, " +
+                        "refresh_token TEXT NOT NULL" +
+                        ");",
+                        [], callback);
+                }
+            });
         },
         function (callback) {
-            self.communication.emit('database:monitor:setup',
-                "CREATE TABLE IF NOT EXISTS arp (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "ip_address TEXT NOT NULL UNIQUE, " +
-                "mac_address TEXT NOT NULL" +
-                ");",
-                [], callback);
+            self.communication.emit('database:monitor:setup', 'DROP TABLE IF EXISTS arp', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:monitor:setup',
+                        "CREATE TABLE IF NOT EXISTS arp (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "ip_address TEXT NOT NULL UNIQUE, " +
+                        "mac_address TEXT NOT NULL" +
+                        ");",
+                        [], callback);
+                }
+            });
         },
         function (callback) {
-            self.communication.emit('database:monitor:setup',
-                "CREATE TABLE IF NOT EXISTS bonjour (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "type TEXT NOT NULL, " +
-                "name TEXT NOT NULL, " +
-                "hostname TEXT NOT NULL, " +
-                "ip_address TEXT NOT NULL, " +
-                "port INTEGER, " +
-                "txt TEXT NOT NULL, " +
-                "UNIQUE(type, name)" +
-                ");", [], callback);
+            self.communication.emit('database:monitor:setup', 'DROP TABLE IF EXISTS bonjour', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:monitor:setup',
+                        "CREATE TABLE IF NOT EXISTS bonjour (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "type TEXT NOT NULL, " +
+                        "name TEXT NOT NULL, " +
+                        "hostname TEXT NOT NULL, " +
+                        "ip_address TEXT NOT NULL, " +
+                        "port INTEGER, " +
+                        "txt TEXT NOT NULL, " +
+                        "UNIQUE(type, name)" +
+                        ");", [], callback);
+                }
+            });
         },
         function (callback) {
-            self.communication.emit('database:monitor:setup',
-                "CREATE TABLE IF NOT EXISTS ip (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "ip_address TEXT NOT NULL UNIQUE" +
-                ");", [], callback);
+            self.communication.emit('database:monitor:setup', 'DROP TABLE IF EXISTS ip', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:monitor:setup',
+                        "CREATE TABLE IF NOT EXISTS ip (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "ip_address TEXT NOT NULL UNIQUE" +
+                        ");", [], callback);
+                }
+            });
         },
         function (callback) {
-            self.communication.emit('database:monitor:setup',
-                "CREATE TABLE IF NOT EXISTS slack (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "slack_id TEXT NOT NULL UNIQUE, " +
-                "username TEXT NOT NULL, " +
-                "name TEXT NOT NULL" +
-                ");", [], callback);
+            self.communication.emit('database:monitor:setup', 'DROP TABLE IF EXISTS slack', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:monitor:setup',
+                        "CREATE TABLE IF NOT EXISTS slack (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "slack_id TEXT NOT NULL UNIQUE, " +
+                        "username TEXT NOT NULL, " +
+                        "name TEXT NOT NULL" +
+                        ");", [], callback);
+                }
+            });
         },
         function (callback) {
-            self.communication.emit('database:person:setup',
-                "CREATE TABLE IF NOT EXISTS mac_address (" +
-                "id TEXT PRIMARY KEY NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "device_id TEXT DEFAULT NULL, " +
-                "vendor TEXT DEFAULT NULL, " +
-                "is_present INTEGER NOT NULL DEFAULT 0, " +
-                "last_presence_date DATETIME DEFAULT NULL," +
-                "is_synced INTEGER NOT NULL DEFAULT 0" +
-                ");", [], callback);
+            self.communication.emit('database:person:setup', 'DROP TABLE IF EXISTS mac_address', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:person:setup',
+                        "CREATE TABLE IF NOT EXISTS mac_address (" +
+                        "id TEXT DEFAULT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "address TEXT PRIMARY KEY NOT NULL, " +
+                        "device_id TEXT DEFAULT NULL, " +
+                        "vendor TEXT DEFAULT NULL, " +
+                        "is_present INTEGER NOT NULL DEFAULT 0, " +
+                        "last_presence_date DATETIME DEFAULT NULL," +
+                        "is_synced INTEGER NOT NULL DEFAULT 0" +
+                        ");", [], callback);
+                }
+            });
         },
         function (callback) {
-            self.communication.emit('database:person:setup',
-                "CREATE TABLE IF NOT EXISTS device (" +
-                "id TEXT PRIMARY KEY NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "employee_id INTEGER REFERENCES employee(id), " +
-                "is_present INTEGER NOT NULL DEFAULT 0" +
-                ");", [], callback);
+            self.communication.emit('database:person:setup', 'DROP TABLE IF EXISTS device', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:person:setup',
+                        "CREATE TABLE IF NOT EXISTS device (" +
+                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "employee_id INTEGER REFERENCES employee(id), " +
+                        "is_present INTEGER NOT NULL DEFAULT 0" +
+                        ");", [], callback);
+                }
+            });
         },
         function (callback) {
-            self.communication.emit('database:person:setup',
-                "CREATE TABLE IF NOT EXISTS employee (" +
-                "id TEXT PRIMARY KEY NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "full_name TEXT NOT NULL UNIQUE, " +
-                "is_present INTEGER NOT NULL DEFAULT 0, " +
-                "slack_id TEXT" +
-                ");", [], callback);
-        },
-        function (callback) {
-            self.communication.emit('database:person:setup',
-                "CREATE TABLE IF NOT EXISTS employee (" +
-                "id TEXT PRIMARY KEY NOT NULL, " +
-                "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "full_name TEXT NOT NULL UNIQUE, " +
-                "is_present INTEGER NOT NULL DEFAULT 0, " +
-                "slack_id TEXT" +
-                ");", [], callback);
+            self.communication.emit('database:person:setup', 'DROP TABLE IF EXISTS employee', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:person:setup',
+                        "CREATE TABLE IF NOT EXISTS employee (" +
+                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "full_name TEXT NOT NULL UNIQUE, " +
+                        "is_present INTEGER NOT NULL DEFAULT 0, " +
+                        "slack_id TEXT" +
+                        ");", [], callback);
+                }
+            });
         },
         function (callback) {
             self.communication.emit('database:performance:setup',

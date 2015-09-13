@@ -33,8 +33,14 @@ var dogbot = {
                 function (type, moduleName, configuration) {
                     modules.loadModule(type, moduleName, configuration, true);
                 },
+                function (mac_address) {
+                    communication.emit('synchronization:incoming:person:mac_address', mac_address);
+                },
+                function (mac_address) {
+
+                },
                 function (device) {
-                    communication.emit('synchronization:person:device', device);
+                    communication.emit('synchronization:incoming:person:device', device);
                 },
                 function (device) {
 
@@ -45,35 +51,7 @@ var dogbot = {
                 function (employee) {
                 },
                 function (callback) {
-                    communication.emit('database:person:retrieveOneByOne',
-                        'SELECT * FROM mac_address WHERE is_synced = 0', [], function (error, row) {
-                            if (error) {
-                                console.error(error.stack);
-                            } else {
-                                if (row !== undefined) {
-                                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
-                                    row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
-                                    row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
-                                    row.is_present = row.is_present == 1 ? true : false;
-
-                                    callback(error, row, function (error) {
-                                        if (error) {
-                                            console.error(error)
-                                        } else {
-                                            communication.emit('database:person:update',
-                                                'UPDATE mac_address SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
-                                                    if (error) {
-                                                        console.error(error.stack);
-                                                    }
-                                                });
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                },
-                function (mac_address) {
-                    communication.emit('synchronization:person:mac_address', mac_address);
+                    communication.emit('synchronization:outgoing:person:mac_address', callback);
                 },
                 function (callback) {
                     communication.emit('database:performance:retrieveOneByOne',

@@ -51,6 +51,7 @@ arp.prototype.start = function () {
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));
     }
 
+    //setTimeout(monitor, time * (1 + Math.random()));
     monitor();
 };
 
