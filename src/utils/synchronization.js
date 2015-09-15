@@ -309,16 +309,18 @@ synchronization.prototype._onCompanyDeviceRemoved = function (snapshot) {
 synchronization.prototype._onDeviceChanged = function (snapshot) {
     var device = snapshot.val();
 
-    debug('received device: %s', JSON.stringify(device));
+    if (device !== undefined) {
+        debug('received device: %s', JSON.stringify(device));
 
-    if (device.created_date !== undefined && device.created_date !== null) {
-        device.created_date = new Date(device.created_date);
-    }
-    if (device.updated_date !== undefined && device.updated_date !== null) {
-        device.updated_date = new Date(device.updated_date);
-    }
+        if (device.created_date !== undefined && device.created_date !== null) {
+            device.created_date = new Date(device.created_date);
+        }
+        if (device.updated_date !== undefined && device.updated_date !== null) {
+            device.updated_date = new Date(device.updated_date);
+        }
 
-    instance.onDeviceCreatedOrUpdatedCallback(_.extend({id: snapshot.key()}, device));
+        instance.onDeviceCreatedOrUpdatedCallback(_.extend({id: snapshot.key()}, device));
+    }
 };
 
 
@@ -386,16 +388,18 @@ synchronization.prototype._onCompanyEmployeeRemoved = function (snapshot) {
 synchronization.prototype._onEmployeeChanged = function (snapshot) {
     var employee = snapshot.val();
 
-    debug('received employee: %s', JSON.stringify(employee));
+    if (employee !== undefined) {
+        debug('received employee: %s', JSON.stringify(employee));
 
-    if (employee.created_date !== undefined && employee.created_date !== null) {
-        employee.created_date = new Date(employee.created_date);
-    }
-    if (employee.updated_date !== undefined && employee.updated_date !== null) {
-        employee.updated_date = new Date(employee.updated_date);
-    }
+        if (employee.created_date !== undefined && employee.created_date !== null) {
+            employee.created_date = new Date(employee.created_date);
+        }
+        if (employee.updated_date !== undefined && employee.updated_date !== null) {
+            employee.updated_date = new Date(employee.updated_date);
+        }
 
-    instance.onEmployeeCreatedOrUpdatedCallback(_.extend({id: snapshot.key()}, employee));
+        instance.onEmployeeCreatedOrUpdatedCallback(_.extend({id: snapshot.key()}, employee));
+    }
 };
 
 
