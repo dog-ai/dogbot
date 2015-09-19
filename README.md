@@ -5,3 +5,8 @@
 1. `npm install`
 
 2. `npm start`
+
+
+or
+
+nodemon bin/app
