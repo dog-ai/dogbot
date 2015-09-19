@@ -9,13 +9,13 @@
 # Description:       Dog Bot
 ### END INIT INFO
 
-# Author: Hugo Freire <hfreire@exec.sh>
+# Author: Hugo Freire <hugo@dog.ai>
 
 # Do NOT "set -e"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
-DESC="Dog Bot"
+DESC="dogbot"
 NAME=dogbot
 
 # Read configuration variable file if it is present
@@ -49,7 +49,7 @@ do_start()
     mkdir -p var/log > /dev/null 2>&1
     mkdir -p var/tmp > /dev/null 2>&1
 
-    $forever start \
+    DOGBOT_SECRET=$DOGBOT_SECRET $forever start \
     --append -l $DOGBOT_HOME/var/log/dogbot.log \
     --pidFile $PIDFILE \
     --workingDir $DOGBOT_HOME \
