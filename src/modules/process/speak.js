@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 function speak() {
@@ -14,27 +14,28 @@ speak.prototype.info = function() {
   return "*" + this.name + "* - " +
     "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
     this.type.toLowerCase() + " module_";
-}
+};
 
 speak.prototype.help = function() {
   var help = '';
 
-  help += '*!speak <text>* - _Speak arbitrary text in english_\n'
-  help += '*!prata <text>* - _Speak arbitrary text in swedish_\n'
-  help += '*!fala <text>* - _Speak arbitrary text in portuguese_\n'
-  help += '*!habla <text>* - _Speak arbitrary text in spanish_\n'
-  help += '*!parle <text>* - _Speak arbitrary text french_\n'
-  help += '*!sprich <text>* - _Speak arbitrary text german_\n'
-  help += '*!puhua <text>* - _Speak arbitrary text finnish_\n'
+  help += '*!speak <text>* - _Speak arbitrary text in english_\n';
+  help += '*!prata <text>* - _Speak arbitrary text in swedish_\n';
+  help += '*!fala <text>* - _Speak arbitrary text in portuguese_\n';
+  help += '*!habla <text>* - _Speak arbitrary text in spanish_\n';
+  help += '*!parle <text>* - _Speak arbitrary text french_\n';
+  help += '*!sprich <text>* - _Speak arbitrary text german_\n';
+  help += '*!puhua <text>* - _Speak arbitrary text finnish_\n';
 
   return help;
-}
+};
 
 speak.prototype.load = function(moduleManager) {
   this.moduleManager = moduleManager;
-}
+};
 
-speak.prototype.unload = function() {}
+speak.prototype.unload = function () {
+};
 
 speak.prototype.process = function(message, callback) {
 
@@ -61,12 +62,12 @@ speak.prototype.process = function(message, callback) {
     this._speak(text, 'fi');
   }
 
-}
+};
 
 speak.prototype._speak = function(text, language, callback) {
   if (text !== undefined && text !== '') {
     this.moduleManager.findLoadedModuleByName('voice').send(null, text, language);
   }
-}
+};
 
 module.exports = new speak();

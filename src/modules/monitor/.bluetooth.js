@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 //var noble = require('noble');
@@ -16,7 +16,7 @@ bluetooth.prototype.info = function() {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
-}
+};
 
 bluetooth.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
@@ -26,7 +26,7 @@ bluetooth.prototype.load = function(moduleManager) {
     }
 
     setTimeout(this.start(), 6000);
-}
+};
 
 bluetooth.prototype.start = function() {
 
@@ -62,10 +62,10 @@ bluetooth.prototype.start = function() {
         });
     });*/
 
-}
+};
 
 bluetooth.prototype.unload = function() {
 
-}
+};
 
 module.exports = new bluetooth();

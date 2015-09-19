@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var browser = require('airplay').createBrowser();
@@ -18,16 +18,16 @@ airplay.prototype.info = function() {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
-}
+};
 
 airplay.prototype.load = function(moduleManager) {
     this.moduleManager = moduleManager;
 
     setTimeout(this.start(), 3000);
-}
+};
 
 airplay.prototype.unload = function() {
-}
+};
 
 airplay.prototype.start = function() {
     browser.on('deviceOnline', function(device) {
@@ -49,6 +49,6 @@ airplay.prototype.start = function() {
         console.log('AirPlay device online: ' + device.id);
     });
     browser2.start();
-}
+};
 
 module.exports = new airplay();

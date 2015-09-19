@@ -1,1 +1,3 @@
 DOGBOT_HOME=/opt/dogbot
+
+DOGBOT_SECRET=""

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var _ = require('lodash');
@@ -32,14 +32,16 @@ device.prototype.unload = function () {
 device.prototype.start = function () {
     this.moduleManager.on('person:mac_address:online', this._onMacAddressOnline);
     this.moduleManager.on('person:mac_address:offline', this._onMacAddressOffline);
-    this.moduleManager.on('synchronization:incoming:person:device', this._onDeviceIncomingSynchronization);
+    this.moduleManager.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.moduleManager.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.moduleManager.on('person:device:is_present', this._isPresent);
 };
 
 device.prototype.stop = function () {
     this.moduleManager.removeListener('person:mac_address:online', this._onMacAddressOnline);
     this.moduleManager.removeListener('person:mac_address:offline', this._onMacAddressOffline);
-    this.moduleManager.removeListener('synchronization:incoming:person:device', this._onDeviceIncomingSynchronization);
+    this.moduleManager.removeListener('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.moduleManager.removeListener('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.moduleManager.removeListener('person:device:is_present', this._isPresent);
 };
 
@@ -73,7 +75,7 @@ device.prototype._isPresent = function (device, callback) {
     instance.moduleManager.on('monitor:arp:discover:finish', handleArpDiscover);
 };
 
-device.prototype._onDeviceIncomingSynchronization = function (device) {
+device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
     instance.moduleManager.emit('database:person:retrieveAll', 'PRAGMA table_info(device)', [], function (error, rows) {
         if (error !== null) {
             throw error();
@@ -88,11 +90,25 @@ device.prototype._onDeviceIncomingSynchronization = function (device) {
                 if (row !== undefined) {
 
                     if (moment(device.updated_date).isAfter(row.updated_date)) {
+
+                        if (row.employee_id !== null && device.employee_id === undefined) {
+                            device.employee_id = null;
+                        }
+
                         device = _.omit(device, 'is_present');
 
-                        instance._updateById(device, function (error) {
+                        instance._updateById(device.id, device, function (error) {
                             if (error) {
                                 console.error(error.stack);
+                            } else {
+
+                                device = _.extend(device, {is_present: row.is_present});
+
+                                if (row.employee_id !== null && device.employee_id === null) {
+                                    instance.moduleManager.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
+                                } else if (row.employee_id === null && device.employee_id !== null) {
+                                    instance.moduleManager.emit('person:device:addedToEmployee', device, {id: device.employee_id});
+                                }
                             }
                         });
                     }
@@ -129,6 +145,28 @@ device.prototype._onDeviceIncomingSynchronization = function (device) {
     });
 };
 
+device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
+    instance.communication.emit('database:person:delete',
+        'SELECT * FROM device WHERE id = ?',
+        [device.id], function (error, row) {
+            if (error) {
+                console.error(error);
+            } else {
+                instance.communication.emit('database:person:delete',
+                    'DELETE FROM device WHERE id = ?',
+                    [device.id], function (error) {
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            if (row.is_present) {
+                                instance.communication.emit('person:device:offline', row);
+                            }
+                        }
+                    });
+            }
+        });
+};
+
 device.prototype._onMacAddressOnline = function (mac_address) {
     if (mac_address.device_id !== undefined && mac_address.device_id !== null) {
         instance._findById(mac_address.device_id, function (error, device) {
@@ -159,26 +197,28 @@ device.prototype._onMacAddressOffline = function (mac_address) {
             if (error) {
                 console.error(error.stack);
             } else {
-                mac_addresses = _.filter(mac_addresses, _.matches({'is_present': 1}));
+                if (mac_addresses !== undefined) {
+                    mac_addresses = _.filter(mac_addresses, _.matches({'is_present': 1}));
 
-                if (mac_addresses.length == 0) {
-                    instance._findById(mac_address.device_id, function (error, device) {
-                        if (error !== null) {
-                            console.error(error.stack);
-                        } else {
+                    if (mac_addresses.length == 0) {
+                        instance._findById(mac_address.device_id, function (error, device) {
+                            if (error !== null) {
+                                console.error(error.stack);
+                            } else {
 
-                            device.updated_date = new Date();
-                            device.is_present = false;
+                                device.updated_date = new Date();
+                                device.is_present = false;
 
-                            instance._updateById(device.id, device, function (error) {
-                                if (error) {
-                                    console.error(error.stack);
-                                } else {
-                                    instance.moduleManager.emit('person:device:offline', device);
-                                }
-                            });
-                        }
-                    });
+                                instance._updateById(device.id, device, function (error) {
+                                    if (error) {
+                                        console.error(error.stack);
+                                    } else {
+                                        instance.moduleManager.emit('person:device:offline', device);
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
             }
 

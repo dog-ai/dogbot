@@ -1,31 +1,28 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var _ = require('lodash');
-
-var stackTrace = require('stack-trace');
-
+//var stackTrace = require('stack-trace');
 var communication = require('./utils/communication.js');
 var revision = require('./utils/revision.js');
 var synchronization = require('./utils/synchronization.js');
-
 var databases = require('./databases.js')(communication);
 var modules = require('./modules.js')(communication);
 
 var dogbot = {
-    token: undefined,
+    secret: undefined,
 
     start: function (callback) {
         var self = this;
 
         databases.startAll(function () {
 
-            synchronization.start(self.token, function (error) {
+            synchronization.start(self.secret, function (error) {
                     if (error) {
                         console.error(error.message);
 
-                        modules.loadAll();
+                        //modules.loadAll();
                     }
 
                     callback();
@@ -34,21 +31,22 @@ var dogbot = {
                     modules.loadModule(type, moduleName, configuration, true);
                 },
                 function (mac_address) {
-                    communication.emit('synchronization:incoming:person:mac_address', mac_address);
+                    communication.emit('synchronization:incoming:person:macAddress:createOrUpdate', mac_address);
                 },
-                function (mac_address) {
-
-                },
-                function (device) {
-                    communication.emit('synchronization:incoming:person:device', device);
+                function (macAddress) {
+                    communication.emit('synchronization:incoming:person:macAddress:delete', macAddress);
                 },
                 function (device) {
-
+                    communication.emit('synchronization:incoming:person:device:createOrUpdate', device);
+                },
+                function (device) {
+                    communication.emit('synchronization:incoming:person:device:delete', device);
                 },
                 function (employee) {
-                    communication.emit('synchronization:person:employee', employee);
+                    communication.emit('synchronization:incoming:person:employee:createOrUpdate', employee);
                 },
                 function (employee) {
+                    communication.emit('synchronization:incoming:person:employee:delete', employee);
                 },
                 function (callback) {
                     communication.emit('synchronization:outgoing:person:mac_address', callback);
@@ -126,11 +124,11 @@ var dogbot = {
     },
 
     error: function (error) {
-        var traces = stackTrace.parse(error);
+        //var traces = stackTrace.parse(error);
 
         console.error(error.stack);
 
-        if (traces !== undefined && traces !== null) {
+        /*if (traces !== undefined && traces !== null) {
             traces.forEach(function (trace) {
                 var filename = trace.getFileName();
                 var name = filename.substring(filename.lastIndexOf("/") + 1, filename.lastIndexOf("."));
@@ -139,11 +137,12 @@ var dogbot = {
                     modules.unloadModule(module);
                 }
             });
-        }
+         }*/
     }
 };
 
-module.exports = function (token) {
-    dogbot.token = token;
+module.exports = function (secret) {
+    dogbot.secret = secret;
+
     return dogbot;
 };

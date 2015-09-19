@@ -37,7 +37,9 @@
   },
   "description": "",
   "main": "index.js",
-  "devDependencies": {},
+  "devDependencies": {
+    "node-uuid": "^1.4.3"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/hfreire/raspbot.git"

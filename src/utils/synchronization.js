@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var debug = require('debug')('dogbot:synchronization');
@@ -22,7 +22,7 @@ function synchronization() {
 
 synchronization.prototype.start = function (token, callback,
                                             onModuleUpdatedCallback,
-                                            onMacAddressCreatedOrUpdateCallback,
+                                            onMacAddressCreatedOrUpdatedCallback,
                                             onMacAddressDeletedCallback,
                                             onDeviceCreatedOrUpdatedCallback,
                                             onDeviceDeletedCallback,
@@ -44,7 +44,7 @@ synchronization.prototype.start = function (token, callback,
     this.onEmployeeDeletedCallback = onEmployeeDeletedCallback;
 
     this.onMacAddressPush = onMacAddressPush;
-    this.onMacAddressCreatedOrUpdatedCallback = onMacAddressCreatedOrUpdateCallback;
+    this.onMacAddressCreatedOrUpdatedCallback = onMacAddressCreatedOrUpdatedCallback;
     this.onMacAddressDeletedCallback = onMacAddressDeletedCallback;
 
     this.onPerformancePush = onPerformancePush;
@@ -57,6 +57,8 @@ synchronization.prototype.start = function (token, callback,
         if (error) {
             callback(error);
         } else {
+            console.log('Synchronizing as %s', authData.uid);
+
             self.dogId = authData.uid;
 
             self._init(callback);
@@ -264,6 +266,10 @@ synchronization.prototype._onCompanyMacAddressAdded = function (snapshot) {
 };
 
 synchronization.prototype._onCompanyMacAddressRemoved = function (snapshot) {
+    var macAddressId = snapshot.key();
+
+    firebase.child('mac_addresses/' + macAddressId).off('value');
+    this.onMacAddressDeletedCallback({id: macAddressId});
 };
 
 synchronization.prototype._onMacAddressChanged = function (snapshot) {
@@ -304,6 +310,10 @@ synchronization.prototype._onCompanyDeviceAdded = function (snapshot) {
 };
 
 synchronization.prototype._onCompanyDeviceRemoved = function (snapshot) {
+    var deviceId = snapshot.key();
+
+    firebase.child('devices/' + deviceId).off('value');
+    this.onDeviceDeletedCallback({id: deviceId});
 };
 
 synchronization.prototype._onDeviceChanged = function (snapshot) {
@@ -383,6 +393,10 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
 };
 
 synchronization.prototype._onCompanyEmployeeRemoved = function (snapshot) {
+    var employeeId = snapshot.key();
+
+    firebase.child('employees/' + employeeId).off('value');
+    this.onEmployeeDeletedCallback({id: employeeId});
 };
 
 synchronization.prototype._onEmployeeChanged = function (snapshot) {

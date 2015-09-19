@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var _ = require('lodash');
@@ -32,9 +32,25 @@ employee.prototype.unload = function () {
 employee.prototype.start = function () {
     this.moduleManager.on('person:device:online', this._handleDeviceOnline);
     this.moduleManager.on('person:device:offline', this._handleDeviceOffline);
+    this.moduleManager.on('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
+    this.moduleManager.on('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
     this.moduleManager.on('person:slack:active', this._handleSlackActive);
     this.moduleManager.on('person:slack:away', this._handleSlackAway);
-    this.moduleManager.on('synchronization:person:employee', this._handleEmployeeSynchronization);
+    this.moduleManager.on('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+    this.moduleManager.on('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
+    this.moduleManager.on('person:employee:is_present', this._isPresent);
+};
+
+employee.prototype.stop = function () {
+    this.moduleManager.removeListener('person:device:online', this._handleDeviceOnline);
+    this.moduleManager.removeListener('person:device:offline', this._handleDeviceOffline);
+    this.moduleManager.removeListener('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
+    this.moduleManager.removeListener('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
+    this.moduleManager.removeListener('person:slack:active', this._handleSlackActive);
+    this.moduleManager.removeListener('person:slack:away', this._handleSlackAway);
+    this.moduleManager.removeListener('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+    this.moduleManager.removeListener('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
+    this.moduleManager.removeListener('person:employee:is_present', this._isPresent);
 };
 
 employee.prototype._handleSlackAway = function (slack) {
@@ -56,49 +72,138 @@ employee.prototype._handleSlackActive = function (slack) {
 };
 
 employee.prototype._handleDeviceOnline = function (device) {
-    instance._findByAddress(device.employee_id, function (error, employee) {
-        if (!employee.is_present) {
-            employee.is_present = true;
+    if (device.employee_id !== undefined && device.employee_id !== null) {
 
-            instance._updateByAddress(employee.id, employee.is_present, function (error) {
-                if (error) {
-                    console.error(error.stack);
-                } else {
-                    instance.moduleManager.emit('person:employee:nearby', employee);
-                }
-            });
-        }
-    });
-};
-
-employee.prototype._handleDeviceOffline = function (device) {
-    instance._findByAddress(device.employee_id, function (error, employee) {
-        // only emit farway if the employee does not have any other device online
-
-        instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
-
+        instance._findById(device.employee_id, function (error, employee) {
             if (error) {
                 console.error(error.stack);
             } else {
 
-                if (devices && devices.length == 0 && employee.is_present) {
-
-                    employee.is_present = false;
+                if (employee !== undefined && !employee.is_present) {
+                    employee.is_present = true;
 
                     instance._updateByAddress(employee.id, employee.is_present, function (error) {
                         if (error) {
                             console.error(error.stack);
                         } else {
-                            instance.moduleManager.emit('person:employee:faraway', employee);
+                            instance.moduleManager.emit('person:employee:nearby', employee);
                         }
                     });
                 }
             }
-        })
+        });
+    }
+};
+
+employee.prototype._handleDeviceOffline = function (device) {
+    if (device.employee_id !== undefined && device.employee_id !== null) {
+        instance._findById(device.employee_id, function (error, employee) {
+            if (error) {
+                console.error(error.stack);
+            } else {
+
+                if (employee !== undefined) {
+                    // only emit farway if the employee does not have any other device online
+                    instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
+
+                        if (error) {
+                            console.error(error.stack);
+                        } else {
+
+                            if (devices && devices.length == 0 && employee.is_present) {
+
+                                employee.is_present = false;
+
+                                instance._updateByAddress(employee.id, employee.is_present, function (error) {
+                                    if (error) {
+                                        console.error(error.stack);
+                                    } else {
+                                        instance.moduleManager.emit('person:employee:faraway', employee);
+                                    }
+                                });
+                            }
+                        }
+                    })
+                }
+            }
+        });
+    }
+};
+
+employee.prototype._isPresent = function (employee, callback) {
+    function handleArpDiscover() {
+        instance.moduleManager.removeListener('monitor:arp:discover:finish', handleArpDiscover);
+
+        instance._findDevicesById(employee.id, function (error, devices) {
+            if (error) {
+                console.error(error.stack);
+            } else {
+                if (devices !== undefined) {
+                    var device = _.find(devices, {'is_present': true});
+                    callback(device !== undefined);
+                }
+            }
+        });
+    }
+
+    instance.moduleManager.on('monitor:arp:discover:finish', handleArpDiscover);
+};
+
+employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
+    instance._findById(employee.id, function (error, employee) {
+        if (error) {
+            console.error(error.stack);
+        } else {
+
+            if (device.is_present && employee !== undefined && !employee.is_present) {
+                employee.is_present = true;
+
+                instance._updateByAddress(employee.id, employee.is_present, function (error) {
+                    if (error) {
+                        console.error(error.stack);
+                    } else {
+                        instance.moduleManager.emit('person:employee:nearby', employee);
+                    }
+                });
+            }
+        }
     });
 };
 
-employee.prototype._handleEmployeeSynchronization = function (employee) {
+employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
+    instance._findById(employee.id, function (error, employee) {
+        if (error) {
+            console.error(error.stack);
+        } else {
+
+            if (employee !== undefined) {
+                // only emit farway if the employee does not have any other device online
+                instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
+
+                    if (error) {
+                        console.error(error.stack);
+                    } else {
+
+                        if (devices && devices.length == 0 && employee.is_present) {
+
+                            employee.is_present = false;
+
+                            instance._updateByAddress(employee.id, employee.is_present, function (error) {
+                                if (error) {
+                                    console.error(error.stack);
+                                } else {
+                                    instance.moduleManager.emit('person:employee:faraway', employee);
+                                }
+                            });
+                        }
+                    }
+                })
+            }
+        }
+    });
+};
+
+employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
     instance.moduleManager.emit('database:person:retrieveAll', 'PRAGMA table_info(employee)', [], function (error, rows) {
         if (error !== null) {
             throw error();
@@ -116,7 +221,7 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
         var keys = _.keys(employee);
         var values = _.values(employee);
 
-        instance._findByAddress(employee.id, function (error, row) {
+        instance._findById(employee.id, function (error, row) {
             if (error) {
                 console.error(error.stack);
             } else {
@@ -140,14 +245,42 @@ employee.prototype._handleEmployeeSynchronization = function (employee) {
     });
 };
 
-employee.prototype._;
+employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee) {
+    instance.communication.emit('database:person:delete',
+        'SELECT * FROM employee WHERE id = ?',
+        [employee.id], function (error, row) {
+            if (error) {
+                console.error(error);
+            } else {
+                instance.communication.emit('database:person:delete',
+                    'DELETE FROM employee WHERE id = ?',
+                    [employee.id], function (error) {
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            if (row.is_present) {
+                                instance.communication.emit('person:employee:faraway', row);
+                            }
+                        }
+                    });
+            }
+        });
+};
 
-employee.prototype.stop = function () {
-    this.moduleManager.removeListener('person:device:online', this._handleDeviceOnline);
-    this.moduleManager.removeListener('person:device:offline', this._handleDeviceOffline);
-    this.moduleManager.removeListener('person:slack:active', this._handleSlackActive);
-    this.moduleManager.removeListener('person:slack:away', this._handleSlackAway);
-    this.moduleManager.removeListener('synchronization:person:employee', this._handleEmployeeSynchronization);
+
+employee.prototype._findDevicesById = function (id, callback) {
+    this.moduleManager.emit('database:person:retrieveAll',
+        "SELECT * FROM device WHERE employee_id = ?;", [id],
+        function (error, rows) {
+            if (rows !== undefined) {
+                rows.forEach(function (row) {
+                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                    row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                });
+            }
+
+            callback(error, rows);
+        });
 };
 
 employee.prototype._addPresence = function (name, slackId, callback) {
@@ -165,7 +298,7 @@ employee.prototype._addPresence = function (name, slackId, callback) {
         });
 };
 
-employee.prototype._findByAddress = function (id, callback) {
+employee.prototype._findById = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveOne',
         "SELECT * FROM employee WHERE id = ?;", [id],
         function (error, row) {
@@ -204,6 +337,25 @@ employee.prototype._retrieveAllOnlineDevicesByEmployeeId = function (id, callbac
                 callback(null, rows);
             }
         });
+};
+
+employee.prototype._updateById = function (id, employee, callback) {
+    if (employee.created_date !== undefined && employee.created_date !== null && employee.created_date instanceof Date) {
+        employee.created_date = employee.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (employee.updated_date !== undefined && employee.updated_date !== null && employee.updated_date instanceof Date) {
+        employee.updated_date = employee.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    var keys = _.keys(employee);
+    var values = _.values(employee);
+
+    instance.moduleManager.emit('database:person:update',
+        'UPDATE employee SET ' + keys.map(function (key) {
+            return key + ' = ?';
+        }) + ' WHERE id = \'' + id + '\';',
+        values, callback);
 };
 
 employee.prototype._updateByAddress = function (id, is_present, callback) {

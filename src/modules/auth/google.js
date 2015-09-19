@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var sqlInsertEntryIntoTable = "INSERT INTO google (user_id, name, email, access_token, expires_in, refresh_token) VALUES (?, ?, ?, ?, ?, ?);";

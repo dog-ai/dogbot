@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Hugo Freire <hfreire@exec.sh>. All rights reserved.
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var _ = require('lodash');
@@ -35,7 +35,8 @@ mac_address.prototype.start = function () {
     this.communication.on('monitor:arp:create', this._onMacAddressOnline);
     this.communication.on('monitor:arp:update', this._onMacAddressOnline);
     this.communication.on('monitor:arp:delete', this._onMacAddressOffline);
-    this.communication.on('synchronization:incoming:person:mac_address', this._onMacAddressIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:macAddress:createOrUpdate', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 };
 
@@ -43,8 +44,9 @@ mac_address.prototype.stop = function () {
     this.communication.removeListener('monitor:arp:create', this._onMacAddressOnline);
     this.communication.removeListener('monitor:arp:update', this._onMacAddressOnline);
     this.communication.removeListener('monitor:arp:delete', this._onMacAddressOffline);
-    this.communication.removeListener('synchronization:incoming:person:mac_address', this._onMacAddressIncomingSynchronization);
-    this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onMacAddressIncomingSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:macAddress:createOrUpdate', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+    this.communication.remoteListener('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
+    this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onCreateOrUpdateMacAddressIncomingSynchronization);
 };
 
 mac_address.prototype._onMacAddressOnline = function (address) {
@@ -73,7 +75,7 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                         }
 
                         // lookup vendor
-                        if (row.vendor === null) {
+                        if (row.vendor === undefined) {
                             macvendor(row.address, function (error, vendor) {
                                 if (error) {
                                     console.error(error.stack);
@@ -112,7 +114,7 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                         instance.communication.emit('person:mac_address:online', row);
 
                         // lookup vendor
-                        if (row.vendor === null) {
+                        if (row.vendor === undefined) {
                             macvendor(row.address, function (error, vendor) {
                                 if (error) {
                                     console.error(error.stack);
@@ -164,7 +166,7 @@ mac_address.prototype._onMacAddressOffline = function (mac_address) {
     });
 };
 
-mac_address.prototype._onMacAddressIncomingSynchronization = function (mac_address) {
+mac_address.prototype._onCreateOrUpdateMacAddressIncomingSynchronization = function (mac_address) {
     instance.communication.emit('database:person:retrieveAll', 'PRAGMA table_info(mac_address)', [], function (error, rows) {
         if (error) {
             console.error(error.stack);
@@ -181,7 +183,7 @@ mac_address.prototype._onMacAddressIncomingSynchronization = function (mac_addre
                     if (row !== undefined) {
                         if (moment(mac_address.updated_date).isAfter(row.updated_date)) {
 
-                            if (mac_address.device_id === undefined) {
+                            if (row.device_id !== undefined && mac_address.device_id === undefined) {
                                 mac_address.device_id = null;
                             }
 
@@ -202,6 +204,28 @@ mac_address.prototype._onMacAddressIncomingSynchronization = function (mac_addre
             });
         }
     });
+};
+
+mac_address.prototype._onDeleteMacAddressIncomingSynchronization = function (macAddress) {
+    instance.communication.emit('database:person:delete',
+        'SELECT * FROM mac_address WHERE id = ?',
+        [macAddress.id], function (error, row) {
+            if (error) {
+                console.error(error);
+            } else {
+                instance.communication.emit('database:person:delete',
+                    'DELETE FROM mac_address WHERE id = ?',
+                    [macAddress.id], function (error) {
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            if (row.is_present) {
+                                instance.communication.emit('person:mac_address:offline', row);
+                            }
+                        }
+                    });
+            }
+        });
 };
 
 mac_address.prototype._onMacAddressOutgoingSynchronization = function (callback) {
