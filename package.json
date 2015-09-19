@@ -1,7 +1,10 @@
 {
-  "name": "raspbot",
+  "name": "dogbot",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "start": "node ./bin/app"
+  },
   "dependencies": {
     "async": "^1.4.2",
     "cron": "^1.0.9",
