@@ -110,13 +110,13 @@ var dogbot = {
             if (error) {
                 console.error(error.stack);
             } else {
-                /*if (changed) {
+                if (changed) {
                  console.log('Detected new code revision: ' + revision);
 
-                 modules.findAllLoadedModulesByType('IO').forEach(function(module) {
-                 module.send(null, 'Refreshing my brains with code revision ' + revision);
-                 });
-                 }*/
+                    /*modules.findAllLoadedModulesByType('IO').forEach(function(module) {
+                     module.send(null, 'Refreshing my brains with code revision ' + revision);
+                     });*/
+                }
             }
 
             self.stop(callback);
