@@ -269,7 +269,7 @@ synchronization.prototype._onCompanyMacAddressRemoved = function (snapshot) {
     var macAddressId = snapshot.key();
 
     firebase.child('mac_addresses/' + macAddressId).off('value');
-    this.onMacAddressDeletedCallback({id: macAddressId});
+    instance.onMacAddressDeletedCallback({id: macAddressId});
 };
 
 synchronization.prototype._onMacAddressChanged = function (snapshot) {
@@ -313,7 +313,7 @@ synchronization.prototype._onCompanyDeviceRemoved = function (snapshot) {
     var deviceId = snapshot.key();
 
     firebase.child('devices/' + deviceId).off('value');
-    this.onDeviceDeletedCallback({id: deviceId});
+    instance.onDeviceDeletedCallback({id: deviceId});
 };
 
 synchronization.prototype._onDeviceChanged = function (snapshot) {
@@ -396,7 +396,7 @@ synchronization.prototype._onCompanyEmployeeRemoved = function (snapshot) {
     var employeeId = snapshot.key();
 
     firebase.child('employees/' + employeeId).off('value');
-    this.onEmployeeDeletedCallback({id: employeeId});
+    instance.onEmployeeDeletedCallback({id: employeeId});
 };
 
 synchronization.prototype._onEmployeeChanged = function (snapshot) {
