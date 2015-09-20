@@ -319,7 +319,7 @@ synchronization.prototype._onCompanyDeviceRemoved = function (snapshot) {
 synchronization.prototype._onDeviceChanged = function (snapshot) {
     var device = snapshot.val();
 
-    if (device !== undefined) {
+    if (device !== null) {
         debug('received device: %s', JSON.stringify(device));
 
         if (device.created_date !== undefined && device.created_date !== null) {
@@ -402,7 +402,7 @@ synchronization.prototype._onCompanyEmployeeRemoved = function (snapshot) {
 synchronization.prototype._onEmployeeChanged = function (snapshot) {
     var employee = snapshot.val();
 
-    if (employee !== undefined) {
+    if (employee !== null) {
         debug('received employee: %s', JSON.stringify(employee));
 
         if (employee.created_date !== undefined && employee.created_date !== null) {

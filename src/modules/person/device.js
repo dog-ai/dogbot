@@ -146,20 +146,20 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 };
 
 device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
-    instance.communication.emit('database:person:delete',
+    instance.moduleManager.emit('database:person:delete',
         'SELECT * FROM device WHERE id = ?',
         [device.id], function (error, row) {
             if (error) {
                 console.error(error);
             } else {
-                instance.communication.emit('database:person:delete',
+                instance.moduleManager.emit('database:person:delete',
                     'DELETE FROM device WHERE id = ?',
                     [device.id], function (error) {
                         if (error) {
                             console.error(error);
                         } else {
                             if (row.is_present) {
-                                instance.communication.emit('person:device:offline', row);
+                                instance.moduleManager.emit('person:device:offline', row);
                             }
                         }
                     });
