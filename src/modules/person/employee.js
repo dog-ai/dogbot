@@ -246,20 +246,20 @@ employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
 };
 
 employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee) {
-    instance.communication.emit('database:person:delete',
+    instance.moduleManager.emit('database:person:delete',
         'SELECT * FROM employee WHERE id = ?',
         [employee.id], function (error, row) {
             if (error) {
                 console.error(error);
             } else {
-                instance.communication.emit('database:person:delete',
+                instance.moduleManager.emit('database:person:delete',
                     'DELETE FROM employee WHERE id = ?',
                     [employee.id], function (error) {
                         if (error) {
                             console.error(error);
                         } else {
                             if (row.is_present) {
-                                instance.communication.emit('person:employee:faraway', row);
+                                instance.moduleManager.emit('person:employee:faraway', row);
                             }
                         }
                     });
