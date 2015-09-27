@@ -74,6 +74,10 @@ var dogbot = {
                     // listen for device changes
                     communication.on('person:employee:nearby', callback);
                     communication.on('person:employee:faraway', callback);
+                },
+                function (callback) {
+                    // listen for employee performance stats changes
+                    communication.on('synchronization:outgoing:performance:stats', callback);
                 }
             );
 

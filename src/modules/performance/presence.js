@@ -157,7 +157,10 @@ presence.prototype._computeDatePresenceDurationForAllEmployees = function (date)
                 if (error) {
                     console.error(error.stack);
                 } else {
-                    console.log("Presence duration for " + employee.id + " on " + date.format('YYYY/MM/DD') + ": " + duration.hours() + ":" + duration.minutes());
+                    var stats = {
+                        total_duration: duration.asMilliseconds()
+                    };
+                    instance.moduleManager.emit('synchronization:outgoing:performance:stats', employee, 'presence', date, stats);
                 }
             });
         }

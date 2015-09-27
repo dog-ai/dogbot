@@ -54,6 +54,7 @@ synchronization.prototype.start = function (token, callback,
 
     updateDevice(this._updateDevice);
     updateEmployee(this._updateEmployee);
+    updateEmployeePerformanceStats(this._updateEmployeePerformanceStats);
 
     firebase.authWithCustomToken(token, function (error, authData) {
         if (error) {
@@ -451,17 +452,15 @@ synchronization.prototype._updateEmployee = function (employee) {
     });
 };
 
+synchronization.prototype._updateEmployeePerformanceStats = function (employee, performanceName, date, stats) {
+    debug('sending employee performance stats: %s', JSON.stringify(stats));
 
-
-
-synchronization.prototype._createToken = function () {
-    var FirebaseTokenGenerator = require("firebase-token-generator");
-    var tokenGenerator = new FirebaseTokenGenerator("XRslnfTztm7ItZ7LELZhCB3IoS20WNekEH6inN0g");
-    var token = tokenGenerator.createToken(
-        {uid: "-JxUwB10Up0dRSKAyFtt"},
-        {expires: 4597064530}
-    );
-    console.log(token);
+    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/stats')
+        .update(stats, function (error) {
+            if (error) {
+                console.error(error.stack);
+            }
+        });
 };
 
 var instance = new synchronization();
