@@ -4,11 +4,14 @@
 
 var _ = require('lodash');
 //var stackTrace = require('stack-trace');
-var communication = require('./utils/communication.js');
-var revision = require('./utils/revision.js');
-var synchronization = require('./utils/synchronization.js');
+
+var communication = require('./utils/communication.js'),
+    revision = require('./utils/revision.js'),
+    synchronization = require('./utils/synchronization.js');
+
 var databases = require('./databases.js')(communication);
 var modules = require('./modules.js')(communication);
+
 
 var dogbot = {
     secret: undefined,
@@ -18,11 +21,12 @@ var dogbot = {
 
         databases.startAll(function () {
 
-            synchronization.start(self.secret, function (error) {
+            synchronization.start(self.secret, function (error, dogId) {
                     if (error) {
                         console.error(error.message);
 
                         //modules.loadAll();
+                    } else {
                     }
 
                     callback();
@@ -46,45 +50,28 @@ var dogbot = {
                     communication.emit('synchronization:incoming:person:employee:createOrUpdate', employee);
                 },
                 function (employee) {
+                    // broadcast incoming employee delete
                     communication.emit('synchronization:incoming:person:employee:delete', employee);
                 },
                 function (callback) {
+                    // request mac address changes
                     communication.emit('synchronization:outgoing:person:mac_address', callback);
                 },
-                function (callback) {
-                    communication.emit('database:performance:retrieveOneByOne',
-                        'SELECT * FROM presence WHERE is_synced = 0', [], function (error, row) {
-                            if (error) {
-                                console.error(error.stack);
-                            } else {
-                                if (row !== undefined) {
-                                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
-                                    row.is_present = row.is_present == 1 ? true : false;
-
-                                    callback(error, row.employee_id, 'presence', row, function (error) {
-                                        if (error) {
-                                            console.error(error)
-                                        } else {
-                                            communication.emit('database:performance:update',
-                                                'UPDATE presence SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
-                                                    if (error) {
-                                                        console.error(error.stack);
-                                                    }
-                                                });
-                                        }
-                                    });
-                                }
-                            }
-                        });
+                function (performanceName, callback) {
+                    // request performance changes
+                    communication.emit('synchronization:outgoing:performance:' + performanceName, callback);
                 },
                 function (performanceName, performance) {
-                    communication.emit('synchronization:performance:' + performanceName, performance);
+                    // broadcast incoming performance
+                    communication.emit('synchronization:incoming:performance:' + performanceName, performance);
                 },
                 function (callback) {
+                    // listen for device changes
                     communication.on('person:device:online', callback);
                     communication.on('person:device:offline', callback);
                 },
                 function (callback) {
+                    // listen for device changes
                     communication.on('person:employee:nearby', callback);
                     communication.on('person:employee:faraway', callback);
                 }

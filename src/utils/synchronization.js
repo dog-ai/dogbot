@@ -33,8 +33,10 @@ synchronization.prototype.start = function (token, callback,
 
                                             onPerformancePush,
                                             onPerformancePull,
+
                                             updateDevice,
-                                            updateEmployee) {
+                                            updateEmployee,
+                                            updateEmployeePerformanceStats) {
     var self = this;
 
     this.onModuleUpdatedCallback = onModuleUpdatedCallback;
@@ -66,7 +68,7 @@ synchronization.prototype.start = function (token, callback,
     });
 };
 
-synchronization.prototype.stop = function () {
+synchronization.prototype.stop = function (callback) {
     this.dogId = undefined;
 
     if (this.dogRef !== undefined && this.dogRef !== null) {
@@ -97,6 +99,10 @@ synchronization.prototype.stop = function () {
 
     if (this.timeout !== undefined && this.timeout !== null) {
         clearTimeout(this.timeout);
+    }
+
+    if (callback !== undefined) {
+        callback();
     }
 };
 
@@ -175,7 +181,7 @@ synchronization.prototype._init = function (callback) {
 
         synchronize();
 
-        callback(null);
+        callback(null, self.dogId);
 
     }, function (error) {
         callback(error);
@@ -223,18 +229,21 @@ synchronization.prototype._synchronize = function () {
             }
         });
 
-        this.onPerformancePush(function (error, employeeId, type, performance, onComplete) {
-            if (error) {
-                console.error(error.stack);
-            } else {
+        var performanceNames = ['presence'];
+        _.forEach(performanceNames, function (performanceName) {
+            instance.onPerformancePush(performanceName, function (error, employeeId, type, performance, onComplete) {
+                if (error) {
+                    console.error(error.stack);
+                } else {
 
-                performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
+                    performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
 
-                var date = moment(performance.created_date);
-                performance.created_date = date.format();
+                    var date = moment(performance.created_date);
+                    performance.created_date = date.format();
 
-                firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
-            }
+                    firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
+                }
+            });
         });
 
         var now = moment().format();
@@ -343,7 +352,6 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
     });
 
     var performanceNames = ['presence'];
-
     var today = moment();
     _.forEach(performanceNames, function (performanceName) {
         firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
