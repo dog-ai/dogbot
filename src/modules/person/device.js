@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var _ = require('lodash');
 var moment = require('moment');
 
@@ -51,7 +53,7 @@ device.prototype._isPresent = function (device, callback) {
 
         instance._findMacAddressesById(device.id, function (error, mac_addresses) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 if (mac_addresses !== undefined) {
                     var values = _.pluck(mac_addresses, 'address');
@@ -62,7 +64,7 @@ device.prototype._isPresent = function (device, callback) {
                         values,
                         function (error, rows) {
                             if (error) {
-                                console.error(error.stack);
+                                logger.error(error.stack);
                             } else {
                                 callback(rows !== undefined && rows !== null && rows.length > 0);
                             }
@@ -85,7 +87,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 
         instance._findById(device.id, function (error, row) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 if (row !== undefined) {
 
@@ -99,7 +101,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 
                         instance._updateById(device.id, device, function (error) {
                             if (error) {
-                                console.error(error.stack);
+                                logger.error(error.stack);
                             } else {
 
                                 device = _.extend(device, {is_present: row.is_present});
@@ -115,7 +117,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                 } else {
                     instance._add(device, function (error) {
                         if (error) {
-                            console.error(error.stack);
+                            logger.error(error.stack);
                         } else {
                             instance.moduleManager.emit('person:device:is_present', device, function (is_present) {
 
@@ -126,7 +128,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 
                                     instance._updateById(device.id, device, function (error) {
                                         if (error) {
-                                            console.error(error.stack);
+                                            logger.error(error.stack);
                                         } else {
                                             if (device.is_present) {
                                                 instance.moduleManager.emit('person:device:online', device);
@@ -150,13 +152,13 @@ device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
         'SELECT * FROM device WHERE id = ?',
         [device.id], function (error, row) {
             if (error) {
-                console.error(error);
+                logger.error(error);
             } else {
                 instance.moduleManager.emit('database:person:delete',
                     'DELETE FROM device WHERE id = ?',
                     [device.id], function (error) {
                         if (error) {
-                            console.error(error);
+                            logger.error(error);
                         } else {
                             if (row.is_present) {
                                 instance.moduleManager.emit('person:device:offline', row);
@@ -171,7 +173,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
     if (mac_address.device_id !== undefined && mac_address.device_id !== null) {
         instance._findById(mac_address.device_id, function (error, device) {
             if (error !== null) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
 
                 if (device !== undefined && !device.is_present) {
@@ -180,7 +182,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
 
                     instance._updateById(device.id, device, function (error) {
                         if (error) {
-                            console.error(error.stack);
+                            logger.error(error.stack);
                         } else {
                             instance.moduleManager.emit('person:device:online', device);
                         }
@@ -195,7 +197,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
     if (mac_address.device_id !== undefined && mac_address.device_id !== null) {
         instance._findMacAddressesById(mac_address.device_id, function (error, mac_addresses) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 if (mac_addresses !== undefined) {
                     mac_addresses = _.filter(mac_addresses, _.matches({'is_present': 1}));
@@ -203,7 +205,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
                     if (mac_addresses.length == 0) {
                         instance._findById(mac_address.device_id, function (error, device) {
                             if (error !== null) {
-                                console.error(error.stack);
+                                logger.error(error.stack);
                             } else {
 
                                 device.updated_date = new Date();
@@ -211,7 +213,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
 
                                 instance._updateById(device.id, device, function (error) {
                                     if (error) {
-                                        console.error(error.stack);
+                                        logger.error(error.stack);
                                     } else {
                                         instance.moduleManager.emit('person:device:offline', device);
                                     }

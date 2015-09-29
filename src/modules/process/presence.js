@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 function presence() {
     var moduleManager = {};
     var plotly = undefined;
@@ -73,7 +75,7 @@ presence.prototype._retrieveSample = function (callback) {
         "SELECT Datetime(date, 'localtime') as date, value FROM arp;", [],
         function (error, rows) {
             if (error !== undefined && error !== null) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 callback(rows);
             }

@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var Client = require('node-wolfram');
 
 function ask() {
@@ -51,7 +53,7 @@ ask.prototype.process = function(message, callback) {
 
       this.wolfram.query(question, function (error, result) {
         if (error !== undefined && error !== null) {
-          console.error(error.stack);
+          logger.error(error.stack);
           callback("Can you repeat that again?");
         } else if (result !== undefined && result !== null) {
 
@@ -59,7 +61,7 @@ ask.prototype.process = function(message, callback) {
             var response = self._handleResult(result);
             callback(response);
           } catch (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
             callback("Oops! Something went wrong...please call the maintenance team!");
           }
         }
@@ -91,7 +93,7 @@ ask.prototype._handleResult = function(result) {
 
   } else if (result.queryresult.didyoumeans !== undefined && result.queryresult.didyoumeans !== null) {
     result.queryresult.didyoumeans[0].didyoumean.forEach(function(didyoumean) {
-      console.log(didyoumean);
+      logger.log(didyoumean);
     });
     return 'Could you be more precise on what you want to know?';
   }

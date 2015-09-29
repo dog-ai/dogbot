@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var _ = require('lodash');
 var events = require('events');
 var Slack = require('slack-client');
@@ -66,7 +68,7 @@ slack.prototype.start = function () {
     });
 
     this.client.on('error', function(error) {
-        console.error(error)
+        logger.error(error)
     });
 
     var time = 60 * 1000;
@@ -76,7 +78,7 @@ slack.prototype.start = function () {
             self._discoverUsers();
 
         } catch (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
 
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));
@@ -125,7 +127,7 @@ slack.prototype._handleMessage = function (message) {
                 }, user);
             } catch (exception) {
                 channel.send("Oops! Something went wrong...please call the maintenance team!");
-                console.log(exception.stack);
+                logger.log(exception.stack);
             }
         });
     }

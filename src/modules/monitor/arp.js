@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 function arp() {
     var communication = {};
     var timeout = undefined;
@@ -45,7 +47,7 @@ arp.prototype.start = function () {
                 });
             });
         } catch (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
 
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));
@@ -65,11 +67,11 @@ arp.prototype.stop = function () {
 arp.prototype._handleIpAddress = function (ipAddress) {
     instance._resolve(ipAddress, function (error, macAddress) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         } else {
             instance._addOrUpdate(ipAddress, macAddress, function (error) {
                 if (error) {
-                    console.error(error.stack);
+                    logger.error(error.stack);
                 }
             });
         }
@@ -97,13 +99,13 @@ arp.prototype._discover = function (callback) {
 
         self._addOrUpdate(ipAddress, macAddress, function (error) {
             if (error !== null) {
-                console.error(error.stack);
+                logger.error(error.stack);
             }
         });
     });
 
     _process.stderr.on('data', function (data) {
-        console.error(new Error(data));
+        logger.error(new Error(data));
     });
 
     _process.on('close', function () {
@@ -119,7 +121,7 @@ arp.prototype._clean = function (callback) {
     var currentDate = new Date();
     this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
 
         if (callback !== undefined) {
@@ -239,7 +241,7 @@ arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
                             "DELETE FROM arp WHERE id = ?;", [row.id],
                             function (error) {
                                 if (error) {
-                                    console.error(error.stack);
+                                    logger.error(error.stack);
                                 } else {
                                     if (onDelete !== undefined) {
                                         onDelete(row);

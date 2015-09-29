@@ -4,6 +4,8 @@
 
 //var noble = require('noble');
 
+var logger = require('../../utils/logger.js');
+
 function bluetooth() {
     var moduleManager = {};
 }
@@ -39,18 +41,18 @@ bluetooth.prototype.start = function() {
     });
 
     noble.on('discover', function(peripheral) {
-        console.log("Detected bluetooth device: " +
+     logger.log("Detected bluetooth device: " +
                     peripheral.advertisement.localName + " (" + peripheral.uuid + ")");
         peripheral.connect(function(err) {
             if (err) {
-                console.log(err);
+     logger.log(err);
             } else {
                 peripheral.discoverServices([peripheral.uuid], function(err, services) {
                     if (err) {
-                        console.log(err);
+     logger.log(err);
                     } else {
                         services.forEach(function(service) {
-                            console.log('Detected bluetooth service: ' + service);
+     logger.log('Detected bluetooth service: ' + service);
                             service.discoverCharacteristics([], function(err, characteristics) {
 
                                 characteristics.forEach(function(characteristic) {});

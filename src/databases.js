@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('./utils/logger.js');
+
 var async = require('async');
 
 var _ = require('lodash');
@@ -179,7 +181,7 @@ databases.prototype.startAll = function (callback) {
         }
     ], function (error) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
 
         callback();
@@ -205,9 +207,9 @@ databases.prototype._start = function (type, file) {
         database.start(self.communication);
         self.started.push(database);
 
-        console.log('Started ' + type.toLowerCase() + ' database: ' + database.name);
+        logger.log('Started ' + type.toLowerCase() + ' database: ' + database.name);
     } catch (error) {
-        console.log('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message);
+        logger.log('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message);
     }
 };
 
@@ -222,9 +224,9 @@ databases.prototype.stopAll = function () {
 databases.prototype._stop = function (database) {
     try {
         database.stop();
-        console.log('Stopped database: ' + database.name);
+        logger.log('Stopped database: ' + database.name);
     } catch (exception) {
-        console.log('Unable to stop database ' + database.name + ' because ' + exception.message);
+        logger.log('Unable to stop database ' + database.name + ' because ' + exception.message);
     }
 };
 

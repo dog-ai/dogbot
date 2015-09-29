@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 function notification() {
     var moduleManager = {};
 }
@@ -41,19 +43,19 @@ notification.prototype.stop = function () {
 };
 
 notification.prototype._handleEmployeeNearby = function (employee) {
-    console.log(new Date() + ' ' + employee.full_name + ' is nearby');
+    logger.log(new Date() + ' ' + employee.full_name + ' is nearby');
 };
 
 notification.prototype._handleEmployeeFaraway = function (employee) {
-    console.log(new Date() + ' ' + employee.full_name + ' is faraway');
+    logger.log(new Date() + ' ' + employee.full_name + ' is faraway');
 };
 
 notification.prototype._handleEmployeeOnline = function (employee) {
-    console.log(new Date() + ' ' + employee.full_name + ' is online');
+    logger.log(new Date() + ' ' + employee.full_name + ' is online');
 };
 
 notification.prototype._handleEmployeeOffline = function (employee) {
-    console.log(new Date() + ' ' + employee.full_name + ' is offline');
+    logger.log(new Date() + ' ' + employee.full_name + ' is offline');
 };
 
 var instance = new notification();

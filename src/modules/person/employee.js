@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var _ = require('lodash');
 var moment = require('moment');
 
@@ -76,7 +78,7 @@ employee.prototype._handleDeviceOnline = function (device) {
 
         instance._findById(device.employee_id, function (error, employee) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
 
                 if (employee !== undefined && !employee.is_present) {
@@ -84,7 +86,7 @@ employee.prototype._handleDeviceOnline = function (device) {
 
                     instance._updateByAddress(employee.id, employee.is_present, function (error) {
                         if (error) {
-                            console.error(error.stack);
+                            logger.error(error.stack);
                         } else {
                             instance.moduleManager.emit('person:employee:nearby', employee);
                         }
@@ -99,7 +101,7 @@ employee.prototype._handleDeviceOffline = function (device) {
     if (device.employee_id !== undefined && device.employee_id !== null) {
         instance._findById(device.employee_id, function (error, employee) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
 
                 if (employee !== undefined) {
@@ -107,7 +109,7 @@ employee.prototype._handleDeviceOffline = function (device) {
                     instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
 
                         if (error) {
-                            console.error(error.stack);
+                            logger.error(error.stack);
                         } else {
 
                             if (devices && devices.length == 0 && employee.is_present) {
@@ -116,7 +118,7 @@ employee.prototype._handleDeviceOffline = function (device) {
 
                                 instance._updateByAddress(employee.id, employee.is_present, function (error) {
                                     if (error) {
-                                        console.error(error.stack);
+                                        logger.error(error.stack);
                                     } else {
                                         instance.moduleManager.emit('person:employee:faraway', employee);
                                     }
@@ -136,7 +138,7 @@ employee.prototype._isPresent = function (employee, callback) {
 
         instance._findDevicesById(employee.id, function (error, devices) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 if (devices !== undefined) {
                     var device = _.find(devices, {'is_present': true});
@@ -152,7 +154,7 @@ employee.prototype._isPresent = function (employee, callback) {
 employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
     instance._findById(employee.id, function (error, employee) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         } else {
 
             if (device.is_present && employee !== undefined && !employee.is_present) {
@@ -160,7 +162,7 @@ employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
 
                 instance._updateByAddress(employee.id, employee.is_present, function (error) {
                     if (error) {
-                        console.error(error.stack);
+                        logger.error(error.stack);
                     } else {
                         instance.moduleManager.emit('person:employee:nearby', employee);
                     }
@@ -173,7 +175,7 @@ employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
 employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
     instance._findById(employee.id, function (error, employee) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         } else {
 
             if (employee !== undefined) {
@@ -181,7 +183,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
                 instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
 
                     if (error) {
-                        console.error(error.stack);
+                        logger.error(error.stack);
                     } else {
 
                         if (devices && devices.length == 0 && employee.is_present) {
@@ -190,7 +192,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
 
                             instance._updateByAddress(employee.id, employee.is_present, function (error) {
                                 if (error) {
-                                    console.error(error.stack);
+                                    logger.error(error.stack);
                                 } else {
                                     instance.moduleManager.emit('person:employee:faraway', employee);
                                 }
@@ -206,7 +208,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
 employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
     instance.moduleManager.emit('database:person:retrieveAll', 'PRAGMA table_info(employee)', [], function (error, rows) {
         if (error !== null) {
-            throw error();
+            logger.error(error.stack);
         }
 
         employee = _.pick(employee, _.pluck(rows, 'name'));
@@ -223,7 +225,7 @@ employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
 
         instance._findById(employee.id, function (error, row) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 if (row !== undefined && moment(employee.updated_date).isAfter(row.updated_date)) {
                     keys = _.keys(_.omit(employee, 'is_present'));
@@ -237,7 +239,7 @@ employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
                     values,
                     function (error) {
                         if (error) {
-                            console.error(error.stack);
+                            logger.error(error.stack);
                         }
                     });
             }
@@ -250,13 +252,13 @@ employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee
         'SELECT * FROM employee WHERE id = ?',
         [employee.id], function (error, row) {
             if (error) {
-                console.error(error);
+                logger.error(error);
             } else {
                 instance.moduleManager.emit('database:person:delete',
                     'DELETE FROM employee WHERE id = ?',
                     [employee.id], function (error) {
                         if (error) {
-                            console.error(error);
+                            logger.error(error);
                         } else {
                             if (row.is_present) {
                                 instance.moduleManager.emit('person:employee:faraway', row);
@@ -266,7 +268,6 @@ employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee
             }
         });
 };
-
 
 employee.prototype._findDevicesById = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveAll',

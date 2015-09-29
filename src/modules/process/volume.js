@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 function volume() {
   var moduleManager = {};
 }
@@ -45,7 +47,7 @@ volume.prototype.process = function(message, callback) {
         .exec('amixer -c 1 set Headphone ' + percentage,
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-              console.error(error.stack);
+              logger.error(error.stack);
             }
           });
     } else {
@@ -53,7 +55,7 @@ volume.prototype.process = function(message, callback) {
         .exec("amixer -c 1 get Headphone | tail -n 1 | cut -d ' ' -f 7",
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-              console.error(error.stack);
+              logger.error(error.stack);
             } else {
               callback(stdout.replace('[', '').replace(']', ''));
             }

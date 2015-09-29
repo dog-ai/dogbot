@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var browser = require('airplay').createBrowser();
 var browser2 = require('airplay2').createBrowser();
 var airtunes = require('airtunes');
@@ -31,7 +33,7 @@ airplay.prototype.unload = function() {
 
 airplay.prototype.start = function() {
     browser.on('deviceOnline', function(device) {
-        console.log('AirPlay device online: ' + device.id);
+        logger.log('AirPlay device online: ' + device.id);
     });
     browser.start();
 
@@ -39,14 +41,14 @@ airplay.prototype.start = function() {
         port: 36666
     });
     device.on('status', function(status) {
-        console.log('Status: ' + status);
+        logger.log('Status: ' + status);
     });
     device.on('error', function(status) {
-        console.log('Error: ' + status);
+        logger.log('Error: ' + status);
     });
 
     browser2.on('deviceOn', function(device) {
-        console.log('AirPlay device online: ' + device.id);
+        logger.log('AirPlay device online: ' + device.id);
     });
     browser2.start();
 };

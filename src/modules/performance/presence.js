@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var _ = require('lodash');
 
 var moment = require('moment');
@@ -61,7 +63,7 @@ presence.prototype.stop = function () {
 presence.prototype._handleEmployeeMovement = function (employee) {
     instance._findLatestPresenceByEmployeeId(employee.id, function (error, performance) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         } else {
             if (performance && performance.is_present == employee.is_present) {
                 return;
@@ -69,7 +71,7 @@ presence.prototype._handleEmployeeMovement = function (employee) {
 
             instance._addPresence({employee_id: employee.id, is_present: employee.is_present}, function (error) {
                 if (error) {
-                    console.error(error.stack);
+                    logger.error(error.stack);
                 }
             });
         }
@@ -77,26 +79,33 @@ presence.prototype._handleEmployeeMovement = function (employee) {
 };
 
 presence.prototype._handlePresenceIncomingSynchronization = function (syncingPresence) {
-    instance._findLatestPresenceByEmployeeId(syncingPresence.employee_id, function (error, presence) {
-        if (error) {
-            console.error(error.stack);
-        } else {
-            if (presence === undefined) {
-                instance._addPresence(syncingPresence, function (error) {
-                    if (error) {
-                        console.error(error.stack);
-                    }
-                });
+    instance.moduleManager.emit('database:performance:retrieveAll', 'PRAGMA table_info(presence)', [], function (error, rows) {
+
+        syncingPresence = _.pick(syncingPresence, _.pluck(rows, 'name'));
+
+        instance._findLatestPresenceByEmployeeId(syncingPresence.employee_id, function (error, presence) {
+            if (error) {
+                logger.error(error.stack);
             } else {
-                if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
+
+
+                if (presence === undefined) {
                     instance._addPresence(syncingPresence, function (error) {
                         if (error) {
-                            console.error(error.stack);
+                            logger.error(error.stack);
                         }
                     });
+                } else {
+                    if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
+                        instance._addPresence(syncingPresence, function (error) {
+                            if (error) {
+                                logger.error(error.stack);
+                            }
+                        });
+                    }
                 }
             }
-        }
+        });
     });
 };
 
@@ -104,7 +113,7 @@ presence.prototype._handlePresenceOutgoingSynchronization = function (callback) 
     instance.moduleManager.emit('database:performance:retrieveOneByOne',
         'SELECT * FROM presence WHERE is_synced = 0', [], function (error, row) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 if (row !== undefined) {
                     row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -112,12 +121,12 @@ presence.prototype._handlePresenceOutgoingSynchronization = function (callback) 
 
                     callback(error, row.employee_id, 'presence', row, function (error) {
                         if (error) {
-                            console.error(error)
+                            logger.error(error)
                         } else {
                             instance.moduleManager.emit('database:performance:update',
                                 'UPDATE presence SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
                                     if (error) {
-                                        console.error(error.stack);
+                                        logger.error(error.stack);
                                     }
                                 });
                         }
@@ -146,7 +155,7 @@ presence.prototype._computeDatePresenceDurationForAllEmployees = function (date)
     instance._findAllEmployees(function (error, employee) {
 
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         } else {
 
             var startDate = date.startOf('day').toDate();
@@ -155,7 +164,7 @@ presence.prototype._computeDatePresenceDurationForAllEmployees = function (date)
             instance._computePresenceDurationBetweenDatesByEmployeeId(employee.id, startDate, endDate, function (error, duration) {
 
                 if (error) {
-                    console.error(error.stack);
+                    logger.error(error.stack);
                 } else {
                     var stats = {
                         total_duration: duration.asMilliseconds()

@@ -24,7 +24,7 @@ var dogbot = {
 
             synchronization.start(self.secret, function (error, dogId) {
                     if (error) {
-                        console.error(error.message);
+                        logger.error(error.message);
 
                         //modules.loadAll();
                     } else {
@@ -100,10 +100,10 @@ var dogbot = {
 
         revision.hasRevisionChanged(function (error, changed, revision) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
                 if (changed) {
-                 console.log('Detected new code revision: ' + revision);
+                    logger.log('Detected new code revision: ' + revision);
 
                     /*modules.findAllLoadedModulesByType('IO').forEach(function(module) {
                      module.send(null, 'Refreshing my brains with code revision ' + revision);

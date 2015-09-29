@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var sqlInsertEntryIntoTable = "INSERT INTO google (user_id, name, email, access_token, expires_in, refresh_token) VALUES (?, ?, ?, ?, ?, ?);";
 
 var sqlUpdateTableEntryByUserId = "UPDATE google SET updated_date = ?, name = ?, email = ?, access_token = ?, expires_in = ?, refresh_token = ? WHERE user_id = ? ;";
@@ -65,7 +67,7 @@ google.prototype.start = function() {
       self.moduleManager.emit('database:auth:retrieveOne', sqlSelectFromTableByUserId, [profile.id],
         function(error, row) {
           if (error !== null) {
-            console.error(error.stack);
+            logger.error(error.stack);
           } else {
             if (row === undefined) {
               self._addPresence(profile.id, profile.displayName, profile.emails[0].value, accessToken, params.expires_in, refreshToken);
@@ -105,12 +107,12 @@ google.prototype.refreshAuth = function(accountId, callback) {
   this.moduleManager.emit('database:auth:retrieveOne', sqlSelectFromTableByUserId, [accountId],
     function(error, row) {
       if (error !== null) {
-        console.error(error.stack);
+        logger.error(error.stack);
       } else {
         if (row !== undefined) {
           refresh.requestNewAccessToken('google', row.refresh_token, function(error, accessToken) {
             if (error !== undefined && error !== null) {
-              console.error(error.stack);
+              logger.error(error.stack);
             } else {
               row.access_token = accessToken;
               self._update(row.user_id, row.name, row.email, row.access_token, row.expires_in, row.refresh_token);
@@ -135,7 +137,7 @@ google.prototype._addPresence = function (userId, name, email, accessToken, expi
     ],
     function(error) {
       if (error !== undefined && error !== null) {
-        console.error(error.stack);
+        logger.error(error.stack);
       } else {
 
       }
@@ -157,7 +159,7 @@ google.prototype._update = function(userId, name, email, accessToken, expiresIn,
     ],
     function(error, lastId, changes) {
       if (error !== undefined && error !== null) {
-        console.error(error.stack);
+        logger.error(error.stack);
       } else {}
     });
 };

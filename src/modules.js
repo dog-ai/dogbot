@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('./utils/logger.js');
+
 var _ = require('lodash');
 var path = require('path');
 var fs = require("fs");
@@ -59,12 +61,12 @@ modules.prototype._load = function (type, file, config) {
 
             self.loaded.push(module);
 
-            console.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
+            logger.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
         } catch (error) {
-            console.log('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
+            logger.log('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
             if (!(error.message.indexOf('platform is not supported') > -1 ||
                 error.message.indexOf('invalid configuration') > -1)) {
-                console.error(error.stack);
+                logger.error(error.stack);
             }
         }
     });
@@ -98,9 +100,9 @@ modules.prototype._unload = function(module) {
             return _module.name == module.name;
         });
 
-        console.log('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
+        logger.log('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
     } catch (exception) {
-        console.log('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + exception.message);
+        logger.log('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + exception.message);
     }
 
 };

@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var _ = require('lodash');
 var os = require('os');
 
@@ -44,7 +46,7 @@ ip.prototype.start = function () {
                 self._clean();
             });
         } catch (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
 
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));
@@ -64,7 +66,7 @@ ip.prototype.stop = function () {
 ip.prototype._handleBonjour = function (bonjour) {
     instance._addOrUpdate(bonjour.ip_address, function (error) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
     });
 };
@@ -109,7 +111,7 @@ ip.prototype._discover = function (callback) {
 
                     self._addOrUpdate(ipAddress, function (error) {
                         if (error !== null) {
-                            console.error(error.stack);
+                            logger.error(error.stack);
                         }
                     });
                 });
@@ -130,7 +132,7 @@ ip.prototype._clean = function () {
     var currentDate = new Date();
     this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error, ip) {
         if (error !== null) {
-            console.error(error.stack);
+            logger.error(error.stack);
         } else {
             self.moduleManager.emit('monitor:ipAddress:delete', ip.ip_address);
         }

@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 function bonjour() {
     var moduleManager = {};
     var timeout = undefined;
@@ -44,7 +46,7 @@ bonjour.prototype.start = function () {
                 self._clean();
             });
         } catch (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
 
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));
@@ -84,13 +86,13 @@ bonjour.prototype._discover = function (callback) {
 
         self._addOrUpdate(type, name, address, hostname, port, txt, function (error) {
             if (error !== null) {
-                console.error(error.stack);
+                logger.error(error.stack);
             }
         });
     });
 
     process.stderr.on('data', function (data) {
-        //console.error(new Error(data));
+        //logger.error(new Error(data));
     });
 
     process.on('close', function () {
@@ -106,7 +108,7 @@ bonjour.prototype._clean = function () {
     var currentDate = new Date();
     this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error, bonjour) {
         if (error !== null) {
-            console.error(error.stack);
+            logger.error(error.stack);
         } else {
             self.moduleManager.emit('monitor:bonjour:delete', bonjour.ip_address);
         }

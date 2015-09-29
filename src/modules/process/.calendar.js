@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var gcal = require('google-calendar');
 var moment = require('moment');
 
@@ -42,7 +44,7 @@ calendar.prototype.process = function(message, callback) {
     var google = this.moduleManager.findLoadedModuleByName('google');
     google.getAccounts(function(error, accounts) {
       if (error !== undefined && error !== null) {
-        console.error(error.stack);
+        logger.error(error.stack);
       } else {
         accounts.forEach(function(account) {
 
@@ -54,7 +56,7 @@ calendar.prototype.process = function(message, callback) {
 
             var response = '';
             eventList.items.forEach(function(event) {
-              console.log(event);
+              logger.log(event);
               response += event.summary + '\n';
 
               if (event.location !== undefined) {

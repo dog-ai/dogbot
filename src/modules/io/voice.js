@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var child_process = require('child_process');
 var events = require('events');
 var querystring = require('querystring');
@@ -102,7 +104,7 @@ voice.prototype._play = function(urls, current, total, callback) {
                 }
             });
     } catch (error) {
-        console.error(error.stack);
+        logger.error(error.stack);
     }
 };
 

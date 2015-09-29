@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var GoSquared = require('gosquared');
 
 function gosquared() {
@@ -54,7 +56,7 @@ gosquared.prototype.process = function(message, callback) {
 
     this.api.now.v3.visitors(function (e, data) {
       if (e) {
-        return console.log(e);
+        return logger.log(e);
       }
 
       var response = '';

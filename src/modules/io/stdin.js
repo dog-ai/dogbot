@@ -2,6 +2,8 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+var logger = require('../../utils/logger.js');
+
 var events = require('events');
 var readline = require('readline');
 
@@ -38,11 +40,11 @@ stdin.prototype.load = function(moduleManager) {
             self.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function (module) {
                 try {
                     module.process(message, function (data) {
-                        console.log(data);
+                        logger.log(data);
                     });
                 } catch (exception) {
-                    console.log("Oops! Something went wrong...please call the maintenance team!");
-                    console.log(exception);
+                    logger.log("Oops! Something went wrong...please call the maintenance team!");
+                    logger.log(exception);
                 }
             });
 
