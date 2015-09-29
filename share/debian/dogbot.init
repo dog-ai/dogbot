@@ -40,7 +40,6 @@ export AUDIODEV=hw:1,0
 export AUDIODRIVER=alsa
 
 forever=`which forever`
-nodemon=`which nodemon`
 
 do_start()
 {
@@ -50,10 +49,11 @@ do_start()
     mkdir -p var/tmp > /dev/null 2>&1
 
     DOGBOT_SECRET=$DOGBOT_SECRET $forever start \
-    --append -l $DOGBOT_HOME/var/log/dogbot.log \
     --pidFile $PIDFILE \
     --workingDir $DOGBOT_HOME \
-    -c "$nodemon --exitcrash" $DAEMON
+    --watch --watchDirectory $DOGBOT_HOME \
+    --killSignal=SIGUSR2 \
+    $DAEMON
     RETVAL="$?"
 
     return "$RETVAL"

@@ -1,7 +1,7 @@
 {
   "name": "dogbot",
   "version": "0.0.0",
-  "license": "",
+  "license": "ISC",
   "private": true,
   "scripts": {
     "start": "node ./bin/app"
@@ -10,7 +10,6 @@
     "async": "^1.4.2",
     "bluebird": "^2.10.1",
     "cron": "^1.0.9",
-    "debug": "^2.2.0",
     "express": "^4.13.0",
     "firebase": "^2.2.9",
     "firebase-queue": "^1.2.1",
@@ -40,6 +39,7 @@
     "split": "^1.0.0",
     "sqlite3": "^3.0.8",
     "stack-trace": "0.0.9",
+    "winston": "^1.0.2",
     "wireless-tools": "^0.14.0"
   },
   "description": "",
@@ -52,7 +52,6 @@
     "url": "https://github.com/hfreire/raspbot.git"
   },
   "author": "Hugo Freire",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/hfreire/raspbot/issues"
   },

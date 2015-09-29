@@ -1,0 +1,12 @@
+.git/**
+node_modules/**
+share/**
+var/**
+
+.gitignore
+package.json
+README.md
+
+# Restart only when js files are changed.
+!*.js
+!bin/app

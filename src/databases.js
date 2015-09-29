@@ -2,9 +2,6 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var debug = require('debug')('dogbot:databases');
-debug.log = console.info.bind(console);
-
 var async = require('async');
 
 var _ = require('lodash');
@@ -182,7 +179,7 @@ databases.prototype.startAll = function (callback) {
         }
     ], function (error) {
         if (error) {
-            debug(error.stack);
+            console.error(error.stack);
         }
 
         callback();

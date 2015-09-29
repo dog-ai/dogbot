@@ -5,7 +5,8 @@
 var _ = require('lodash');
 //var stackTrace = require('stack-trace');
 
-var communication = require('./utils/communication.js'),
+var logger = require('./utils/logger.js'),
+    communication = require('./utils/communication.js'),
     revision = require('./utils/revision.js'),
     synchronization = require('./utils/synchronization.js');
 
@@ -117,7 +118,7 @@ var dogbot = {
     error: function (error) {
         //var traces = stackTrace.parse(error);
 
-        console.error(error.stack);
+        logger.error(error);
 
         /*if (traces !== undefined && traces !== null) {
             traces.forEach(function (trace) {
@@ -134,6 +135,5 @@ var dogbot = {
 
 module.exports = function (secret) {
     dogbot.secret = secret;
-
     return dogbot;
 };

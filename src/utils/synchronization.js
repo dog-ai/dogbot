@@ -2,8 +2,7 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var debug = require('debug')('dogbot:synchronization');
-debug.log = console.info.bind(console);
+var logger = require('./logger.js');
 
 var _ = require('lodash');
 var moment = require('moment-timezone');
@@ -60,7 +59,7 @@ synchronization.prototype.start = function (token, callback,
         if (error) {
             callback(error);
         } else {
-            console.log('Synchronizing as %s', authData.uid);
+            logger.info('Synchronizing as %s', authData.uid);
 
             self.dogId = authData.uid;
 
@@ -129,7 +128,7 @@ synchronization.prototype._init = function (callback) {
             // listen for dog modules events
             if (dog.modules !== undefined) {
                 self.dogRef.child('modules').on('child_changed', self._onModuleChanged, function (error) {
-                    console.error(error.stack);
+                    logger.error(error.stack);
                 });
                 _.forEach(dog.modules, function (modules, type) {
                     _.forEach(modules, function (moduleConfiguration, moduleName) {
@@ -144,26 +143,26 @@ synchronization.prototype._init = function (callback) {
 
                 // listen for company device events
                 self.companyRef.child('/devices').on('child_added', self._onCompanyDeviceAdded, function (error) {
-                    console.error("devices child_added" + error);
+                    logger.error("devices child_added" + error);
                 });
                 self.companyRef.child('/devices').on('child_removed', self._onCompanyDeviceRemoved, function (error) {
-                    console.error("devices child_removed" + error);
+                    logger.error("devices child_removed" + error);
                 });
 
                 // listen for company employee events
                 self.companyRef.child('/employees').on('child_added', self._onCompanyEmployeeAdded, function (error) {
-                    console.error("employees child_added" + error);
+                    logger.error("employees child_added" + error);
                 });
                 self.companyRef.child('/employees').on('child_removed', self._onCompanyEmployeeRemoved, function (error) {
-                    console.error("employees child_removed" + error);
+                    logger.error("employees child_removed" + error);
                 });
 
                 // listen for company devices events
                 self.companyRef.child('/mac_addresses').on('child_added', self._onCompanyMacAddressAdded, function (error) {
-                    console.error("mac addresses child_added" + error);
+                    logger.error("mac addresses child_added" + error);
                 });
                 self.companyRef.child('/mac_addresses').on('child_removed', self._onCompanyMacAddressRemoved, function (error) {
-                    console.error("mac addresses child_removed" + error);
+                    logger.error("mac addresses child_removed" + error);
                 });
             }
         }
@@ -174,7 +173,7 @@ synchronization.prototype._init = function (callback) {
             try {
                 self._synchronize();
             } catch (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             }
 
             self.timeout = setTimeout(synchronize, time * (1 + Math.random()));
@@ -196,10 +195,10 @@ synchronization.prototype._synchronize = function () {
 
         this.onMacAddressPush(function (error, mac_address, onComplete) {
 
-            debug('sending mac address: %s', JSON.stringify(mac_address));
+            logger.debug('sending mac address: %s', JSON.stringify(mac_address));
 
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             } else {
 
                 var val = _.omit(mac_address, ['id', 'is_synced', 'is_present']);
@@ -218,7 +217,7 @@ synchronization.prototype._synchronize = function () {
                     var macAddressesRef = firebase.child('mac_addresses');
                     macAddressRef = macAddressesRef.push(val, function (error) {
                         if (error) {
-                            console.error(error);
+                            logger.error(error);
                         } else {
                             self.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, function (error) {
                                 mac_address.id = macAddressRef.key();
@@ -234,7 +233,7 @@ synchronization.prototype._synchronize = function () {
         _.forEach(performanceNames, function (performanceName) {
             instance.onPerformancePush(performanceName, function (error, employeeId, type, performance, onComplete) {
                 if (error) {
-                    console.error(error.stack);
+                    logger.error(error.stack);
                 } else {
 
                     performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
@@ -271,12 +270,14 @@ synchronization.prototype._onCompanyMacAddressAdded = function (snapshot) {
 
     // listen for mac address events
     firebase.child('mac_addresses/' + macAddressId).on('value', instance._onMacAddressChanged, function (error) {
-        console.error("mac address " + error);
+        logger.error("mac address " + error);
     });
 };
 
 synchronization.prototype._onCompanyMacAddressRemoved = function (snapshot) {
     var macAddressId = snapshot.key();
+
+    logger.debug('deleted mac address: %s', macAddressId);
 
     firebase.child('mac_addresses/' + macAddressId).off('value');
     instance.onMacAddressDeletedCallback({id: macAddressId});
@@ -285,7 +286,7 @@ synchronization.prototype._onCompanyMacAddressRemoved = function (snapshot) {
 synchronization.prototype._onMacAddressChanged = function (snapshot) {
     var mac_address = snapshot.val();
 
-    debug('received mac address: %s', JSON.stringify(mac_address));
+    logger.debug('received mac address: %s', JSON.stringify(mac_address));
 
     if (mac_address !== null) {
         if (mac_address.created_date !== undefined && mac_address.created_date !== null) {
@@ -315,12 +316,14 @@ synchronization.prototype._onCompanyDeviceAdded = function (snapshot) {
 
     // listen for device events
     firebase.child('devices/' + deviceId).on('value', instance._onDeviceChanged, function (error) {
-        console.error("device " + error);
+        logger.error("device " + error);
     });
 };
 
 synchronization.prototype._onCompanyDeviceRemoved = function (snapshot) {
     var deviceId = snapshot.key();
+
+    logger.debug('deleted device: %s', deviceId);
 
     firebase.child('devices/' + deviceId).off('value');
     instance.onDeviceDeletedCallback({id: deviceId});
@@ -330,7 +333,7 @@ synchronization.prototype._onDeviceChanged = function (snapshot) {
     var device = snapshot.val();
 
     if (device !== null) {
-        debug('received device: %s', JSON.stringify(device));
+        logger.debug('received device: %s', JSON.stringify(device));
 
         if (device.created_date !== undefined && device.created_date !== null) {
             device.created_date = new Date(device.created_date);
@@ -349,7 +352,7 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
     var employeeId = snapshot.key();
 
     firebase.child('employees/' + employeeId).on('value', instance._onEmployeeChanged, function (error) {
-        console.error("employee " + error);
+        logger.error("employee " + error);
     });
 
     var performanceNames = ['presence'];
@@ -404,6 +407,8 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
 synchronization.prototype._onCompanyEmployeeRemoved = function (snapshot) {
     var employeeId = snapshot.key();
 
+    logger.debug('deleted employee: %s', employeeId);
+
     firebase.child('employees/' + employeeId).off('value');
     instance.onEmployeeDeletedCallback({id: employeeId});
 };
@@ -412,7 +417,7 @@ synchronization.prototype._onEmployeeChanged = function (snapshot) {
     var employee = snapshot.val();
 
     if (employee !== null) {
-        debug('received employee: %s', JSON.stringify(employee));
+        logger.debug('received employee: %s', JSON.stringify(employee));
 
         if (employee.created_date !== undefined && employee.created_date !== null) {
             employee.created_date = new Date(employee.created_date);
@@ -427,38 +432,38 @@ synchronization.prototype._onEmployeeChanged = function (snapshot) {
 
 
 synchronization.prototype._updateDevice = function (device) {
-    debug('sending device: %s', JSON.stringify(device));
+    logger.debug('sending device: %s', JSON.stringify(device));
 
     firebase.child('devices/' + device.id).update({
         updated_date: moment().format(),
         is_present: device.is_present
     }, function (error) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
     });
 };
 
 synchronization.prototype._updateEmployee = function (employee) {
-    debug('sending employee: %s', JSON.stringify(employee));
+    logger.debug('sending employee: %s', JSON.stringify(employee));
 
     firebase.child('employees/' + employee.id).update({
         updated_date: moment().format(),
         is_present: employee.is_present
     }, function (error) {
         if (error) {
-            console.error(error.stack);
+            logger.error(error.stack);
         }
     });
 };
 
 synchronization.prototype._updateEmployeePerformanceStats = function (employee, performanceName, date, stats) {
-    debug('sending employee performance stats: %s', JSON.stringify(stats));
+    logger.debug('sending employee performance stats: %s', JSON.stringify(stats));
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/stats')
         .update(stats, function (error) {
             if (error) {
-                console.error(error.stack);
+                logger.error(error.stack);
             }
         });
 };
