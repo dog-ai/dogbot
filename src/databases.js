@@ -51,7 +51,7 @@ databases.prototype.startAll = function (callback) {
                     callback(error);
                 } else {
                     self.communication.emit('database:monitor:setup',
-                        "CREATE TABLE IF NOT EXISTS arp (" +
+                        "CREATE TABLE arp (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -68,7 +68,7 @@ databases.prototype.startAll = function (callback) {
                     callback(error);
                 } else {
                     self.communication.emit('database:monitor:setup',
-                        "CREATE TABLE IF NOT EXISTS bonjour (" +
+                        "CREATE TABLE bonjour (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -89,7 +89,7 @@ databases.prototype.startAll = function (callback) {
                     callback(error);
                 } else {
                     self.communication.emit('database:monitor:setup',
-                        "CREATE TABLE IF NOT EXISTS ip (" +
+                        "CREATE TABLE ip (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -104,7 +104,7 @@ databases.prototype.startAll = function (callback) {
                     callback(error);
                 } else {
                     self.communication.emit('database:monitor:setup',
-                        "CREATE TABLE IF NOT EXISTS slack (" +
+                        "CREATE TABLE slack (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -121,7 +121,7 @@ databases.prototype.startAll = function (callback) {
                     callback(error);
                 } else {
                     self.communication.emit('database:person:setup',
-                        "CREATE TABLE IF NOT EXISTS mac_address (" +
+                        "CREATE TABLE mac_address (" +
                         "id TEXT DEFAULT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -141,7 +141,7 @@ databases.prototype.startAll = function (callback) {
                     callback(error);
                 } else {
                     self.communication.emit('database:person:setup',
-                        "CREATE TABLE IF NOT EXISTS device (" +
+                        "CREATE TABLE device (" +
                         "id TEXT PRIMARY KEY NOT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
@@ -157,7 +157,7 @@ databases.prototype.startAll = function (callback) {
                     callback(error);
                 } else {
                     self.communication.emit('database:person:setup',
-                        "CREATE TABLE IF NOT EXISTS employee (" +
+                        "CREATE TABLE employee (" +
                         "id TEXT PRIMARY KEY NOT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +

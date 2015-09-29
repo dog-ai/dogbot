@@ -1,4 +1,12 @@
+/*
+ * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ */
+
 #!/usr/bin/env node
+
+var SECRET = process.env.DOGBOT_SECRET;
+
+var dogbot = require('../src/dogbot.js')(SECRET);
 
 process.on('SIGINT', function() {
     dogbot.stop(function () {
@@ -6,30 +14,24 @@ process.on('SIGINT', function() {
     });
 });
 
-process.once('SIGUSR2', function() {
+process.once('SIGUSR2', function () {
     dogbot.reload(function () {
         process.kill(process.pid, 'SIGUSR2');
     });
 });
 
-process.on('exit', function() {
+process.on('exit', function () {
 });
 
-process.on('uncaughtException', function(exception) {
-    try {
-        dogbot.error(exception);
-    } catch (e) {
-        console.error(exception.stack);
-    }
+process.on('uncaughtException', function (error) {
+    dogbot.error(error);
 });
 
-var secret = process.env.DOGBOT_SECRET;
-if (secret === undefined) {
-    console.error("Please provide a dog.ai secret.");
-    process.exit(1);
+if (SECRET === undefined) {
+    dogbot.error("Please provide a dog.ai secret.", function () {
+        process.exit(1);
+    });
+} else {
+    dogbot.start(function () {
+    });
 }
-
-var dogbot = require('../src/dogbot.js')(secret);
-
-dogbot.start(function () {
-});

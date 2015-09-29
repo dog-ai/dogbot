@@ -49,6 +49,7 @@ do_start()
     mkdir -p var/tmp > /dev/null 2>&1
 
     DOGBOT_SECRET=$DOGBOT_SECRET $forever start \
+    --silent \
     --pidFile $PIDFILE \
     --workingDir $DOGBOT_HOME \
     --watch --watchDirectory $DOGBOT_HOME \

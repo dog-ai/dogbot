@@ -20,6 +20,8 @@ var dogbot = {
     start: function (callback) {
         var self = this;
 
+        logger.info("Starting dogbot");
+
         databases.startAll(function () {
 
             synchronization.start(self.secret, function (error, dogId) {
@@ -92,7 +94,7 @@ var dogbot = {
 
         databases.stopAll();
 
-        callback();
+        logger.info("Stopped dogbot", callback); // force winston to flush logs before stopping
     },
 
     reload: function (callback) {
@@ -115,10 +117,10 @@ var dogbot = {
         });
     },
 
-    error: function (error) {
+    error: function (error, callback) {
         //var traces = stackTrace.parse(error);
 
-        logger.error(error);
+        logger.error(error, callback);
 
         /*if (traces !== undefined && traces !== null) {
             traces.forEach(function (trace) {

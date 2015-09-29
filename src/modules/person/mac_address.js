@@ -191,14 +191,14 @@ mac_address.prototype._onCreateOrUpdateMacAddressIncomingSynchronization = funct
 
                             instance._updateByAddress(mac_address.address, mac_address, function (error) {
                                 if (error) {
-                                    logger.error(error.stack);
+                                    logger.error('Failed to synchronize MAC address from server: ' + mac_address + ' due to: ' + error);
                                 }
                             });
                         }
                     } else {
                         instance._add(mac_address, function (error) {
                             if (error) {
-                                logger.error(error.stack);
+                                logger.error('Failed to synchronize MAC address from server: ' + mac_address + ' due to: ' + error);
                             }
                         });
                     }
