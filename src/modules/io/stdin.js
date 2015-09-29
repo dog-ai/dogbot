@@ -40,11 +40,11 @@ stdin.prototype.load = function(moduleManager) {
             self.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function (module) {
                 try {
                     module.process(message, function (data) {
-                        logger.log(data);
+                        logger.info(data);
                     });
                 } catch (exception) {
-                    logger.log("Oops! Something went wrong...please call the maintenance team!");
-                    logger.log(exception);
+                    logger.info("Oops! Something went wrong...please call the maintenance team!");
+                    logger.info(exception);
                 }
             });
 

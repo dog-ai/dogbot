@@ -61,9 +61,9 @@ modules.prototype._load = function (type, file, config) {
 
             self.loaded.push(module);
 
-            logger.log('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
+            logger.info('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
         } catch (error) {
-            logger.log('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
+            logger.info('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
             if (!(error.message.indexOf('platform is not supported') > -1 ||
                 error.message.indexOf('invalid configuration') > -1)) {
                 logger.error(error.stack);
@@ -100,9 +100,9 @@ modules.prototype._unload = function(module) {
             return _module.name == module.name;
         });
 
-        logger.log('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
+        logger.info('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
     } catch (exception) {
-        logger.log('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + exception.message);
+        logger.info('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + exception.message);
     }
 
 };

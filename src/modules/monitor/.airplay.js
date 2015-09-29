@@ -33,7 +33,7 @@ airplay.prototype.unload = function() {
 
 airplay.prototype.start = function() {
     browser.on('deviceOnline', function(device) {
-        logger.log('AirPlay device online: ' + device.id);
+        logger.info('AirPlay device online: ' + device.id);
     });
     browser.start();
 
@@ -41,14 +41,14 @@ airplay.prototype.start = function() {
         port: 36666
     });
     device.on('status', function(status) {
-        logger.log('Status: ' + status);
+        logger.info('Status: ' + status);
     });
     device.on('error', function(status) {
-        logger.log('Error: ' + status);
+        logger.info('Error: ' + status);
     });
 
     browser2.on('deviceOn', function(device) {
-        logger.log('AirPlay device online: ' + device.id);
+        logger.info('AirPlay device online: ' + device.id);
     });
     browser2.start();
 };

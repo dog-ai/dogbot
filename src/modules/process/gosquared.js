@@ -56,7 +56,7 @@ gosquared.prototype.process = function(message, callback) {
 
     this.api.now.v3.visitors(function (e, data) {
       if (e) {
-        return logger.log(e);
+        return logger.info(e);
       }
 
       var response = '';

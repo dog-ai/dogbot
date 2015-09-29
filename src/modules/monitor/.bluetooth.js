@@ -41,18 +41,18 @@ bluetooth.prototype.start = function() {
     });
 
     noble.on('discover', function(peripheral) {
-     logger.log("Detected bluetooth device: " +
+     logger.info("Detected bluetooth device: " +
                     peripheral.advertisement.localName + " (" + peripheral.uuid + ")");
         peripheral.connect(function(err) {
             if (err) {
-     logger.log(err);
+     logger.info(err);
             } else {
                 peripheral.discoverServices([peripheral.uuid], function(err, services) {
                     if (err) {
-     logger.log(err);
+     logger.info(err);
                     } else {
                         services.forEach(function(service) {
-     logger.log('Detected bluetooth service: ' + service);
+     logger.info('Detected bluetooth service: ' + service);
                             service.discoverCharacteristics([], function(err, characteristics) {
 
                                 characteristics.forEach(function(characteristic) {});

@@ -127,7 +127,7 @@ slack.prototype._handleMessage = function (message) {
                 }, user);
             } catch (exception) {
                 channel.send("Oops! Something went wrong...please call the maintenance team!");
-                logger.log(exception.stack);
+                logger.info(exception.stack);
             }
         });
     }

@@ -207,9 +207,9 @@ databases.prototype._start = function (type, file) {
         database.start(self.communication);
         self.started.push(database);
 
-        logger.log('Started ' + type.toLowerCase() + ' database: ' + database.name);
+        logger.info('Started ' + type.toLowerCase() + ' database: ' + database.name);
     } catch (error) {
-        logger.log('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message);
+        logger.info('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message);
     }
 };
 
@@ -224,9 +224,9 @@ databases.prototype.stopAll = function () {
 databases.prototype._stop = function (database) {
     try {
         database.stop();
-        logger.log('Stopped database: ' + database.name);
+        logger.info('Stopped database: ' + database.name);
     } catch (exception) {
-        logger.log('Unable to stop database ' + database.name + ' because ' + exception.message);
+        logger.info('Unable to stop database ' + database.name + ' because ' + exception.message);
     }
 };
 

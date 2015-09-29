@@ -93,7 +93,7 @@ ask.prototype._handleResult = function(result) {
 
   } else if (result.queryresult.didyoumeans !== undefined && result.queryresult.didyoumeans !== null) {
     result.queryresult.didyoumeans[0].didyoumean.forEach(function(didyoumean) {
-      logger.log(didyoumean);
+      logger.info(didyoumean);
     });
     return 'Could you be more precise on what you want to know?';
   }

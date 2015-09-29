@@ -103,7 +103,7 @@ var dogbot = {
                 logger.error(error.stack);
             } else {
                 if (changed) {
-                    logger.log('Detected new code revision: ' + revision);
+                    logger.info('Detected new code revision: ' + revision);
 
                     /*modules.findAllLoadedModulesByType('IO').forEach(function(module) {
                      module.send(null, 'Refreshing my brains with code revision ' + revision);

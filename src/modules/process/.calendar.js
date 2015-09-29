@@ -56,7 +56,7 @@ calendar.prototype.process = function(message, callback) {
 
             var response = '';
             eventList.items.forEach(function(event) {
-              logger.log(event);
+              logger.info(event);
               response += event.summary + '\n';
 
               if (event.location !== undefined) {
