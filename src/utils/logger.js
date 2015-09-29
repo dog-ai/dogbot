@@ -20,13 +20,6 @@ var logger = new winston.Logger({
             colorize: false,
             zippedArchive: true,
             timestamp: timeFormat
-        }),
-        new winston.transports.Console({
-            level: 'debug',
-            handleExceptions: true,
-            json: false,
-            colorize: true,
-            timestamp: timeFormat
         })
     ],
     exitOnError: false
