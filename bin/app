@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
- */
-
 #!/usr/bin/env node
 
 var SECRET = process.env.DOGBOT_SECRET;
