@@ -460,7 +460,7 @@ synchronization.prototype._updateEmployee = function (employee) {
 synchronization.prototype._updateEmployeePerformanceStats = function (employee, performanceName, date, stats) {
     logger.debug('sending employee performance stats: %s', JSON.stringify(stats));
 
-    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/stats')
+    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/_stats')
         .update(stats, function (error) {
             if (error) {
                 logger.error(error.stack);

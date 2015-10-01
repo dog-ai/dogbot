@@ -6,7 +6,3 @@
 
 2. `npm start`
 
-
-or
-
-nodemon bin/app
