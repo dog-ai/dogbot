@@ -2,106 +2,40 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var sqlite3 = require("sqlite3").verbose();
-
-var path = __dirname + "/../../../var/db/";
-var file = path + "monitor.db";
-var db = new sqlite3.Database(file);
+var sql = require('../sql.js');
 
 function monitor() {
-    var databaseManager = {};
+    this.communication = undefined;
 }
 
-monitor.prototype.type = 'SQL';
+monitor.prototype = new sql();
 
 monitor.prototype.name = "monitor";
 
-monitor.prototype.start = function (databaseManager) {
-    this.databaseManager = databaseManager;
+monitor.prototype.start = function (communication) {
+    this.communication = communication;
 
-    this.databaseManager.on('database:monitor:setup', this._run);
-    this.databaseManager.on('database:monitor:create', this._run);
-    this.databaseManager.on('database:monitor:retrieveOne', this._get);
-    this.databaseManager.on('database:monitor:retrieveAll', this._all);
-    this.databaseManager.on('database:monitor:retrieveOneByOne', this._each);
-    this.databaseManager.on('database:monitor:update', this._run);
-    this.databaseManager.on('database:monitor:delete', this._run);
+    this._open(this.name);
+
+    this.communication.on('database:' + this.name + ':setup', this._run);
+    this.communication.on('database:' + this.name + ':create', this._run);
+    this.communication.on('database:' + this.name + ':retrieveOne', this._get);
+    this.communication.on('database:' + this.name + ':retrieveAll', this._all);
+    this.communication.on('database:' + this.name + ':retrieveOneByOne', this._each);
+    this.communication.on('database:' + this.name + ':update', this._run);
+    this.communication.on('database:' + this.name + ':delete', this._run);
 };
 
 monitor.prototype.stop = function () {
-    db.close();
-};
+    this.communication.removeListener('database:' + this.name + ':setup', this._run);
+    this.communication.removeListener('database:' + this.name + ':create', this._run);
+    this.communication.removeListener('database:' + this.name + ':retrieveOne', this._get);
+    this.communication.removeListener('database:' + this.name + ':retrieveAll', this._all);
+    this.communication.removeListener('database:' + this.name + ':retrieveOneByOne', this._each);
+    this.communication.removeListener('database:' + this.name + ':update', this._run);
+    this.communication.removeListener('database:' + this.name + ':delete', this._run);
 
-monitor.prototype._run = function(query, parameters, callback) {
-    var handler = function(error) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, this.lastID, this.changes);
-        }
-    };
-
-    if (parameters) {
-        db.run(query, parameters, handler);
-    } else {
-        db.run(query, handler);
-    }
-};
-
-monitor.prototype._get = function(query, parameters, callback) {
-    var handler = function(error, row) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, row);
-        }
-    };
-
-    if (parameters) {
-        db.get(query, parameters, handler);
-    } else {
-        db.get(query, handler);
-    }
-};
-
-monitor.prototype._all = function(query, parameters, callback) {
-    var handler = function(error, row) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, row);
-        }
-    };
-
-    if (parameters) {
-        db.all(query, parameters, handler);
-    } else {
-        db.all(query, handler);
-    }
-};
-
-monitor.prototype._each = function (query, parameters, callback) {
-    var handler = function (error, row) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, row);
-        }
-    };
-
-    if (parameters) {
-        db.each(query, parameters, handler);
-    } else {
-        db.each(query, handler);
-    }
+    this._close();
 };
 
 module.exports = new monitor();

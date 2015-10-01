@@ -23,7 +23,6 @@ var dogbot = {
         logger.info("Starting dogbot");
 
         databases.startAll(function () {
-
             synchronization.start(self.secret, function (error, dogId) {
                     if (error) {
                         logger.error(error.message);
@@ -119,7 +118,6 @@ var dogbot = {
 
     error: function (error, callback) {
         //var traces = stackTrace.parse(error);
-
         logger.error(error, callback);
 
         /*if (traces !== undefined && traces !== null) {

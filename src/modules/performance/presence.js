@@ -2,18 +2,16 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
-
-var _ = require('lodash');
-
-var moment = require('moment');
-var later = require('later');
+var logger = require('../../utils/logger.js'),
+    _ = require('lodash'),
+    moment = require('moment'),
+    later = require('later');
 
 later.date.localTime();
 
 function presence() {
-    var communication = {};
-    var generateDailyStats = undefined;
+    this.communication = undefined;
+    this.generateDailyStats = undefined;
 }
 
 presence.prototype.type = "PERFORMANCE";
@@ -42,8 +40,7 @@ presence.prototype.start = function () {
     this.communication.on('synchronization:incoming:performance:presence', this._onIncomingPresenceSynchronization);
     this.communication.on('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSynchronization);
 
-
-    var schedule = later.parse.text('at 00:00');
+    var schedule = later.parse.text('at 00:00:01');
     this.generateDailyStats = later.setInterval(function () {
         var date = moment().subtract(1, 'day');
         instance._generateDailyStats(date);

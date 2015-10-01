@@ -235,7 +235,13 @@ module.exports = function (communication) {
 
     instance.communication = communication;
     instance.started = [];
-    instance.types = (fs.readdirSync(databasesDir) || []).map(function (type) {
+    instance.types = (fs.readdirSync(databasesDir) || []).filter(function (type) {
+        if (type.indexOf('.') > -1) {
+            return false;
+        } else {
+            return true;
+        }
+    }).map(function (type) {
         return type.toUpperCase();
     });
 

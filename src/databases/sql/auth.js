@@ -2,106 +2,40 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var sqlite3 = require("sqlite3").verbose();
-
-var path = __dirname + "/../../../var/db/";
-var file = path + "auth.db";
-var db = new sqlite3.Database(file);
+var sql = require('../sql.js');
 
 function auth() {
-    var databaseManager = {};
+    this.communication = {};
 }
 
-auth.prototype.type = 'SQL';
+auth.prototype = new sql();
 
 auth.prototype.name = "auth";
 
-auth.prototype.start = function (databaseManager) {
-    this.databaseManager = databaseManager;
+auth.prototype.start = function (communication) {
+    this.communication = communication;
 
-    this.databaseManager.on('database:auth:setup', this._run);
-    this.databaseManager.on('database:auth:create', this._run);
-    this.databaseManager.on('database:auth:retrieveOne', this._get);
-    this.databaseManager.on('database:auth:retrieveAll', this._all);
-    this.databaseManager.on('database:auth:retrieveOneByOne', this._each);
-    this.databaseManager.on('database:auth:update', this._run);
-    this.databaseManager.on('database:auth:delete', this._run);
+    this._open(this.name);
+
+    this.communication.on('database:' + this.name + ':setup', this._run);
+    this.communication.on('database:' + this.name + ':create', this._run);
+    this.communication.on('database:' + this.name + ':retrieveOne', this._get);
+    this.communication.on('database:' + this.name + ':retrieveAll', this._all);
+    this.communication.on('database:' + this.name + ':retrieveOneByOne', this._each);
+    this.communication.on('database:' + this.name + ':update', this._run);
+    this.communication.on('database:' + this.name + ':delete', this._run);
 };
 
 auth.prototype.stop = function () {
-    db.close();
-};
+    this.communication.removeListener('database:' + this.name + ':setup', this._run);
+    this.communication.removeListener('database:' + this.name + ':create', this._run);
+    this.communication.removeListener('database:' + this.name + ':retrieveOne', this._get);
+    this.communication.removeListener('database:' + this.name + ':retrieveAll', this._all);
+    this.communication.removeListener('database:' + this.name + ':retrieveOneByOne', this._each);
+    this.communication.removeListener('database:' + this.name + ':update', this._run);
+    this.communication.removeListener('database:' + this.name + ':delete', this._run);
 
-auth.prototype._run = function(query, parameters, callback) {
-    var handler = function(error) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, this.lastID, this.changes);
-        }
-    };
-
-    if (parameters) {
-        db.run(query, parameters, handler);
-    } else {
-        db.run(query, handler);
-    }
-};
-
-auth.prototype._get = function(query, parameters, callback) {
-    var handler = function(error, row) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, row);
-        }
-    };
-
-    if (parameters) {
-        db.get(query, parameters, handler);
-    } else {
-        db.get(query, handler);
-    }
-};
-
-auth.prototype._all = function(query, parameters, callback) {
-    var handler = function(error, row) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, row);
-        }
-    };
-
-    if (parameters) {
-        db.all(query, parameters, handler);
-    } else {
-        db.all(query, handler);
-    }
-};
-
-auth.prototype._each = function (query, parameters, callback) {
-    var handler = function (error, row) {
-        if (error) {
-            if (callback) {
-                callback(error);
-            }
-        } else {
-            callback(null, row);
-        }
-    };
-
-    if (parameters !== undefined) {
-        db.each(query, parameters, handler);
-    } else {
-        db.each(query, handler);
-    }
+    this._close();
 };
 
 module.exports = new auth();

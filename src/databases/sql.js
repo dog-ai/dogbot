@@ -4,13 +4,25 @@
 
 var sqlite3 = require("sqlite3").verbose();
 
+var DB_DIR = __dirname + "/../../var/db";
+
+// TODO: can't seem to do proper class inherintance inside function sql() {}
+var file = undefined,
+    db = undefined;
+
 function sql() {
-    this.path = __dirname + "/../../../var/db/";
-    this.file = undefined;
-    this.db = undefined;
 }
 
 sql.prototype.type = 'SQL';
+
+sql.prototype._open = function (name) {
+    file = DB_DIR + '/' + name + '.db';
+    db = new sqlite3.Database(file);
+};
+
+sql.prototype._close = function () {
+    db.close();
+};
 
 sql.prototype._run = function (query, parameters, callback) {
     var handler = function (error) {
@@ -24,9 +36,9 @@ sql.prototype._run = function (query, parameters, callback) {
     };
 
     if (parameters) {
-        this.db.run(query, parameters, handler);
+        db.run(query, parameters, handler);
     } else {
-        this.db.run(query, handler);
+        db.run(query, handler);
     }
 };
 
@@ -42,9 +54,9 @@ sql.prototype._get = function (query, parameters, callback) {
     };
 
     if (parameters) {
-        this.db.get(query, parameters, handler);
+        db.get(query, parameters, handler);
     } else {
-        this.db.get(query, handler);
+        db.get(query, handler);
     }
 };
 
@@ -60,9 +72,9 @@ sql.prototype._all = function (query, parameters, callback) {
     };
 
     if (parameters) {
-        this.db.all(query, parameters, handler);
+        db.all(query, parameters, handler);
     } else {
-        this.db.all(query, handler);
+        db.all(query, handler);
     }
 };
 
@@ -78,9 +90,9 @@ sql.prototype._each = function (query, parameters, callback) {
     };
 
     if (parameters) {
-        this.db.each(query, parameters, handler);
+        db.each(query, parameters, handler);
     } else {
-        this.db.each(query, handler);
+        db.each(query, handler);
     }
 };
 
