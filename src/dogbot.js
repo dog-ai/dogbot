@@ -75,7 +75,7 @@ var dogbot = {
                     // broadcast incoming performance
                     communication.emit('synchronization:incoming:performance:' + performanceName, performance);
                 },
-                function (performanceName, performanceStatsPeriod, performanceStats, employeeId) {
+                function (performanceName, performanceStatsPeriod, employeeId, performanceStats) {
                     // broadcast incoming performance stats
                     communication.emit('synchronization:incoming:performance:' + performanceName + ':' + performanceStatsPeriod + ':stats', employeeId, performanceStats);
                 },
@@ -93,11 +93,11 @@ var dogbot = {
                 },
 
 
-                function (callback) {
+                function (dailyStatsCallback, monthlyStatsCallback, yearlyStatsCallback) {
                     // listen for employee performance stats changes
-                    communication.on('synchronization:outgoing:performance:daily:stats', callback);
-                    communication.on('synchronization:outgoing:performance:monthly:stats', callback);
-                    communication.on('synchronization:outgoing:performance:yearly:stats', callback);
+                    communication.on('synchronization:outgoing:performance:daily:stats', dailyStatsCallback);
+                    communication.on('synchronization:outgoing:performance:monthly:stats', monthlyStatsCallback);
+                    communication.on('synchronization:outgoing:performance:yearly:stats', yearlyStatsCallback);
                 }
             );
 

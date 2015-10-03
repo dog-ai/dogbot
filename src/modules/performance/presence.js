@@ -11,7 +11,14 @@ later.date.localTime();
 
 function presence() {
     this.communication = undefined;
+
     this.generateDailyStats = undefined;
+    this.generateMonthlyStats = undefined;
+    this.generateYearlyStats = undefined;
+
+    this.latestDailyStats = {};
+    this.latestMonthlyStats = {};
+    this.latestYearlyStats = {};
 }
 
 presence.prototype.type = "PERFORMANCE";
@@ -43,15 +50,21 @@ presence.prototype.start = function () {
     this.communication.on('synchronization:incoming:performance:presence:monthly:stats', this._onIncomingEmployeeMonthlyStatsSynchronization);
     this.communication.on('synchronization:incoming:performance:presence:yearly:stats', this._onIncomingEmployeeYearlyStatsSynchronization);
 
-    var schedule = later.parse.text('at 00:00:01');
     this.generateDailyStats = later.setInterval(function () {
         var date = moment().subtract(1, 'day');
         instance._generateDailyStats(date);
-    }, schedule);
+    }, later.parse.text('at 00:00:01'));
+
+    this.generateMonthlyStats = later.setInterval(function () {
+        var date = moment().subtract(1, 'day');
+        instance._generateMonthlyStats(date);
+    }, later.parse.text('at 00:10:01'));
 };
 
 presence.prototype.stop = function () {
     this.generateDailyStats.clear();
+    this.generateMonthlyStats.clear();
+    this.generateYearlyStats.clear();
 
     this.communication.removeListener('person:employee:nearby', this._onEmployeePresence);
     this.communication.removeListener('person:employee:faraway', this._onEmployeePresence);
@@ -61,6 +74,7 @@ presence.prototype.stop = function () {
     this.communication.removeListener('synchronization:incoming:performance:presence:monthly:stats', this._onIncomingEmployeeMonthlyStatsSynchronization);
     this.communication.removeListener('synchronization:incoming:performance:presence:yearly:stats', this._onIncomingEmployeeYearlyStatsSynchronization);
 };
+
 
 presence.prototype._onEmployeePresence = function (employee) {
     instance._findLatestPresenceByEmployeeId(employee.id).then(function (performance) {
@@ -97,9 +111,10 @@ presence.prototype._onOutgoingPresenceSynchronization = function (callback) {
             if (error) {
                 logger.error(error.stack);
             } else {
+
                 if (row !== undefined) {
                     row.created_date = new Date(row.created_date.replace(' ', 'T'));
-                    row.is_present = row.is_present == 1 ? true : false;
+                    row.is_present = row.is_present == 1;
 
                     callback(error, row.employee_id, 'presence', row, function (error) {
                         if (error) {
@@ -119,16 +134,17 @@ presence.prototype._onOutgoingPresenceSynchronization = function (callback) {
 };
 
 presence.prototype._onIncomingEmployeeDailyStatsSynchronization = function (employeeId, _stats) {
-    console.log("DAY: " + _stats);
+    instance.latestDailyStats[employeeId] = _stats;
 };
 
 presence.prototype._onIncomingEmployeeMonthlyStatsSynchronization = function (employeeId, _stats) {
-    console.log("MONTH: " + _stats);
+    instance.latestMonthlyStats[employeeId] = _stats;
 };
 
 presence.prototype._onIncomingEmployeeYearlyStatsSynchronization = function (employeeId, _stats) {
-    console.log("YEAR: " + _stats);
+    instance.latestYearlyStats[employeeId] = _stats;
 };
+
 
 presence.prototype._generateDailyStats = function (date) {
     instance._findAllEmployees()
@@ -194,7 +210,7 @@ presence.prototype._computeEmployeeDailyStartTime = function (employee, date) {
     return instance._findFirstDatePresenceByEmployeeId(employee.id, startDate, endDate)
         .then(function (presence) {
             if (presence !== undefined) {
-                return date.startOf('day').diff(moment(presence.created_date), 'seconds');
+                return moment(presence.created_date).diff(date.startOf('day'), 'seconds');
             } else {
                 return 0;
             }
@@ -207,7 +223,7 @@ presence.prototype._computeEmployeeDailyEndTime = function (employee, date) {
     return instance._findLastDatePresenceByEmployeeId(employee.id, startDate, endDate)
         .then(function (presence) {
             if (presence !== undefined) {
-                return date.startOf('day').diff(moment(presence.created_date), 'seconds');
+                return moment(presence.created_date).diff(date.startOf('day'), 'seconds');
             } else {
                 return 0;
             }
@@ -215,16 +231,154 @@ presence.prototype._computeEmployeeDailyEndTime = function (employee, date) {
 };
 
 presence.prototype._synchronizeEmployeeDailyStats = function (employee, date, stats) {
+    this.latestDailyStats[employee.id] = stats;
     return instance.communication.emitAsync('synchronization:outgoing:performance:daily:stats', employee, 'presence', date, stats);
 };
 
+
+presence.prototype._generateMonthlyStats = function (date) {
+    instance._findAllEmployees()
+        .then(function (employee) {
+            var stats = instance._computeEmployeeMonthlyStats(employee, date);
+            return instance._synchronizeEmployeeMonthlyStats(employee, date, stats);
+        })
+        .catch(function (error) {
+            logger.error(error);
+        });
+};
+
+presence.prototype._computeEmployeeMonthlyStats = function (employee, date) {
+    if (date.date() == 1) { // beginning of the month
+        this.latestMonthlyStats[employee.id] = null;
+    }
+
+    if (this.latestMonthlyStats[employee.id] === undefined || this.latestMonthlyStats[employee.id] === null) { // no latest monthly stats
+        this.latestMonthlyStats[employee.id] = {
+            _total_duration_by_day: {},
+            _start_time_by_day: {},
+            _end_time_by_day: {},
+
+            _total_days: parseInt(moment().endOf('month').format('D')),
+            _present_days: 0,
+
+            _average_start_time: 0,
+
+            _average_end_time: 0
+        };
+    }
+
+    if (this.latestDailyStats[employee.id] === undefined || this.latestDailyStats[employee.id] === null) {
+        this.latestDailyStats[employee.id] = {
+            _total_duration: 0,
+            _start_time: 0,
+            _end_time: 0
+        };
+    }
+
+    var _stats = _.cloneDeep(this.latestMonthlyStats[employee.id]);
+
+    var result = instance._computeEmployeeMonthlyStartTime(employee, date);
+    _.extend(_stats._start_time_by_day, result[0]);
+    _stats._minimum_start_time = result[1];
+    _stats._maximum_start_time = result[2];
+    _stats._average_start_time = result[3];
+
+    result = instance._computeEmployeeMonthlyEndTime(employee, date);
+    _.extend(_stats._end_time_by_day, result[0]);
+    _stats._minimum_end_time = result[1];
+    _stats._maximum_end_time = result[2];
+    _stats._average_end_time = result[3];
+
+    result = instance._computeEmployeeMonthlyTotalDuration(employee, date);
+    _.extend(_stats._total_duration_by_day, result[0]);
+    _stats._present_days = result[1];
+
+    return _stats;
+};
+
+presence.prototype._computeEmployeeMonthlyStartTime = function (employee, date) {
+    var startTimeByDay = {};
+    if (this.latestDailyStats[employee.id]._start_time > 0) {
+        startTimeByDay[date.startOf('day').unix()] = this.latestDailyStats[employee.id]._start_time;
+    }
+
+    if (this.latestDailyStats[employee.id]._start_time > 0) {
+        var minimumStartTime = _.min([this.latestMonthlyStats[employee.id]._minimum_start_time, this.latestDailyStats[employee.id]._start_time]);
+    } else {
+        var minimumStartTime = this.latestMonthlyStats[employee.id]._minimum_start_time;
+    }
+
+    var maximumStartTime = _.max([this.latestMonthlyStats[employee.id]._maximum_start_time, this.latestDailyStats[employee.id]._start_time]);
+
+    // https://en.wikipedia.org/wiki/Moving_average
+    var averageStartTime = (this.latestDailyStats[employee.id]._start_time + this.latestMonthlyStats[employee.id]._present_days * this.latestMonthlyStats[employee.id]._average_start_time) / (this.latestMonthlyStats[employee.id]._present_days + 1);
+
+    return [startTimeByDay, minimumStartTime, maximumStartTime, averageStartTime];
+};
+
+presence.prototype._computeEmployeeMonthlyEndTime = function (employee, date) {
+    var endTimeByDay = {};
+    if (this.latestDailyStats[employee.id]._end_time > 0) {
+        endTimeByDay[date.startOf('day').unix()] = this.latestDailyStats[employee.id]._end_time;
+    }
+
+    if (this.latestDailyStats[employee.id]._end_time > 0) {
+        var minimumEndTime = _.min([this.latestMonthlyStats[employee.id]._minimum_end_time, this.latestDailyStats[employee.id]._end_time]);
+    } else {
+        var minimumEndTime = this.latestMonthlyStats[employee.id]._minimum_end_time;
+    }
+    var maximumEndTime = _.max([this.latestMonthlyStats[employee.id]._maximum_end_time, this.latestDailyStats[employee.id]._end_time]);
+
+    // https://en.wikipedia.org/wiki/Moving_average
+    var averageEndTime = (this.latestDailyStats[employee.id]._end_time + this.latestMonthlyStats[employee.id]._present_days * this.latestMonthlyStats[employee.id]._average_end_time) / (this.latestMonthlyStats[employee.id]._present_days + 1);
+
+    return [endTimeByDay, minimumEndTime, maximumEndTime, averageEndTime];
+};
+
+presence.prototype._computeEmployeeMonthlyTotalDuration = function (employee, date) {
+    var totalDurationByDay = {};
+    if (this.latestDailyStats[employee.id]._total_duration > 0) {
+        totalDurationByDay[date.startOf('day').unix()] = this.latestDailyStats[employee.id]._total_duration;
+
+        var presentDays = this.latestMonthlyStats[employee.id]._present_days + 1;
+    } else {
+        var presentDays = this.latestMonthlyStats[employee.id]._present_days;
+    }
+
+    return [totalDurationByDay, presentDays];
+};
+
 presence.prototype._synchronizeEmployeeMonthlyStats = function (employee, date, stats) {
+    this.latestMonthlyStats[employee.id] = stats;
     return instance.communication.emitAsync('synchronization:outgoing:performance:monthly:stats', employee, 'presence', date, stats);
 };
 
+
+presence.prototype._generateYearlyStats = function (date) {
+    instance._findAllEmployees()
+        .then(function (employee) {
+            return instance._computeEmployeeYearlyStats(employee, date)
+                .then(function (stats) {
+                    return instance._synchronizeEmployeeYearlyStats(employee, date, stats);
+                });
+        })
+        .catch(function (error) {
+            logger.error(error);
+        });
+};
+
+presence.prototype._computeEmployeeYearlyStats = function (employee, date) {
+    if (date.date() == 1 && date.month() == 0) {
+        // beginning of the year
+        this.latestYearlyStats = null;
+    }
+};
+
 presence.prototype._synchronizeEmployeeYearlyStats = function (employee, date, stats) {
+    this.latestYearlyStats = stats;
     return instance.communication.emitAsync('synchronization:outgoing:performance:yearly:stats', employee, 'presence', date, stats);
 };
+
 
 presence.prototype._createPresence = function (presence) {
     if (presence.created_date !== undefined && presence.created_date !== null) {
@@ -254,9 +408,12 @@ presence.prototype._findLatestPresenceByEmployeeId = function (id) {
 };
 
 presence.prototype._findLastDatePresenceByEmployeeId = function (id, startDate, endDate) {
+    startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    endDate = endDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
     return this.communication.emitAsync('database:performance:retrieveOne',
         "SELECT * from presence WHERE employee_id = ? AND Datetime(?) < created_date AND created_date < Datetime(?) ORDER BY created_date DESC LIMIT 1;",
-        [id])
+        [id, startDate, endDate])
         .then(function (row) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -267,9 +424,12 @@ presence.prototype._findLastDatePresenceByEmployeeId = function (id, startDate, 
 };
 
 presence.prototype._findFirstDatePresenceByEmployeeId = function (id, startDate, endDate) {
+    startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    endDate = endDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
     return this.communication.emitAsync('database:performance:retrieveOne',
         "SELECT * from presence WHERE employee_id = ? AND Datetime(?) < created_date AND created_date < Datetime(?) ORDER BY created_date ASC LIMIT 1;",
-        [id])
+        [id, startDate, endDate])
         .then(function (row) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));

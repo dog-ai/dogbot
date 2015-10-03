@@ -189,12 +189,11 @@ synchronization.prototype._synchronize = function () {
     if (this.companyRef !== undefined && this.companyRef !== null) {
 
         this.onMacAddressPush(function (error, mac_address, onComplete) {
-
-            logger.debug('sending mac address: %s', JSON.stringify(mac_address));
-
             if (error) {
                 logger.error(error.stack);
             } else {
+
+                logger.debug('sending mac address: %s', JSON.stringify(mac_address));
 
                 var val = _.omit(mac_address, ['id', 'is_synced', 'is_present']);
                 val = _.extend(val, {company_id: self.companyId});
@@ -230,6 +229,8 @@ synchronization.prototype._synchronize = function () {
                 if (error) {
                     logger.error(error.stack);
                 } else {
+
+                    logger.debug('sending performance ' + performanceName + ': %s', JSON.stringify(performance));
 
                     performance = _.omit(performance, ['id', 'is_synced', 'employee_id']);
 
@@ -397,7 +398,7 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
                 })
             }
         });
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM/DD') + '/_stats').once('value', function (snapshot) {
+        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'day').format('YYYY/MM/DD') + '/_stats').once('value', function (snapshot) {
             var _stats = snapshot.val();
             if (_stats !== null) {
                 instance.onPerformanceStatsPull(performanceName, 'daily', employeeId, _stats);
@@ -405,13 +406,28 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
         });
         firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM') + '/_stats').once('value', function (snapshot) {
             var _stats = snapshot.val();
-            if (_stats !== null) {
+            if (_stats === null) {
+                firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'month').format('YYYY/MM') + '/_stats').once('value', function (snapshot) {
+                    var _stats = snapshot.val();
+                    if (_stats !== null) {
+                        instance.onPerformanceStatsPull(performanceName, 'monthly', employeeId, _stats);
+                    }
+                });
+
+            } else {
                 instance.onPerformanceStatsPull(performanceName, 'monthly', employeeId, _stats);
             }
         });
         firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY') + '/_stats').once('value', function (snapshot) {
             var _stats = snapshot.val();
-            if (_stats !== null) {
+            if (_stats === null) {
+                firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'year').format('YYYY') + '/_stats').once('value', function (snapshot) {
+                    var _stats = snapshot.val();
+                    if (_stats !== null) {
+                        instance.onPerformanceStatsPull(performanceName, 'yearly', employeeId, _stats);
+                    }
+                });
+            } else {
                 instance.onPerformanceStatsPull(performanceName, 'yearly', employeeId, _stats);
             }
         });
