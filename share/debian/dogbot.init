@@ -82,6 +82,7 @@ do_reload() {
     # then implement that here.
     #
     git=`which git`
+    npm=`which npm`
 
     cd $DOGBOT_HOME
 
@@ -90,6 +91,8 @@ do_reload() {
     grep -q "Your branch is behind" && \
     $git reset --hard origin/master
     RETVAL="$?"
+
+    $RETVAL && $npm install && RETVAL="$?"
 
     return "$RETVAL"
 }
