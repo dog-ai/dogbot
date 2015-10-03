@@ -42,12 +42,16 @@ var dogbot = {
                 function (macAddress) {
                     communication.emit('synchronization:incoming:person:macAddress:delete', macAddress);
                 },
+
+
                 function (device) {
                     communication.emit('synchronization:incoming:person:device:createOrUpdate', device);
                 },
                 function (device) {
                     communication.emit('synchronization:incoming:person:device:delete', device);
                 },
+
+
                 function (employee) {
                     communication.emit('synchronization:incoming:person:employee:createOrUpdate', employee);
                 },
@@ -55,6 +59,8 @@ var dogbot = {
                     // broadcast incoming employee delete
                     communication.emit('synchronization:incoming:person:employee:delete', employee);
                 },
+
+
                 function (callback) {
                     // request mac address changes
                     communication.emit('synchronization:outgoing:person:mac_address', callback);
@@ -63,10 +69,18 @@ var dogbot = {
                     // request performance changes
                     communication.emit('synchronization:outgoing:performance:' + performanceName, callback);
                 },
+
+
                 function (performanceName, performance) {
                     // broadcast incoming performance
                     communication.emit('synchronization:incoming:performance:' + performanceName, performance);
                 },
+                function (performanceName, performanceStatsPeriod, performanceStats, employeeId) {
+                    // broadcast incoming performance stats
+                    communication.emit('synchronization:incoming:performance:' + performanceName + ':' + performanceStatsPeriod + ':stats', employeeId, performanceStats);
+                },
+
+
                 function (callback) {
                     // listen for device changes
                     communication.on('person:device:online', callback);
@@ -77,9 +91,13 @@ var dogbot = {
                     communication.on('person:employee:nearby', callback);
                     communication.on('person:employee:faraway', callback);
                 },
+
+
                 function (callback) {
                     // listen for employee performance stats changes
-                    communication.on('synchronization:outgoing:performance:stats', callback);
+                    communication.on('synchronization:outgoing:performance:daily:stats', callback);
+                    communication.on('synchronization:outgoing:performance:monthly:stats', callback);
+                    communication.on('synchronization:outgoing:performance:yearly:stats', callback);
                 }
             );
 

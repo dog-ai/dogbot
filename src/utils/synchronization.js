@@ -10,13 +10,6 @@ var Firebase = require('firebase');
 var firebase = new Firebase('https://dazzling-torch-7723.firebaseIO.com');
 
 function synchronization() {
-    var dogId = undefined;
-    var dogRef = undefined;
-
-    var companyId = undefined;
-    var companyRef = undefined;
-
-    var timeout = undefined;
 }
 
 synchronization.prototype.start = function (token, callback,
@@ -29,9 +22,10 @@ synchronization.prototype.start = function (token, callback,
                                             onEmployeeDeletedCallback,
 
                                             onMacAddressPush,
-
                                             onPerformancePush,
+
                                             onPerformancePull,
+                                            onPerformanceStatsPull,
 
                                             updateDevice,
                                             updateEmployee,
@@ -50,10 +44,11 @@ synchronization.prototype.start = function (token, callback,
 
     this.onPerformancePush = onPerformancePush;
     this.onPerformancePull = onPerformancePull;
+    this.onPerformanceStatsPull = onPerformanceStatsPull;
 
     updateDevice(this._updateDevice);
     updateEmployee(this._updateEmployee);
-    updateEmployeePerformanceStats(this._updateEmployeePerformanceStats);
+    updateEmployeePerformanceStats(this._updateEmployeePerformanceDailyStats, this._updateEmployeePerformanceMonthlyStats, this._updateEmployeePerformanceYearlyStats);
 
     firebase.authWithCustomToken(token, function (error, authData) {
         if (error) {
@@ -244,6 +239,7 @@ synchronization.prototype._synchronize = function () {
                     firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
                 }
             });
+
         });
 
         var now = moment().format();
@@ -401,6 +397,24 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
                 })
             }
         });
+        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM/DD') + '/_stats').once('value', function (snapshot) {
+            var _stats = snapshot.val();
+            if (_stats !== null) {
+                instance.onPerformanceStatsPull(performanceName, 'daily', employeeId, _stats);
+            }
+        });
+        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM') + '/_stats').once('value', function (snapshot) {
+            var _stats = snapshot.val();
+            if (_stats !== null) {
+                instance.onPerformanceStatsPull(performanceName, 'monthly', employeeId, _stats);
+            }
+        });
+        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY') + '/_stats').once('value', function (snapshot) {
+            var _stats = snapshot.val();
+            if (_stats !== null) {
+                instance.onPerformanceStatsPull(performanceName, 'yearly', employeeId, _stats);
+            }
+        });
     });
 };
 
@@ -457,8 +471,9 @@ synchronization.prototype._updateEmployee = function (employee) {
     });
 };
 
-synchronization.prototype._updateEmployeePerformanceStats = function (employee, performanceName, date, stats) {
-    logger.debug('sending employee performance stats: %s', JSON.stringify(stats));
+
+synchronization.prototype._updateEmployeePerformanceDailyStats = function (employee, performanceName, date, stats) {
+    logger.debug('sending employee performance daily stats: %s', JSON.stringify(stats));
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/_stats')
         .update(stats, function (error) {
@@ -467,6 +482,29 @@ synchronization.prototype._updateEmployeePerformanceStats = function (employee, 
             }
         });
 };
+
+synchronization.prototype._updateEmployeePerformanceMonthlyStats = function (employee, performanceName, date, stats) {
+    logger.debug('sending employee performance monthly stats: %s', JSON.stringify(stats));
+
+    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM') + '/_stats')
+        .update(stats, function (error) {
+            if (error) {
+                logger.error(error.stack);
+            }
+        });
+};
+
+synchronization.prototype._updateEmployeePerformanceYearlyStats = function (employee, performanceName, date, stats) {
+    logger.debug('sending employee performance yearly stats: %s', JSON.stringify(stats));
+
+    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY') + '/_stats')
+        .update(stats, function (error) {
+            if (error) {
+                logger.error(error.stack);
+            }
+        });
+};
+
 
 var instance = new synchronization();
 

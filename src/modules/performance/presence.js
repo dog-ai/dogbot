@@ -39,6 +39,9 @@ presence.prototype.start = function () {
     this.communication.on('person:employee:faraway', this._onEmployeePresence);
     this.communication.on('synchronization:incoming:performance:presence', this._onIncomingPresenceSynchronization);
     this.communication.on('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSynchronization);
+    this.communication.on('synchronization:incoming:performance:presence:daily:stats', this._onIncomingEmployeeDailyStatsSynchronization);
+    this.communication.on('synchronization:incoming:performance:presence:monthly:stats', this._onIncomingEmployeeMonthlyStatsSynchronization);
+    this.communication.on('synchronization:incoming:performance:presence:yearly:stats', this._onIncomingEmployeeYearlyStatsSynchronization);
 
     var schedule = later.parse.text('at 00:00:01');
     this.generateDailyStats = later.setInterval(function () {
@@ -54,23 +57,20 @@ presence.prototype.stop = function () {
     this.communication.removeListener('person:employee:faraway', this._onEmployeePresence);
     this.communication.removeListener('synchronization:incoming:performance:presence', this._onIncomingPresenceSynchronization);
     this.communication.removeListener('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSynchronization);
+    this.communication.removeListener('synchronization:incoming:performance:presence:daily:stats', this._onIncomingEmployeeDailyStatsSynchronization);
+    this.communication.removeListener('synchronization:incoming:performance:presence:monthly:stats', this._onIncomingEmployeeMonthlyStatsSynchronization);
+    this.communication.removeListener('synchronization:incoming:performance:presence:yearly:stats', this._onIncomingEmployeeYearlyStatsSynchronization);
 };
 
 presence.prototype._onEmployeePresence = function (employee) {
-    instance._findLatestPresenceByEmployeeId(employee.id, function (error, performance) {
-        if (error) {
-            logger.error(error.stack);
-        } else {
-            if (performance && performance.is_present == employee.is_present) {
-                return;
-            }
-
-            instance._createPresence({employee_id: employee.id, is_present: employee.is_present}, function (error) {
-                if (error) {
-                    logger.error(error.stack);
-                }
-            });
+    instance._findLatestPresenceByEmployeeId(employee.id).then(function (performance) {
+        if (performance && performance.is_present == employee.is_present) {
+            return;
         }
+
+        return instance._createPresence({employee_id: employee.id, is_present: employee.is_present});
+    }).catch(function (error) {
+        logger.error(error.stack);
     });
 };
 
@@ -79,28 +79,14 @@ presence.prototype._onIncomingPresenceSynchronization = function (syncingPresenc
 
         syncingPresence = _.pick(syncingPresence, _.pluck(rows, 'name'));
 
-        instance._findLatestPresenceByEmployeeId(syncingPresence.employee_id, function (error, presence) {
-            if (error) {
-                logger.error(error.stack);
-            } else {
-
-
-                if (presence === undefined) {
-                    instance._createPresence(syncingPresence, function (error) {
-                        if (error) {
-                            logger.error(error.stack);
-                        }
-                    });
-                } else {
-                    if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
-                        instance._createPresence(syncingPresence, function (error) {
-                            if (error) {
-                                logger.error(error.stack);
-                            }
-                        });
-                    }
-                }
+        instance._findLatestPresenceByEmployeeId(syncingPresence.employee_id).then(function (presence) {
+            if (presence === undefined) {
+                return instance._createPresence(syncingPresence);
+            } else if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
+                return instance._createPresence(syncingPresence);
             }
+        }).catch(function (error) {
+            logger.error(error.stack);
         });
     });
 };
@@ -130,6 +116,18 @@ presence.prototype._onOutgoingPresenceSynchronization = function (callback) {
                 }
             }
         });
+};
+
+presence.prototype._onIncomingEmployeeDailyStatsSynchronization = function (employeeId, _stats) {
+    console.log("DAY: " + _stats);
+};
+
+presence.prototype._onIncomingEmployeeMonthlyStatsSynchronization = function (employeeId, _stats) {
+    console.log("MONTH: " + _stats);
+};
+
+presence.prototype._onIncomingEmployeeYearlyStatsSynchronization = function (employeeId, _stats) {
+    console.log("YEAR: " + _stats);
 };
 
 presence.prototype._generateDailyStats = function (date) {
@@ -217,10 +215,18 @@ presence.prototype._computeEmployeeDailyEndTime = function (employee, date) {
 };
 
 presence.prototype._synchronizeEmployeeDailyStats = function (employee, date, stats) {
-    return instance.communication.emitAsync('synchronization:outgoing:performance:stats', employee, 'presence', date, stats);
+    return instance.communication.emitAsync('synchronization:outgoing:performance:daily:stats', employee, 'presence', date, stats);
 };
 
-presence.prototype._createPresence = function (presence, callback) {
+presence.prototype._synchronizeEmployeeMonthlyStats = function (employee, date, stats) {
+    return instance.communication.emitAsync('synchronization:outgoing:performance:monthly:stats', employee, 'presence', date, stats);
+};
+
+presence.prototype._synchronizeEmployeeYearlyStats = function (employee, date, stats) {
+    return instance.communication.emitAsync('synchronization:outgoing:performance:yearly:stats', employee, 'presence', date, stats);
+};
+
+presence.prototype._createPresence = function (presence) {
     if (presence.created_date !== undefined && presence.created_date !== null) {
         presence.created_date = presence.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
@@ -228,11 +234,10 @@ presence.prototype._createPresence = function (presence, callback) {
     var keys = _.keys(presence);
     var values = _.values(presence);
 
-    this.communication.emit('database:performance:create',
+    return this.communication.emitAsync('database:performance:create',
         "INSERT INTO presence (" + keys + ") VALUES (" + values.map(function () {
             return '?';
-        }) + ");",
-        values, callback);
+        }) + ");", values);
 };
 
 presence.prototype._findLatestPresenceByEmployeeId = function (id) {
