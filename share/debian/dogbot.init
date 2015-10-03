@@ -52,7 +52,6 @@ do_start()
     --silent \
     --pidFile $PIDFILE \
     --workingDir $DOGBOT_HOME \
-    --watch --watchDirectory $DOGBOT_HOME \
     --killSignal=SIGUSR2 \
     $DAEMON
     RETVAL="$?"
@@ -92,7 +91,7 @@ do_reload() {
     $git reset --hard origin/master
     RETVAL="$?"
 
-    [ "$RETVAL" ] && $npm install && RETVAL="$?"
+    [ "$RETVAL" ] && $npm install
 
     return "$RETVAL"
 }
