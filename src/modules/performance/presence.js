@@ -252,6 +252,8 @@ presence.prototype._generateMonthlyStats = function (date) {
                     return instance._synchronizeEmployeeMonthlyStats(employee, date, stats);
                 });
             });
+
+            return Promise.all(promises);
         })
         .catch(function (error) {
             logger.error(error);
