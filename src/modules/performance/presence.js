@@ -247,10 +247,8 @@ presence.prototype._generateMonthlyStats = function (date) {
         .then(function (employees) {
             var promises = [];
             _.forEach(employees, function (employee) {
-                promises.push(function () {
-                    var stats = instance._computeEmployeeMonthlyStats(employee, date);
-                    return instance._synchronizeEmployeeMonthlyStats(employee, date, stats);
-                });
+                var stats = instance._computeEmployeeMonthlyStats(employee, date);
+                promises.push(instance._synchronizeEmployeeMonthlyStats(employee, date, stats));
             });
 
             return Promise.all(promises);
