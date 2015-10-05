@@ -67,7 +67,6 @@ presence.prototype.start = function () {
 presence.prototype.stop = function () {
     this.generateDailyStats.clear();
     this.generateMonthlyStats.clear();
-    this.generateYearlyStats.clear();
 
     this.communication.removeListener('person:employee:nearby', this._onEmployeePresence);
     this.communication.removeListener('person:employee:faraway', this._onEmployeePresence);
@@ -245,9 +244,14 @@ presence.prototype._synchronizeEmployeeDailyStats = function (employee, date, st
 
 presence.prototype._generateMonthlyStats = function (date) {
     instance._findAllEmployees()
-        .then(function (employee) {
-            var stats = instance._computeEmployeeMonthlyStats(employee, date);
-            return instance._synchronizeEmployeeMonthlyStats(employee, date, stats);
+        .then(function (employees) {
+            var promises = [];
+            _.forEach(employees, function (employee) {
+                promises.push(function () {
+                    var stats = instance._computeEmployeeMonthlyStats(employee, date);
+                    return instance._synchronizeEmployeeMonthlyStats(employee, date, stats);
+                });
+            });
         })
         .catch(function (error) {
             logger.error(error);
