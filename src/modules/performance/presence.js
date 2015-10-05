@@ -5,7 +5,10 @@
 var logger = require('../../utils/logger.js'),
     _ = require('lodash'),
     moment = require('moment'),
-    later = require('later');
+    later = require('later'),
+    Promise = require("bluebird")
+
+    ;
 
 later.date.localTime();
 
@@ -148,11 +151,15 @@ presence.prototype._onIncomingEmployeeYearlyStatsSynchronization = function (emp
 
 presence.prototype._generateDailyStats = function (date) {
     instance._findAllEmployees()
-        .then(function (employee) {
-            return instance._computeEmployeeDailyStats(employee, date)
-                .then(function (stats) {
+        .then(function (employees) {
+            var promises = [];
+            _.forEach(employees, function (employee) {
+                promises.push(instance._computeEmployeeDailyStats(employee, date).then(function (stats) {
                     return instance._synchronizeEmployeeDailyStats(employee, date, stats);
-                });
+                }));
+            });
+
+            return Promise.all(promises);
         })
         .catch(function (error) {
             logger.error(error);
@@ -458,7 +465,7 @@ presence.prototype._findAllByEmployeeIdAndBetweenDates = function (id, startDate
 };
 
 presence.prototype._findAllEmployees = function () {
-    return this.communication.emitAsync('database:person:retrieveOneByOne', 'SELECT * FROM employee;', []);
+    return this.communication.emitAsync('database:person:retrieveAll', 'SELECT * FROM employee;', []);
 };
 
 var instance = new presence();
