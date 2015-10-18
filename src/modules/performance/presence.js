@@ -302,7 +302,10 @@ presence.prototype._computeEmployeeMonthlyStats = function (employee, date) {
 
     result = instance._computeEmployeeMonthlyTotalDuration(employee, date);
     _.extend(_stats._total_duration_by_day, result[0]);
-    _stats._present_days = result[1];
+    _stats._minimum_total_duration = result[1];
+    _stats._maximum_total_duration = result[2];
+    _stats._average_total_duration = result[3];
+    _stats._present_days = result[4];
 
     return _stats;
 };
@@ -356,7 +359,17 @@ presence.prototype._computeEmployeeMonthlyTotalDuration = function (employee, da
         var presentDays = this.latestMonthlyStats[employee.id]._present_days;
     }
 
-    return [totalDurationByDay, presentDays];
+    if (this.latestDailyStats[employee.id]._total_duration > 0) {
+        var minimumTotalDuration = _.min([this.latestMonthlyStats[employee.id]._minimum_total_duration, this.latestDailyStats[employee.id]._total_duration]);
+    } else {
+        var minimumTotalDuration = this.latestMonthlyStats[employee.id]._minimum_total_duration;
+    }
+    var maximumTotalDuration = _.max([this.latestMonthlyStats[employee.id]._maximum_total_duration, this.latestDailyStats[employee.id]._total_duration]);
+
+    // https://en.wikipedia.org/wiki/Moving_average
+    var averageTotalDuration = (this.latestDailyStats[employee.id]._total_duration + this.latestMonthlyStats[employee.id]._present_days * this.latestMonthlyStats[employee.id]._average_total_duration) / (this.latestMonthlyStats[employee.id]._present_days + 1);
+
+    return [totalDurationByDay, minimumTotalDuration, maximumTotalDuration, averageTotalDuration, presentDays];
 };
 
 presence.prototype._synchronizeEmployeeMonthlyStats = function (employee, date, stats) {
