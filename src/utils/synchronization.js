@@ -48,7 +48,12 @@ synchronization.prototype.start = function (token, callback,
 
     updateDevice(this._updateDevice);
     updateEmployee(this._updateEmployee);
-    updateEmployeePerformanceStats(this._updateEmployeePerformanceDailyStats, this._updateEmployeePerformanceMonthlyStats, this._updateEmployeePerformanceYearlyStats);
+    updateEmployeePerformanceStats(
+        this._updateEmployeePerformanceDailyStats,
+        this._updateEmployeePerformanceMonthlyStats,
+        this._updateEmployeePerformanceYearlyStats,
+        this._updateEmployeePerformanceAlltimeStats
+    );
 
     firebase.authWithCustomToken(token, function (error, authData) {
         if (error) {
@@ -431,6 +436,12 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
                 instance.onPerformanceStatsPull(performanceName, 'yearly', employeeId, _stats);
             }
         });
+        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/_stats').once('value', function (snapshot) {
+            var _stats = snapshot.val();
+            if (_stats !== null) {
+                instance.onPerformanceStatsPull(performanceName, 'alltime', employeeId, _stats);
+            }
+        });
     });
 };
 
@@ -514,6 +525,17 @@ synchronization.prototype._updateEmployeePerformanceYearlyStats = function (empl
     logger.debug('sending employee performance yearly stats: %s', JSON.stringify(stats));
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY') + '/_stats')
+        .update(stats, function (error) {
+            if (error) {
+                logger.error(error.stack);
+            }
+        });
+};
+
+synchronization.prototype._updateEmployeePerformanceAlltimeStats = function (employee, performanceName, stats) {
+    logger.debug('sending employee performance alltime stats: %s', JSON.stringify(stats));
+
+    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/_stats')
         .update(stats, function (error) {
             if (error) {
                 logger.error(error.stack);

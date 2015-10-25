@@ -93,11 +93,12 @@ var dogbot = {
                 },
 
 
-                function (dailyStatsCallback, monthlyStatsCallback, yearlyStatsCallback) {
+                function (dailyStatsCallback, monthlyStatsCallback, yearlyStatsCallback, statsCallback) {
                     // listen for employee performance stats changes
                     communication.on('synchronization:outgoing:performance:daily:stats', dailyStatsCallback);
                     communication.on('synchronization:outgoing:performance:monthly:stats', monthlyStatsCallback);
                     communication.on('synchronization:outgoing:performance:yearly:stats', yearlyStatsCallback);
+                    communication.on('synchronization:outgoing:performance:alltime:stats', statsCallback);
                 }
             );
 

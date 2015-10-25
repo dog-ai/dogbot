@@ -28,8 +28,8 @@ firebase.authWithCustomToken(FIREBASE_CUSTOM_USER_ADMIN_TOKEN, function (error) 
 
         // NOTE: http://stackoverflow.com/questions/20342058/which-uuid-version-to-use
         var uid = uuid.v1();
-        
-        var expirationDate = 4597064530 // Wed, 04 Sep 2115 18:22:10 GMT (100 years!)
+
+        var expirationDate = 4597064530; // Wed, 04 Sep 2115 18:22:10 GMT (100 years!)
         var firebaseToken = firebaseTokenGenerator.createToken(
             {uid: uid},
             {expires: expirationDate}
