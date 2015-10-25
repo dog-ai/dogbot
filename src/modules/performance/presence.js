@@ -449,13 +449,20 @@ presence.prototype._generateAlltimeStats = function (date) {
 };
 
 presence.prototype._computeEmployeeAlltimeStats = function (employee) {
+    var now = moment().format();
     if (this.latestAlltimeStats[employee.id] === undefined || this.latestAlltimeStats[employee.id] === null) { // no latest alltime stats
         this.latestAlltimeStats[employee.id] = {
+            created_date: now,
+
             _present_days: 0,
 
             _average_total_duration: 0,
             _average_start_time: 0,
             _average_end_time: 0,
+
+            _previous_average_total_duration: 0,
+            _previous_average_start_time: 0,
+            _previous_average_end_time: 0,
 
             _maximum_total_duration: 0,
             _maximum_start_time: 0,
@@ -465,6 +472,8 @@ presence.prototype._computeEmployeeAlltimeStats = function (employee) {
             _minimum_start_time: 0,
             _minimum_end_time: 0,
         };
+    } else {
+        this.latestAlltimeStats[employee.id].updated_date = now;
     }
 
     if (this.latestDailyStats[employee.id] === undefined || this.latestDailyStats[employee.id] === null) { // no latest daily stats
@@ -482,17 +491,20 @@ presence.prototype._computeEmployeeAlltimeStats = function (employee) {
         _stats._minimum_start_time = result[0];
         _stats._maximum_start_time = result[1];
         _stats._average_start_time = result[2];
+        _stats._previous_average_start_time = result[3];
 
         result = instance._computeEmployeeAlltimeEndTime(employee);
         _stats._minimum_end_time = result[0];
         _stats._maximum_end_time = result[1];
         _stats._average_end_time = result[2];
+        _stats._previous_average_end_time = result[3];
 
         result = instance._computeEmployeeAlltimeTotalDuration(employee);
         _stats._minimum_total_duration = result[0];
         _stats._maximum_total_duration = result[1];
         _stats._average_total_duration = result[2];
-        _stats._present_days = result[3];
+        _stats._previous_average_total_duration = result[3];
+        _stats._present_days = result[4];
     } catch (error) {
         throw new Error('unable to compute employee alltime stats');
     }
@@ -514,7 +526,7 @@ presence.prototype._computeEmployeeAlltimeStartTime = function (employee) {
     // https://en.wikipedia.org/wiki/Moving_average
     var averageStartTime = (this.latestDailyStats[employee.id]._start_time + this.latestAlltimeStats[employee.id]._present_days * this.latestAlltimeStats[employee.id]._average_start_time) / (this.latestAlltimeStats[employee.id]._present_days + 1);
 
-    return [minimumStartTime, maximumStartTime, averageStartTime];
+    return [minimumStartTime, maximumStartTime, averageStartTime, this.latestAlltimeStats[employee.id]._average_start_time];
 };
 
 presence.prototype._computeEmployeeAlltimeEndTime = function (employee) {
@@ -531,7 +543,7 @@ presence.prototype._computeEmployeeAlltimeEndTime = function (employee) {
     // https://en.wikipedia.org/wiki/Moving_average
     var averageEndTime = (this.latestDailyStats[employee.id]._end_time + this.latestAlltimeStats[employee.id]._present_days * this.latestAlltimeStats[employee.id]._average_end_time) / (this.latestAlltimeStats[employee.id]._present_days + 1);
 
-    return [minimumEndTime, maximumEndTime, averageEndTime];
+    return [minimumEndTime, maximumEndTime, averageEndTime, this.latestAlltimeStats[employee.id]._average_end_time];
 };
 
 presence.prototype._computeEmployeeAlltimeTotalDuration = function (employee) {
@@ -549,7 +561,7 @@ presence.prototype._computeEmployeeAlltimeTotalDuration = function (employee) {
     // https://en.wikipedia.org/wiki/Moving_average
     var averageTotalDuration = (this.latestDailyStats[employee.id]._total_duration + this.latestAlltimeStats[employee.id]._present_days * this.latestAlltimeStats[employee.id]._average_total_duration) / (this.latestAlltimeStats[employee.id]._present_days + 1);
 
-    return [minimumTotalDuration, maximumTotalDuration, averageTotalDuration, presentDays];
+    return [minimumTotalDuration, maximumTotalDuration, averageTotalDuration, this.latestAlltimeStats[employee.id]._average_total_duration, presentDays];
 };
 
 presence.prototype._synchronizeEmployeeAlltimeStats = function (employee, stats) {
