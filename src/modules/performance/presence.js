@@ -285,7 +285,7 @@ presence.prototype._computeEmployeeMonthlyStats = function (employee, date) {
             _start_time_by_day: {},
             _end_time_by_day: {},
 
-            _total_days: parseInt(date.endOf('month').format('D')),
+            _total_days: parseInt(date.clone().endOf('month').format('D')),
             _present_days: 0,
 
             _average_total_duration: 0,
@@ -384,6 +384,7 @@ presence.prototype._computeEmployeeMonthlyTotalDuration = function (employee, da
 
     var totalDurationByDay = {};
     totalDurationByDay[date.startOf('day').unix()] = this.latestDailyStats[employee.id]._total_duration;
+
     var presentDays = this.latestMonthlyStats[employee.id]._present_days + 1;
     if (this.latestMonthlyStats[employee.id]._minimum_total_duration == 0) {
         var minimumTotalDuration = this.latestDailyStats[employee.id]._total_duration;
