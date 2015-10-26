@@ -49,7 +49,7 @@ var _computeYearlyStats = function (employeeId, performanceName, yearPerformance
         console.log(presence.latestMonthlyStats[employeeId]);
 
         firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/_stats')
-            .update(presence.latestMonthlyStats[employeeId], function (error) {
+            .set(presence.latestMonthlyStats[employeeId], function (error) {
                 if (error) {
                     logger.error(error.stack);
                 }
@@ -73,6 +73,14 @@ var _computeMonthlyStats = function (employeeId, performanceName, monthPerforman
 
         presence.latestDailyStats[employeeId] = null;
         presence.latestDailyStats[employeeId] = dayPerformance['_stats'];
+
+        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/' + day + '/_stats')
+            .set(presence.latestDailyStats[employeeId], function (error) {
+                if (error) {
+                    logger.error(error.stack);
+                }
+
+            });
 
         var date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD');
 
@@ -122,12 +130,12 @@ var _computeDailyStats = function (employeeId, performanceName, dayPerformance, 
         }
 
         if (keys.length > 0) {
-            dayPerformance._stats._start_time = moment(dayPerformance[keys[0]].created_date).diff(date.startOf('day'), 'seconds');
-            dayPerformance._stats._end_time = moment(dayPerformance[keys[keys.length - 1]].created_date).diff(date.startOf('day'), 'seconds');
+            dayPerformance._stats.start_time = moment(dayPerformance[keys[0]].created_date).diff(date.startOf('day'), 'seconds');
+            dayPerformance._stats.end_time = moment(dayPerformance[keys[keys.length - 1]].created_date).diff(date.startOf('day'), 'seconds');
         }
     }
 
-    dayPerformance._stats._total_duration = totalDuration.asSeconds();
+    dayPerformance._stats.total_duration = totalDuration.asSeconds();
 };
 
 firebase.authWithCustomToken(FIREBASE_CUSTOM_USER_ADMIN_TOKEN, function (error) {
@@ -149,28 +157,15 @@ firebase.authWithCustomToken(FIREBASE_CUSTOM_USER_ADMIN_TOKEN, function (error) 
                     console.log(presence.latestAlltimeStats[employeeId]);
 
                     firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/_stats')
-                        .update(presence.latestAlltimeStats[employeeId], function (error) {
+                        .set(presence.latestAlltimeStats[employeeId], function (error) {
                             if (error) {
                                 logger.error(error.stack);
                             }
 
+                            process.exit(0);
                         });
                 }
-
-                //process.exit(0);
-
             });
         }
     }
 });
-
-
-tens;
-que;
-empurrar;
-os;
-daily;
-stats;
-para;
-o;
-firebase;
