@@ -436,7 +436,7 @@ presence.prototype._generateAlltimeStats = function (date) {
             var promises = [];
             _.forEach(employees, function (employee) {
                 try {
-                    var stats = instance._computeEmployeeAlltimeStats(employee);
+                    var stats = instance._computeEmployeeAlltimeStats(employee, date);
                     promises.push(instance._synchronizeEmployeeAlltimeStats(employee, stats));
                 } catch (error) {
                 }
@@ -449,11 +449,12 @@ presence.prototype._generateAlltimeStats = function (date) {
         });
 };
 
-presence.prototype._computeEmployeeAlltimeStats = function (employee) {
+presence.prototype._computeEmployeeAlltimeStats = function (employee, date) {
     var now = moment().format();
     if (this.latestAlltimeStats[employee.id] === undefined || this.latestAlltimeStats[employee.id] === null) { // no latest alltime stats
         this.latestAlltimeStats[employee.id] = {
             created_date: now,
+            started_date: date.format(),
 
             present_days: 0,
 
@@ -475,6 +476,7 @@ presence.prototype._computeEmployeeAlltimeStats = function (employee) {
         };
     } else {
         this.latestAlltimeStats[employee.id].updated_date = now;
+        this.latestAlltimeStats[employee.id].ended_date = date.clone().endOf('day').format();
     }
 
     if (this.latestDailyStats[employee.id] === undefined || this.latestDailyStats[employee.id] === null) { // no latest daily stats
