@@ -65,6 +65,12 @@ var _computeMonthlyStats = function (employeeId, performanceName, monthPerforman
             return;
         }
 
+        var date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD');
+
+        if (moment().isSame(date, 'day')) {
+            return;
+        }
+
         console.log('Computing stats for date: ' + year + '/' + month + '/' + day);
 
         var dayPerformance = monthPerformance[day];
@@ -82,7 +88,6 @@ var _computeMonthlyStats = function (employeeId, performanceName, monthPerforman
 
             });
 
-        var date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD');
 
         try {
             var monthlyStats = presence._computeEmployeeMonthlyStats({id: employeeId}, date);
@@ -92,11 +97,6 @@ var _computeMonthlyStats = function (employeeId, performanceName, monthPerforman
 
         try {
             var alltimeStats = presence._computeEmployeeAlltimeStats({id: employeeId}, date);
-
-            if (moment(alltimeStats.created_date).isSame(alltimeStats.updated_date, 'day')) {
-                alltimeStats.created_date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD').format();
-            }
-
             presence.latestAlltimeStats[employeeId] = alltimeStats;
         } catch (error) {
         }
@@ -132,6 +132,9 @@ var _computeDailyStats = function (employeeId, performanceName, dayPerformance, 
         if (keys.length > 0) {
             dayPerformance._stats.start_time = moment(dayPerformance[keys[0]].created_date).diff(date.startOf('day'), 'seconds');
             dayPerformance._stats.end_time = moment(dayPerformance[keys[keys.length - 1]].created_date).diff(date.startOf('day'), 'seconds');
+        } else {
+            dayPerformance._stats.start_time = 0;
+            dayPerformance._stats.end_time = 0;
         }
     }
 
