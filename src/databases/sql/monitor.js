@@ -30,7 +30,7 @@ monitor.prototype.start = function (communication) {
 };
 
 monitor.prototype.stop = function () {
-    this.communication.removeListener('database:' + this.name + ':setup', this._run.bind(this)).bind(this);
+    this.communication.removeListener('database:' + this.name + ':setup', this._run.bind(this));
     this.communication.removeListener('database:' + this.name + ':create', this._run.bind(this));
     this.communication.removeListener('database:' + this.name + ':retrieveOne', this._get.bind(this));
     this.communication.removeListener('database:' + this.name + ':retrieveAll', this._all.bind(this));

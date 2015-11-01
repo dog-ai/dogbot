@@ -8,8 +8,7 @@ var _ = require('lodash');
 var os = require('os');
 
 function ip() {
-    var moduleManager = {};
-    var timeout = undefined;
+    var communication = {};
 }
 
 ip.prototype.type = "MONITOR";
@@ -22,8 +21,8 @@ ip.prototype.info = function () {
         this.type.toLowerCase() + " module_";
 };
 
-ip.prototype.load = function (moduleManager) {
-    this.moduleManager = moduleManager;
+ip.prototype.load = function (communication) {
+    this.communication = communication;
 
     this.start();
 };
@@ -33,34 +32,35 @@ ip.prototype.unload = function () {
 };
 
 ip.prototype.start = function () {
-    var self = this;
+    this.communication.on('monitor:ip:discover', this._discover);
+    this.communication.on('monitor:bonjour:create', this._handleBonjour);
+    this.communication.on('monitor:bonjour:update', this._handleBonjour);
 
-    this.moduleManager.on('monitor:bonjour:create', this._handleBonjour);
-    this.moduleManager.on('monitor:bonjour:update', this._handleBonjour);
-
-    var time = 60 * 1000;
-
-    function monitor() {
-        try {
-            self._discover(function () {
-                self._clean();
-            });
-        } catch (error) {
-            logger.error(error.stack);
-        }
-
-        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
-    }
-
-    monitor();
+    this.communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, '1 minute');
 };
 
 ip.prototype.stop = function () {
-    clearTimeout(this.timeout);
+    this.communication.removeListener('monitor:ip:discover', this._discover);
+    this.communication.removeListener('monitor:bonjour:create', this._handleBonjour);
+    this.communication.removeListener('monitor:bonjour:update', this._handleBonjour);
+};
 
-    this.moduleManager.removeListener('monitor:bonjour:create', this._handleBonjour);
-    this.moduleManager.removeListener('monitor:bonjour:update', this._handleBonjour);
+ip.prototype._discover = function (callback) {
+    try {
+        instance._scan(function () {
+            instance._clean();
+        });
 
+        if (callback !== undefined) {
+            callback();
+        }
+    } catch (error) {
+        logger.error(error.stack);
+
+        if (callback !== undefined) {
+            callback(error);
+        }
+    }
 };
 
 ip.prototype._handleBonjour = function (bonjour) {
@@ -71,7 +71,7 @@ ip.prototype._handleBonjour = function (bonjour) {
     });
 };
 
-ip.prototype._discover = function (callback) {
+ip.prototype._scan = function (callback) {
     var self = this;
 
     var networkInterfaces = os.networkInterfaces();
@@ -134,7 +134,7 @@ ip.prototype._clean = function () {
         if (error !== null) {
             logger.error(error.stack);
         } else {
-            self.moduleManager.emit('monitor:ipAddress:delete', ip.ip_address);
+            self.communication.emit('monitor:ipAddress:delete', ip.ip_address);
         }
     });
 };
@@ -142,7 +142,7 @@ ip.prototype._clean = function () {
 ip.prototype._addOrUpdate = function (ipAddress, callback) {
     var self = this;
 
-    this.moduleManager.emit('database:monitor:retrieveOne',
+    this.communication.emit('database:monitor:retrieveOne',
         "SELECT * FROM ip WHERE ip_address = ?;", [ipAddress],
         function (error, row) {
             if (error !== null) {
@@ -153,7 +153,7 @@ ip.prototype._addOrUpdate = function (ipAddress, callback) {
                 if (row === undefined) {
                     self._addPresence(ipAddress, function (error) {
                         if (error === null) {
-                            self.moduleManager.emit('monitor:ipAddress:create', ipAddress);
+                            self.communication.emit('monitor:ipAddress:create', ipAddress);
                         }
 
                         if (callback !== undefined) {
@@ -163,7 +163,7 @@ ip.prototype._addOrUpdate = function (ipAddress, callback) {
                 } else {
                     self._update(ipAddress, function (error) {
                         if (error === null) {
-                            self.moduleManager.emit('monitor:ipAddress:update', ipAddress);
+                            self.communication.emit('monitor:ipAddress:update', ipAddress);
                         }
 
                         if (callback !== undefined) {
@@ -176,7 +176,7 @@ ip.prototype._addOrUpdate = function (ipAddress, callback) {
 };
 
 ip.prototype._addPresence = function (ipAddress, callback) {
-    this.moduleManager.emit('database:monitor:create',
+    this.communication.emit('database:monitor:create',
         "INSERT INTO ip (ip_address) VALUES (?);", [
             ipAddress
         ],
@@ -190,7 +190,7 @@ ip.prototype._addPresence = function (ipAddress, callback) {
 ip.prototype._update = function (ipAddress, callback) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:update',
+    this.communication.emit('database:monitor:update',
         "UPDATE ip SET updated_date = ? WHERE ip_address = ?;", [
             updatedDate,
             ipAddress
@@ -207,7 +207,7 @@ ip.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
 
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:retrieveOneByOne',
+    this.communication.emit('database:monitor:retrieveOneByOne',
         "SELECT * FROM ip WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, row) {
             if (error !== null) {
@@ -216,7 +216,7 @@ ip.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
                 }
             } else {
                 if (row !== undefined) {
-                    self.moduleManager.emit('database:monitor:delete',
+                    self.communication.emit('database:monitor:delete',
                         "DELETE FROM ip WHERE id = ?;", [row.id],
                         function (error) {
                             if (callback !== undefined) {

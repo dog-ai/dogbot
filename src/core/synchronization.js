@@ -2,7 +2,7 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('./logger.js');
+var logger = require('../utils/logger.js');
 
 var _ = require('lodash');
 var moment = require('moment-timezone');
@@ -29,7 +29,8 @@ synchronization.prototype.start = function (token, callback,
 
                                             updateDevice,
                                             updateEmployee,
-                                            updateEmployeePerformanceStats) {
+                                            updateEmployeePerformanceStats,
+                                            synchronize) {
     var self = this;
 
     this.onModuleUpdatedCallback = onModuleUpdatedCallback;
@@ -66,6 +67,8 @@ synchronization.prototype.start = function (token, callback,
             self._init(callback);
         }
     });
+
+    synchronize(this._synchronize);
 };
 
 synchronization.prototype.stop = function (callback) {
@@ -167,20 +170,6 @@ synchronization.prototype._init = function (callback) {
             }
         }
 
-        var time = 10 * 60 * 1000;
-
-        function synchronize() {
-            try {
-                self._synchronize();
-            } catch (error) {
-                logger.error(error.stack);
-            }
-
-            self.timeout = setTimeout(synchronize, time * (1 + Math.random()));
-        }
-
-        synchronize();
-
         callback(null, self.dogId);
 
     }, function (error) {
@@ -188,12 +177,11 @@ synchronization.prototype._init = function (callback) {
     });
 };
 
-synchronization.prototype._synchronize = function () {
-    var self = this;
+synchronization.prototype._synchronize = function (callback) {
 
-    if (this.companyRef !== undefined && this.companyRef !== null) {
+    if (instance.companyRef !== undefined && instance.companyRef !== null) {
 
-        this.onMacAddressPush(function (error, mac_address, onComplete) {
+        instance.onMacAddressPush(function (error, mac_address, onComplete) {
             if (error) {
                 logger.error(error.stack);
             } else {
@@ -201,7 +189,7 @@ synchronization.prototype._synchronize = function () {
                 logger.debug('sending mac address: %s', JSON.stringify(mac_address));
 
                 var val = _.omit(mac_address, ['id', 'is_synced', 'is_present']);
-                val = _.extend(val, {company_id: self.companyId});
+                val = _.extend(val, {company_id: instance.companyId});
                 val.created_date = moment(val.created_date).format();
                 val.updated_date = moment(val.updated_date).format();
                 val.last_presence_date = moment(val.last_presence_date).format();
@@ -218,7 +206,7 @@ synchronization.prototype._synchronize = function () {
                         if (error) {
                             logger.error(error);
                         } else {
-                            self.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, function (error) {
+                            instance.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, function (error) {
                                 mac_address.id = macAddressRef.key();
                                 onComplete(error, mac_address);
                             });
@@ -249,11 +237,13 @@ synchronization.prototype._synchronize = function () {
         });
 
         var now = moment().format();
-        self.dogRef.update({
+        instance.dogRef.update({
             last_seen_date: now,
             updated_date: now
         });
     }
+
+    callback();
 };
 
 
@@ -499,24 +489,24 @@ synchronization.prototype._updateEmployee = function (employee) {
 };
 
 
-synchronization.prototype._updateEmployeePerformanceDailyStats = function (employee, performanceName, date, stats) {
+synchronization.prototype._updateEmployeePerformanceDailyStats = function (employee, performanceName, date, stats, callback) {
     logger.debug('sending employee performance daily stats: %s', JSON.stringify(stats));
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/_stats')
         .update(stats, function (error) {
-            if (error) {
-                logger.error(error.stack);
+            if (callback !== undefined && callback !== null) {
+                callback(error);
             }
         });
 };
 
-synchronization.prototype._updateEmployeePerformanceMonthlyStats = function (employee, performanceName, date, stats) {
+synchronization.prototype._updateEmployeePerformanceMonthlyStats = function (employee, performanceName, date, stats, callback) {
     logger.debug('sending employee performance monthly stats: %s', JSON.stringify(stats));
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM') + '/_stats')
         .update(stats, function (error) {
-            if (error) {
-                logger.error(error.stack);
+            if (callback !== undefined && callback !== null) {
+                callback(error);
             }
         });
 };
@@ -526,8 +516,8 @@ synchronization.prototype._updateEmployeePerformanceYearlyStats = function (empl
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY') + '/_stats')
         .update(stats, function (error) {
-            if (error) {
-                logger.error(error.stack);
+            if (callback !== undefined && callback !== null) {
+                callback(error);
             }
         });
 };
@@ -537,8 +527,8 @@ synchronization.prototype._updateEmployeePerformanceAlltimeStats = function (emp
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/_stats')
         .update(stats, function (error) {
-            if (error) {
-                logger.error(error.stack);
+            if (callback !== undefined && callback !== null) {
+                callback(error);
             }
         });
 };

@@ -5,8 +5,6 @@
 var logger = require('../../utils/logger.js');
 
 function bonjour() {
-    var moduleManager = {};
-    var timeout = undefined;
 }
 
 bonjour.prototype.type = "MONITOR";
@@ -19,10 +17,8 @@ bonjour.prototype.info = function () {
         this.type.toLowerCase() + " module_";
 };
 
-bonjour.prototype.load = function (moduleManager) {
-    var self = this;
-
-    this.moduleManager = moduleManager;
+bonjour.prototype.load = function (communication) {
+    this.communication = communication;
 
     if (process.platform !== 'linux') {
         throw new Error(process.platform + ' platform is not supported');
@@ -59,7 +55,7 @@ bonjour.prototype.stop = function () {
     clearTimeout(this.timeout);
 };
 
-bonjour.prototype._discover = function (callback) {
+bonjour.prototype._scan = function (callback) {
     var self = this;
 
     var spawn = require('child_process').spawn,
@@ -110,7 +106,7 @@ bonjour.prototype._clean = function () {
         if (error !== null) {
             logger.error(error.stack);
         } else {
-            self.moduleManager.emit('monitor:bonjour:delete', bonjour.ip_address);
+            self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         }
     });
 };
@@ -118,7 +114,7 @@ bonjour.prototype._clean = function () {
 bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, txt, callback) {
     var self = this;
 
-    this.moduleManager.emit('database:monitor:retrieveOne',
+    this.communication.emit('database:monitor:retrieveOne',
         "SELECT * FROM bonjour WHERE type = ? AND name = ?;", [type, name],
         function (error, row) {
             if (error !== null) {
@@ -129,7 +125,7 @@ bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, 
                 if (row === undefined) {
                     self._addPresence(type, name, address, hostname, port, txt, function (error) {
                         if (error === null) {
-                            self.moduleManager.emit('monitor:bonjour:create', {
+                            self.communication.emit('monitor:bonjour:create', {
                                 type: type,
                                 name: name,
                                 hostname: hostname,
@@ -146,7 +142,7 @@ bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, 
                 } else {
                     self._update(type, name, address, hostname, port, txt, function (error) {
                         if (error === null) {
-                            self.moduleManager.emit('monitor:bonjour:update', {
+                            self.communication.emit('monitor:bonjour:update', {
                                 type: type,
                                 name: name,
                                 hostname: hostname,
@@ -166,7 +162,7 @@ bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, 
 };
 
 bonjour.prototype._addPresence = function (type, name, address, hostname, port, txt, callback) {
-    this.moduleManager.emit('database:monitor:create',
+    this.communication.emit('database:monitor:create',
         "INSERT INTO bonjour (type, name, ip_address, hostname, port, txt) VALUES (?, ?, ?, ?, ?, ?);",
         [
             type,
@@ -187,7 +183,7 @@ bonjour.prototype._addPresence = function (type, name, address, hostname, port, 
 bonjour.prototype._update = function (type, name, address, hostname, port, txt, callback) {
     var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:update',
+    this.communication.emit('database:monitor:update',
         "UPDATE bonjour SET updated_date = ?, ip_address = ?, hostname = ?, port = ?, txt = ? WHERE type = ? AND name = ?;", [
             updatedDate,
             address,
@@ -209,7 +205,7 @@ bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
 
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.moduleManager.emit('database:monitor:retrieveOneByOne',
+    this.communication.emit('database:monitor:retrieveOneByOne',
         "SELECT * FROM bonjour WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, row) {
             if (error !== null) {
@@ -217,7 +213,7 @@ bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
                     callback(error);
                 }
             } else {
-                self.moduleManager.emit('database:monitor:delete',
+                self.communication.emit('database:monitor:delete',
                     "DELETE FROM bonjour WHERE id = ?;", [row.id],
                     function (error) {
                         if (callback !== undefined) {

@@ -5,8 +5,7 @@
 var logger = require('../../utils/logger.js');
 
 function arp() {
-    var communication = {};
-    var timeout = undefined;
+    var communication = undefined;
 }
 
 arp.prototype.type = "MONITOR";
@@ -30,38 +29,37 @@ arp.prototype.unload = function () {
 };
 
 arp.prototype.start = function () {
-    var self = this;
-
+    this.communication.on('monitor:arp:discover', this._discover);
     this.communication.on('monitor:ipAddress:create', this._handleIpAddress);
     this.communication.on('monitor:ipAddress:update', this._handleIpAddress);
 
-    var time = 60 * 1000;
-    function monitor() {
-        try {
-            self.communication.emit('monitor:arp:discover:begin');
-
-            self._discover(function () {
-                self._clean(function () {
-
-                    self.communication.emit('monitor:arp:discover:finish');
-                });
-            });
-        } catch (error) {
-            logger.error(error.stack);
-        }
-
-        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
-    }
-
-    //setTimeout(monitor, time * (1 + Math.random()));
-    monitor();
+    this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, '1 minute');
 };
 
 arp.prototype.stop = function () {
-    clearTimeout(this.timeout);
+    this.communication.removeListener('monitor:arp:discover', this._discover);
+    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+};
 
-    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
-    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+arp.prototype._discover = function (callback) {
+    try {
+        instance.communication.emit('monitor:arp:discover:begin');
+
+        instance._scan(function () {
+            instance._clean(function () {
+                instance.communication.emit('monitor:arp:discover:finish');
+            });
+        });
+
+        if (callback !== undefined) {
+            callback();
+        }
+    } catch (error) {
+        if (callback !== undefined) {
+            callback(error);
+        }
+    }
 };
 
 arp.prototype._handleIpAddress = function (ipAddress) {
@@ -78,7 +76,7 @@ arp.prototype._handleIpAddress = function (ipAddress) {
     })
 };
 
-arp.prototype._discover = function (callback) {
+arp.prototype._scan = function (callback) {
     var self = this;
 
     var _interface = process.platform === 'linux' ? "wlan0" : "en0";

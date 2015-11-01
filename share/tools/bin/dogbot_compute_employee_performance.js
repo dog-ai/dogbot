@@ -18,7 +18,7 @@ var firebase = new Firebase(FIREBASE_ENDPOINT);
 var _ = require('lodash'),
     moment = require('moment'),
     presence = require('../../../src/modules/performance/presence.js'),
-    synchronization = require('../../../src/utils/synchronization.js');
+    synchronization = require('../../../src/core/synchronization.js');
 
 
 var _computeAlltimeStats = function (employeeId, performanceName, alltimePerformance) {

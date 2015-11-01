@@ -3,11 +3,8 @@
  */
 
 var logger = require('./utils/logger.js');
-
 var async = require('async');
-
 var _ = require('lodash');
-
 var path = require('path');
 var fs = require("fs");
 
@@ -196,6 +193,8 @@ databases.prototype._startAllByType = function (type) {
     fs.readdirSync(dir).forEach(function (file) {
         self._start(type, file);
     });
+
+
 };
 
 databases.prototype._start = function (type, file) {

@@ -8,7 +8,8 @@ var _ = require('lodash');
 var logger = require('./utils/logger.js'),
     communication = require('./utils/communication.js'),
     revision = require('./utils/revision.js'),
-    synchronization = require('./utils/synchronization.js');
+    synchronization = require('./core/synchronization.js'),
+    worker = require('./core/worker.js');
 
 var databases = require('./databases.js')(communication);
 var modules = require('./modules.js')(communication);
@@ -23,7 +24,18 @@ var dogbot = {
         logger.info("Starting dogbot");
 
         databases.startAll(function () {
-            synchronization.start(self.secret, function (error, dogId) {
+
+            worker.start(
+                function (callback) {
+                    communication.on('worker:job:enqueue', callback);
+                },
+                function (event, callback) {
+                    communication.emit(event, callback);
+                }
+            );
+
+            synchronization.start(self.secret,
+                function (error, dogId) {
                     if (error) {
                         logger.error(error.message);
 
@@ -99,6 +111,11 @@ var dogbot = {
                     communication.on('synchronization:outgoing:performance:monthly:stats', monthlyStatsCallback);
                     communication.on('synchronization:outgoing:performance:yearly:stats', yearlyStatsCallback);
                     communication.on('synchronization:outgoing:performance:alltime:stats', statsCallback);
+                },
+
+                function (callback) {
+                    communication.on('synchronization:outgoing', callback);
+                    communication.emit('worker:job:enqueue', 'synchronization:outgoing', null, '10 minutes');
                 }
             );
 
@@ -109,6 +126,8 @@ var dogbot = {
         modules.unloadAll();
 
         synchronization.stop();
+
+        worker.stop();
 
         databases.stopAll();
 

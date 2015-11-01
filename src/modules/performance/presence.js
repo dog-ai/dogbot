@@ -15,11 +15,6 @@ later.date.localTime();
 function presence() {
     this.communication = undefined;
 
-    this.generateDailyStats = undefined;
-    this.generateMonthlyStats = undefined;
-    this.generateYearlyStats = undefined;
-    this.generateAlltimeStats = undefined;
-
     this.latestDailyStats = {};
     this.latestMonthlyStats = {};
     this.latestYearlyStats = {};
@@ -47,6 +42,9 @@ presence.prototype.unload = function () {
 };
 
 presence.prototype.start = function () {
+    this.communication.on('performance:presence:daily:stats', this._generateDailyStats);
+    this.communication.on('performance:presence:monthly:stats', this._generateMonthlyStats);
+    this.communication.on('performance:presence:alltime:stats', this._generateAlltimeStats);
     this.communication.on('person:employee:nearby', this._onEmployeePresence);
     this.communication.on('person:employee:faraway', this._onEmployeePresence);
     this.communication.on('synchronization:incoming:performance:presence', this._onIncomingPresenceSynchronization);
@@ -56,26 +54,15 @@ presence.prototype.start = function () {
     this.communication.on('synchronization:incoming:performance:presence:yearly:stats', this._onIncomingEmployeeYearlyStatsSynchronization);
     this.communication.on('synchronization:incoming:performance:presence:alltime:stats', this._onIncomingEmployeeAlltimeStatsSynchronization);
 
-    this.generateDailyStats = later.setInterval(function () {
-        var date = moment().subtract(1, 'day');
-        instance._generateDailyStats(date);
-    }, later.parse.text('at 00:00:01'));
-
-    this.generateMonthlyStats = later.setInterval(function () {
-        var date = moment().subtract(1, 'day');
-        instance._generateMonthlyStats(date);
-    }, later.parse.text('at 00:10:01'));
-
-    this.generateAlltimeStats = later.setInterval(function () {
-        var date = moment().subtract(1, 'day');
-        instance._generateAlltimeStats(date);
-    }, later.parse.text('at 00:30:01'));
+    this.communication.emit('worker:job:enqueue', 'performance:presence:daily:stats', null, '01 00 00 * * *');
+    this.communication.emit('worker:job:enqueue', 'performance:presence:monthly:stats', null, '02 00 00 * * *');
+    this.communication.emit('worker:job:enqueue', 'performance:presence:alltime:stats', null, '03 00 00 * * *');
 };
 
 presence.prototype.stop = function () {
-    this.generateDailyStats.clear();
-    this.generateMonthlyStats.clear();
-
+    this.communication.removeListener('performance:presence:daily:stats', this._generateDailyStats);
+    this.communication.removeListener('performance:presence:monthly:stats', this._generateMonthlyStats);
+    this.communication.removeListener('performance:presence:alltime:stats', this._generateAlltimeStats);
     this.communication.removeListener('person:employee:nearby', this._onEmployeePresence);
     this.communication.removeListener('person:employee:faraway', this._onEmployeePresence);
     this.communication.removeListener('synchronization:incoming:performance:presence', this._onIncomingPresenceSynchronization);
@@ -161,7 +148,8 @@ presence.prototype._onIncomingEmployeeAlltimeStatsSynchronization = function (em
 };
 
 
-presence.prototype._generateDailyStats = function (date) {
+presence.prototype._generateDailyStats = function (callback) {
+    var date = moment().subtract(1, 'day');
     instance._findAllEmployees()
         .then(function (employees) {
             var promises = [];
@@ -170,11 +158,13 @@ presence.prototype._generateDailyStats = function (date) {
                     return instance._synchronizeEmployeeDailyStats(employee, date, stats);
                 }));
             });
-
             return Promise.all(promises);
         })
+        .then(function () {
+            callback();
+        })
         .catch(function (error) {
-            logger.error(error);
+            callback(error);
         });
 };
 
@@ -255,7 +245,8 @@ presence.prototype._synchronizeEmployeeDailyStats = function (employee, date, st
 };
 
 
-presence.prototype._generateMonthlyStats = function (date) {
+presence.prototype._generateMonthlyStats = function (callback) {
+    var date = moment().subtract(1, 'day');
     instance._findAllEmployees()
         .then(function (employees) {
             var promises = [];
@@ -269,8 +260,11 @@ presence.prototype._generateMonthlyStats = function (date) {
 
             return Promise.all(promises);
         })
+        .then(function () {
+            callback();
+        })
         .catch(function (error) {
-            logger.error(error);
+            callback(error);
         });
 };
 
@@ -404,7 +398,7 @@ presence.prototype._synchronizeEmployeeMonthlyStats = function (employee, date, 
 };
 
 
-presence.prototype._generateYearlyStats = function (date) {
+presence.prototype._generateYearlyStats = function (callback) {
     instance._findAllEmployees()
         .then(function (employee) {
             return instance._computeEmployeeYearlyStats(employee, date)
@@ -412,8 +406,11 @@ presence.prototype._generateYearlyStats = function (date) {
                     return instance._synchronizeEmployeeYearlyStats(employee, date, stats);
                 });
         })
+        .then(function () {
+            callback();
+        })
         .catch(function (error) {
-            logger.error(error);
+            callback(error);
         });
 };
 
@@ -430,7 +427,8 @@ presence.prototype._synchronizeEmployeeYearlyStats = function (employee, date, s
 };
 
 
-presence.prototype._generateAlltimeStats = function (date) {
+presence.prototype._generateAlltimeStats = function (callback) {
+    var date = moment().subtract(1, 'day');
     instance._findAllEmployees()
         .then(function (employees) {
             var promises = [];
@@ -444,8 +442,11 @@ presence.prototype._generateAlltimeStats = function (date) {
 
             return Promise.all(promises);
         })
+        .then(function () {
+            callback();
+        })
         .catch(function (error) {
-            logger.error(error);
+            callback(error);
         });
 };
 

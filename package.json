@@ -18,6 +18,8 @@
     "gosquared": "^2.0.2",
     "intimidate": "^1.2.0",
     "ip": "^0.3.3",
+    "kue": "^0.9.6",
+    "kue-scheduler": "^0.2.2",
     "later": "^1.1.10",
     "lodash": "^3.10.0",
     "macvendor": "^0.1.1",

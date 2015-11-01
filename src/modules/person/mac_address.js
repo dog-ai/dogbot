@@ -47,8 +47,8 @@ mac_address.prototype.stop = function () {
     this.communication.removeListener('monitor:arp:update', this._onMacAddressOnline);
     this.communication.removeListener('monitor:arp:delete', this._onMacAddressOffline);
     this.communication.removeListener('synchronization:incoming:person:macAddress:createOrUpdate', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-    this.communication.remoteListener('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
-    this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
+    this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 };
 
 mac_address.prototype._onMacAddressOnline = function (address) {
@@ -82,7 +82,7 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                                 if (error) {
                                     logger.error(error.stack);
                                 } else {
-                                    if (vendor !== undefined && vendor !== null) {
+                                    if (vendor !== undefined && vendor !== null && vendor.length < 60) {
                                         row.vendor = vendor;
                                         row.is_synced = false;
                                         row.updated_date = new Date();
@@ -121,7 +121,7 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                                 if (error) {
                                     logger.error(error.stack);
                                 } else {
-                                    if (vendor !== undefined && vendor !== null) {
+                                    if (vendor !== undefined && vendor !== null && vendor.length < 60) {
                                         row.vendor = vendor;
                                         row.is_synced = false;
                                         row.updated_date = new Date();
