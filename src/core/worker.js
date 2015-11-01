@@ -39,12 +39,12 @@ worker.prototype.start = function (enqueue, processJob) {
             logger.debug('Job ' + id + ' failed ' + attempts + ' times');
         }).on('schedule success', function (job) {
         }).on('schedule error', function (error) {
-            logger.error(error);
+            logger.error('schedule error: ' + error);
         }).on('already scheduled', function (job) {
         }).on('scheduler unknown job expiry key', function (message) {
-            logger.error(message);
+            logger.error('scheduler unknown job expiry key: ' + message);
         }).on('error', function (error) {
-            logger.error(error);
+            logger.error('error: ' + error);
         });
 
     enqueue(instance._enqueue);
