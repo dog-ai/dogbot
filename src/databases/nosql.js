@@ -5,6 +5,7 @@
 var logger = require('../utils/logger.js');
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
+var fs = require('fs');
 
 var REDIS_UNIX_SOCKET = __dirname + '/../../var/run/redis.sock';
 
@@ -15,16 +16,23 @@ function nosql() {
 nosql.prototype.type = 'NOSQL';
 
 nosql.prototype._open = function () {
-    try {
-        var pid = parseInt(execSync('pgrep redis-server')) || undefined;
-        if (pid !== undefined) {
-            execSync('kill -9 ' + pid);
-        }
-    } catch (error) {
-    }
-
     if (this.redis === undefined || this.redis === null) {
+        try {
+            var pid = parseInt(execSync('pgrep redis-server')) || undefined;
+            if (pid !== undefined) {
+                execSync('kill -9 ' + pid);
+                fs.unlinkSync(REDIS_UNIX_SOCKET);
+            }
+        } catch (error) {
+        }
+
         this.redis = spawn('redis-server', ['share/redis/redis.conf']);
+
+        execSync('sleep 1');
+
+        if (!fs.existsSync(REDIS_UNIX_SOCKET)) {
+            throw new Error('redis unix socket not available');
+        }
 
         logger.debug('Started redis child process with pid: ' + this.redis.pid);
     }

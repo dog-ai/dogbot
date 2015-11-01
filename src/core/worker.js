@@ -8,16 +8,22 @@ var kue = require('kue-scheduler');
 var REDIS_UNIX_SOCKET = __dirname + '/../../var/run/redis.sock';
 
 function worker() {
+    var database = undefined;
     var queue = undefined;
 }
 
-worker.prototype.start = function (enqueue, processJob) {
+worker.prototype.start = function (database, enqueue, processJob) {
+
+    if (database === undefined || database === null) {
+        throw new Error('Unable to start worker: no database available');
+    }
+    this.database = database;
 
     this.queue = kue.createQueue({
         redis: {
             socket: REDIS_UNIX_SOCKET
         },
-        prefix: 'worker'
+        prefix: database.name
     });
 
     this.queue.process('worker', function (job, done) {
@@ -42,9 +48,8 @@ worker.prototype.start = function (enqueue, processJob) {
             logger.error('schedule error: ' + error);
         }).on('already scheduled', function (job) {
         }).on('scheduler unknown job expiry key', function (message) {
-            logger.error('scheduler unknown job expiry key: ' + message);
+            //logger.error('scheduler unknown job expiry key: ' + message);
         }).on('error', function (error) {
-            logger.error('error: ' + error);
         });
 
     enqueue(instance._enqueue);

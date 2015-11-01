@@ -23,16 +23,21 @@ var dogbot = {
 
         logger.info("Starting dogbot");
 
-        databases.startAll(function () {
+        databases.startAll(function (startedDatabases) {
 
-            worker.start(
-                function (callback) {
-                    communication.on('worker:job:enqueue', callback);
-                },
-                function (event, callback) {
-                    communication.emit(event, callback);
-                }
-            );
+            try {
+                worker.start(
+                    _.find(startedDatabases, {name: 'worker'}),
+                    function (callback) {
+                        communication.on('worker:job:enqueue', callback);
+                    },
+                    function (event, callback) {
+                        communication.emit(event, callback);
+                    }
+                );
+            } catch (error) {
+                self.error(error);
+            }
 
             synchronization.start(self.secret,
                 function (error, dogId) {

@@ -181,7 +181,7 @@ databases.prototype.startAll = function (callback) {
             logger.error(error.stack);
         }
 
-        callback();
+        callback(self.started);
     });
 };
 
