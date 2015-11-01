@@ -39,6 +39,17 @@ worker.prototype.start = function (database, enqueue, processJob) {
             });
         }).on('job complete', function (id, result) {
             logger.debug('Job ' + id + ' completed');
+            kue.Job.get(id, function (error, job) {
+                if (error) {
+                    return;
+                }
+
+                job.remove(function (error) {
+                    if (error) {
+                        logger.error(error);
+                    }
+                });
+            });
         }).on('job failed', function (id) {
             logger.debug('Job ' + id + ' failed');
         }).on('job failed attempt', function (id, attempts) {
@@ -76,7 +87,7 @@ worker.prototype._enqueue = function (event, params, schedule) {
         event: event,
         params: params
 
-    }).removeOnComplete(true);
+    });
 
     if (schedule !== undefined && schedule !== null) {
         instance.queue.every(schedule, job);

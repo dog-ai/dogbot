@@ -132,11 +132,11 @@ var dogbot = {
 
         synchronization.stop();
 
-        worker.stop();
+        worker.stop(function () {
+            databases.stopAll();
 
-        databases.stopAll();
-
-        logger.info("Stopped dogbot", callback); // force winston to flush logs before stopping
+            logger.info("Stopped dogbot", callback); // force winston to flush logs before stopping
+        });
     },
 
     reload: function (callback) {
