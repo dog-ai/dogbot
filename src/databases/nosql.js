@@ -6,6 +6,8 @@ var logger = require('../utils/logger.js');
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
 
+var REDIS_UNIX_SOCKET = __dirname + '/../../var/run/redis.sock';
+
 function nosql() {
     this.redis = undefined;
 }

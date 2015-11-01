@@ -14,7 +14,7 @@
 # Do NOT "set -e"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
-#PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/opt/redis/bin
 DESC="dogbot"
 NAME=dogbot
 
@@ -47,6 +47,7 @@ do_start()
 
     mkdir -p var/log > /dev/null 2>&1
     mkdir -p var/tmp > /dev/null 2>&1
+    mkdir -p var/run > /dev/null 2>&1
 
     DOGBOT_SECRET=$DOGBOT_SECRET $forever start \
     --silent \

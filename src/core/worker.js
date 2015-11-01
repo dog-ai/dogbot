@@ -5,6 +5,8 @@
 var logger = require('../utils/logger.js');
 var kue = require('kue-scheduler');
 
+var REDIS_UNIX_SOCKET = __dirname + '/../../var/run/redis.sock';
+
 function worker() {
     var queue = undefined;
 }
@@ -12,6 +14,9 @@ function worker() {
 worker.prototype.start = function (enqueue, processJob) {
 
     this.queue = kue.createQueue({
+        redis: {
+            socket: REDIS_UNIX_SOCKET
+        },
         prefix: 'worker'
     });
 
