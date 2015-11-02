@@ -16,7 +16,7 @@ if (!fs.existsSync(LOG_DIR)) {
 }
 
 var timeFormat = function () {
-    return moment().format('YYYY-MM-DDTHH:mm:ssZ');
+    return moment().format('YYYY-MM-DDTHH:mm:ss,SSSZ');
 };
 
 var logger = new winston.Logger({
