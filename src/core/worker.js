@@ -51,7 +51,13 @@ worker.prototype.start = function (database, enqueue, processJob) {
                 });
             });
         }).on('job failed', function (id) {
-            logger.debug('Job ' + id + ' failed');
+            kue.Job.get(id, function (error, job) {
+                if (error) {
+
+                } else {
+                    logger.error('Job ' + id + ' failed: ' + job.error());
+                }
+            });
         }).on('job failed attempt', function (id, attempts) {
             logger.debug('Job ' + id + ' failed ' + attempts + ' times');
         }).on('schedule success', function (job) {
@@ -59,7 +65,6 @@ worker.prototype.start = function (database, enqueue, processJob) {
             logger.error('schedule error: ' + error);
         }).on('already scheduled', function (job) {
         }).on('scheduler unknown job expiry key', function (message) {
-            //logger.error('scheduler unknown job expiry key: ' + message);
         }).on('error', function (error) {
         });
 
