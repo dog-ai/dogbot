@@ -511,7 +511,7 @@ synchronization.prototype._updateEmployeePerformanceMonthlyStats = function (emp
         });
 };
 
-synchronization.prototype._updateEmployeePerformanceYearlyStats = function (employee, performanceName, date, stats) {
+synchronization.prototype._updateEmployeePerformanceYearlyStats = function (employee, performanceName, date, stats, callback) {
     logger.debug('sending employee performance yearly stats: %s', JSON.stringify(stats));
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY') + '/_stats')
@@ -522,7 +522,7 @@ synchronization.prototype._updateEmployeePerformanceYearlyStats = function (empl
         });
 };
 
-synchronization.prototype._updateEmployeePerformanceAlltimeStats = function (employee, performanceName, stats) {
+synchronization.prototype._updateEmployeePerformanceAlltimeStats = function (employee, performanceName, stats, callback) {
     logger.debug('sending employee performance alltime stats: %s', JSON.stringify(stats));
 
     firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/_stats')
