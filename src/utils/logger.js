@@ -24,7 +24,6 @@ var logger = new winston.Logger({
         new winston.transports.DailyRotateFile({
             level: 'info',
             filename: LOG_DIR + '/dogbot.log',
-            handleExceptions: true,
             json: false,
             colorize: false,
             zippedArchive: true,
@@ -32,7 +31,6 @@ var logger = new winston.Logger({
         }),
         new winston.transports.Console({
             level: 'debug',
-            handleExceptions: true,
             json: false,
             colorize: true,
             timestamp: timeFormat

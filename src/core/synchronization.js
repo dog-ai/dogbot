@@ -85,7 +85,7 @@ synchronization.prototype.stop = function (callback) {
         this.companyRef.child('/devices').off('child_removed');
         this.companyRef.child('/devices').once('value', function (snapshot) {
             snapshot.forEach(function (snapshot) {
-                firebase.child('devices/' + snapshot.key()).off('value');
+                firebase.child('company_devices/' + instance.companyId + '/' + snapshot.key()).off('value');
             });
         });
         this.companyRef.child('/employees').off('child_added');
@@ -93,7 +93,7 @@ synchronization.prototype.stop = function (callback) {
         this.companyRef.child('/employees').off('child_removed');
         this.companyRef.child('/employees').once('value', function (snapshot) {
             snapshot.forEach(function (snapshot) {
-                firebase.child('employees/' + snapshot.key()).off('value');
+                firebase.child('company_employees/' + instance.companyId + '/' + snapshot.key()).off('value');
             });
         });
 
@@ -193,7 +193,7 @@ synchronization.prototype._synchronize = function (callback) {
                         if (error) {
                             logger.error(error);
                         } else {
-                            var macAddressRef = firebase.child('mac_addresses/' + mac_address.id);
+                            var macAddressRef = firebase.child('company_mac_addresses/' + instance.companyId + '/' + mac_address.id);
                             macAddressRef.remove(function (error) {
                                 onComplete(error, mac_address);
                             });
@@ -210,7 +210,7 @@ synchronization.prototype._synchronize = function (callback) {
 
                     var macAddressRef;
                     if (mac_address.id !== undefined && mac_address.id !== null) {
-                        macAddressRef = firebase.child('mac_addresses/' + mac_address.id);
+                        macAddressRef = firebase.child('company_mac_addresses/' + instance.companyId + '/' + mac_address.id);
                         macAddressRef.update(val, function (error) {
                             onComplete(error, mac_address);
                         });
@@ -245,7 +245,7 @@ synchronization.prototype._synchronize = function (callback) {
                     var date = moment(performance.created_date);
                     performance.created_date = date.format();
 
-                    firebase.child('employee_performances/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
+                    firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + type + '/' + date.format('YYYY/MM/DD')).push(performance, onComplete);
                 }
             });
 
@@ -276,7 +276,7 @@ synchronization.prototype._onCompanyMacAddressAdded = function (snapshot) {
     var macAddressId = snapshot.key();
 
     // listen for mac address events
-    firebase.child('mac_addresses/' + macAddressId).on('value', instance._onMacAddressChanged, function (error) {
+    firebase.child('company_mac_addresses/' + instance.companyId + '/' + macAddressId).on('value', instance._onMacAddressChanged, function (error) {
         logger.error("mac address " + error);
     });
 };
@@ -286,7 +286,7 @@ synchronization.prototype._onCompanyMacAddressRemoved = function (snapshot) {
 
     logger.debug('deleted mac address: %s', macAddressId);
 
-    firebase.child('mac_addresses/' + macAddressId).off('value');
+    firebase.child('company_mac_addresses/' + instance.companyId + '/' + macAddressId).off('value');
     instance.onMacAddressDeletedCallback({id: macAddressId});
 };
 
@@ -322,7 +322,7 @@ synchronization.prototype._onCompanyDeviceAdded = function (snapshot) {
     var deviceId = snapshot.key();
 
     // listen for device events
-    firebase.child('devices/' + deviceId).on('value', instance._onDeviceChanged, function (error) {
+    firebase.child('company_devices/' + instance.companyId + '/' + deviceId).on('value', instance._onDeviceChanged, function (error) {
         logger.error("device " + error);
     });
 };
@@ -332,7 +332,7 @@ synchronization.prototype._onCompanyDeviceRemoved = function (snapshot) {
 
     logger.debug('deleted device: %s', deviceId);
 
-    firebase.child('devices/' + deviceId).off('value');
+    firebase.child('company_devices/' + instance.companyId + '/' + deviceId).off('value');
     instance.onDeviceDeletedCallback({id: deviceId});
 };
 
@@ -358,18 +358,18 @@ synchronization.prototype._onDeviceChanged = function (snapshot) {
 synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
     var employeeId = snapshot.key();
 
-    firebase.child('employees/' + employeeId).on('value', instance._onEmployeeChanged, function (error) {
+    firebase.child('company_employees/' + instance.companyId + '/' + employeeId).on('value', instance._onEmployeeChanged, function (error) {
         logger.error("employee " + error);
     });
 
     var performanceNames = ['presence'];
     var today = moment();
     _.forEach(performanceNames, function (performanceName) {
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
+        firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
             if (snapshot.val() === null) {
-                firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'days').format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
+                firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'days').format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
                     if (snapshot.val() === null) {
-                        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(2, 'days').format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
+                        firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.subtract(2, 'days').format('YYYY/MM/DD')).orderByChild('created_date').limitToLast(1).once("value", function (snapshot) {
                             if (snapshot.val() === null) {
                                 // stop here
                             } else {
@@ -408,16 +408,16 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
                 })
             }
         });
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'day').format('YYYY/MM/DD') + '/_stats').once('value', function (snapshot) {
+        firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'day').format('YYYY/MM/DD') + '/_stats').once('value', function (snapshot) {
             var _stats = snapshot.val();
             if (_stats !== null) {
                 instance.onPerformanceStatsPull(performanceName, 'daily', employeeId, _stats);
             }
         });
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM') + '/_stats').once('value', function (snapshot) {
+        firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.format('YYYY/MM') + '/_stats').once('value', function (snapshot) {
             var _stats = snapshot.val();
             if (_stats === null) {
-                firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'month').format('YYYY/MM') + '/_stats').once('value', function (snapshot) {
+                firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'month').format('YYYY/MM') + '/_stats').once('value', function (snapshot) {
                     var _stats = snapshot.val();
                     if (_stats !== null) {
                         instance.onPerformanceStatsPull(performanceName, 'monthly', employeeId, _stats);
@@ -428,10 +428,10 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
                 instance.onPerformanceStatsPull(performanceName, 'monthly', employeeId, _stats);
             }
         });
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.format('YYYY') + '/_stats').once('value', function (snapshot) {
+        firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.format('YYYY') + '/_stats').once('value', function (snapshot) {
             var _stats = snapshot.val();
             if (_stats === null) {
-                firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'year').format('YYYY') + '/_stats').once('value', function (snapshot) {
+                firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/' + today.subtract(1, 'year').format('YYYY') + '/_stats').once('value', function (snapshot) {
                     var _stats = snapshot.val();
                     if (_stats !== null) {
                         instance.onPerformanceStatsPull(performanceName, 'yearly', employeeId, _stats);
@@ -441,7 +441,7 @@ synchronization.prototype._onCompanyEmployeeAdded = function (snapshot) {
                 instance.onPerformanceStatsPull(performanceName, 'yearly', employeeId, _stats);
             }
         });
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/_stats').once('value', function (snapshot) {
+        firebase.child('company_employee_performances/' + instance.companyId + '/' + employeeId + '/' + performanceName + '/_stats').once('value', function (snapshot) {
             var _stats = snapshot.val();
             if (_stats !== null) {
                 instance.onPerformanceStatsPull(performanceName, 'alltime', employeeId, _stats);
@@ -455,7 +455,7 @@ synchronization.prototype._onCompanyEmployeeRemoved = function (snapshot) {
 
     logger.debug('deleted employee: %s', employeeId);
 
-    firebase.child('employees/' + employeeId).off('value');
+    firebase.child('company_employees/' + instance.companyId + '/' + employeeId).off('value');
     instance.onEmployeeDeletedCallback({id: employeeId});
 };
 
@@ -480,7 +480,7 @@ synchronization.prototype._onEmployeeChanged = function (snapshot) {
 synchronization.prototype._updateDevice = function (device) {
     logger.debug('sending device: %s', JSON.stringify(device));
 
-    firebase.child('devices/' + device.id).update({
+    firebase.child('company_devices/' + instance.companyId + '/' + device.id).update({
         updated_date: moment().format(),
         is_present: device.is_present
     }, function (error) {
@@ -493,7 +493,7 @@ synchronization.prototype._updateDevice = function (device) {
 synchronization.prototype._updateEmployee = function (employee) {
     logger.debug('sending employee: %s', JSON.stringify(employee));
 
-    firebase.child('employees/' + employee.id).update({
+    firebase.child('company_employees/' + instance.companyId + '/' + employee.id).update({
         updated_date: moment().format(),
         is_present: employee.is_present
     }, function (error) {
@@ -507,7 +507,7 @@ synchronization.prototype._updateEmployee = function (employee) {
 synchronization.prototype._updateEmployeePerformanceDailyStats = function (employee, performanceName, date, stats, callback) {
     logger.debug('sending employee performance daily stats: %s', JSON.stringify(stats));
 
-    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/_stats')
+    firebase.child('company_employee_performances/' + instance.companyId + '/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM/DD') + '/_stats')
         .update(stats, function (error) {
             if (callback !== undefined && callback !== null) {
                 callback(error);
@@ -518,7 +518,7 @@ synchronization.prototype._updateEmployeePerformanceDailyStats = function (emplo
 synchronization.prototype._updateEmployeePerformanceMonthlyStats = function (employee, performanceName, date, stats, callback) {
     logger.debug('sending employee performance monthly stats: %s', JSON.stringify(stats));
 
-    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM') + '/_stats')
+    firebase.child('company_employee_performances/' + instance.companyId + '/' + employee.id + '/' + performanceName + '/' + date.format('YYYY/MM') + '/_stats')
         .update(stats, function (error) {
             if (callback !== undefined && callback !== null) {
                 callback(error);
@@ -529,7 +529,7 @@ synchronization.prototype._updateEmployeePerformanceMonthlyStats = function (emp
 synchronization.prototype._updateEmployeePerformanceYearlyStats = function (employee, performanceName, date, stats, callback) {
     logger.debug('sending employee performance yearly stats: %s', JSON.stringify(stats));
 
-    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/' + date.format('YYYY') + '/_stats')
+    firebase.child('company_employee_performances/' + instance.companyId + '/' + employee.id + '/' + performanceName + '/' + date.format('YYYY') + '/_stats')
         .update(stats, function (error) {
             if (callback !== undefined && callback !== null) {
                 callback(error);
@@ -540,7 +540,7 @@ synchronization.prototype._updateEmployeePerformanceYearlyStats = function (empl
 synchronization.prototype._updateEmployeePerformanceAlltimeStats = function (employee, performanceName, stats, callback) {
     logger.debug('sending employee performance alltime stats: %s', JSON.stringify(stats));
 
-    firebase.child('employee_performances/' + employee.id + '/' + performanceName + '/_stats')
+    firebase.child('company_employee_performances/' + instance.companyId + '/' + employee.id + '/' + performanceName + '/_stats')
         .update(stats, function (error) {
             if (callback !== undefined && callback !== null) {
                 callback(error);
