@@ -5,14 +5,14 @@
 var _ = require('lodash');
 //var stackTrace = require('stack-trace');
 
-var logger = require('./utils/logger.js'),
-    communication = require('./utils/communication.js'),
-    revision = require('./utils/revision.js'),
-    synchronization = require('./core/synchronization.js'),
-    worker = require('./core/worker.js');
+var logger = require('../utils/logger.js'),
+    communication = require('../utils/communication.js'),
+    revision = require('../utils/revision.js'),
+    synchronization = require('./synchronization.js'),
+    worker = require('./worker.js');
 
-var databases = require('./databases.js')(communication);
-var modules = require('./modules.js')(communication);
+var databases = require('../databases.js')(communication);
+var modules = require('../modules.js')(communication);
 
 
 var dogbot = {
