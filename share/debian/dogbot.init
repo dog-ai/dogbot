@@ -21,7 +21,7 @@ NAME=dogbot
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-DAEMON=$DOGBOT_HOME/bin/app
+DAEMON=$DOGBOT_HOME/src/app.js
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 

@@ -2,7 +2,7 @@
 
 var SECRET = process.env.DOGBOT_SECRET;
 
-var dogbot = require('../src/dogbot.js')(SECRET);
+var dogbot = require('./core/dogbot.js')(SECRET);
 
 process.on('SIGINT', function() {
     dogbot.stop(function () {
