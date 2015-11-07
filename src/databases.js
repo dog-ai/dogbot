@@ -127,6 +127,7 @@ databases.prototype.startAll = function (callback) {
                         "vendor TEXT DEFAULT NULL, " +
                         "is_present INTEGER NOT NULL DEFAULT 0, " +
                         "last_presence_date DATETIME DEFAULT NULL," +
+                        "is_to_be_deleted INTEGER NOT NULL DEFAULT 0," +
                         "is_synced INTEGER NOT NULL DEFAULT 0" +
                         ");", [], callback);
                 }

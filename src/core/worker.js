@@ -29,7 +29,11 @@ worker.prototype.start = function (database, enqueue, processJob) {
     this.queue.process('worker', function (job, done) {
         logger.debug('Job ' + job.id + ' started');
 
-        processJob(job.data.event, done);
+        processJob(job.data.event).then(function () {
+            done();
+        }).catch(function (error) {
+            done(error);
+        });
     });
 
     this.queue

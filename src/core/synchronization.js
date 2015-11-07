@@ -188,30 +188,45 @@ synchronization.prototype._synchronize = function (callback) {
 
                 logger.debug('sending mac address: %s', JSON.stringify(mac_address));
 
-                var val = _.omit(mac_address, ['id', 'is_synced', 'is_present']);
-                val = _.extend(val, {company_id: instance.companyId});
-                val.created_date = moment(val.created_date).format();
-                val.updated_date = moment(val.updated_date).format();
-                val.last_presence_date = moment(val.last_presence_date).format();
-
-                var macAddressRef;
-                if (mac_address.id !== undefined && mac_address.id !== null) {
-                    macAddressRef = firebase.child('mac_addresses/' + mac_address.id);
-                    macAddressRef.update(val, function (error) {
-                        onComplete(error, mac_address);
-                    });
-                } else {
-                    var macAddressesRef = firebase.child('mac_addresses');
-                    macAddressRef = macAddressesRef.push(val, function (error) {
+                if (mac_address.is_to_be_deleted) {
+                    instance.companyRef.child('mac_addresses/' + mac_address.id).remove(function (error) {
                         if (error) {
                             logger.error(error);
                         } else {
-                            instance.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, function (error) {
-                                mac_address.id = macAddressRef.key();
+                            var macAddressRef = firebase.child('mac_addresses/' + mac_address.id);
+                            macAddressRef.remove(function (error) {
                                 onComplete(error, mac_address);
                             });
                         }
                     });
+
+
+                } else {
+                    var val = _.omit(mac_address, ['id', 'is_synced', 'is_present', 'is_to_be_deleted']);
+                    val = _.extend(val, {company_id: instance.companyId});
+                    val.created_date = moment(val.created_date).format();
+                    val.updated_date = moment(val.updated_date).format();
+                    val.last_presence_date = moment(val.last_presence_date).format();
+
+                    var macAddressRef;
+                    if (mac_address.id !== undefined && mac_address.id !== null) {
+                        macAddressRef = firebase.child('mac_addresses/' + mac_address.id);
+                        macAddressRef.update(val, function (error) {
+                            onComplete(error, mac_address);
+                        });
+                    } else {
+                        var macAddressesRef = firebase.child('mac_addresses');
+                        macAddressRef = macAddressesRef.push(val, function (error) {
+                            if (error) {
+                                logger.error(error);
+                            } else {
+                                instance.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, function (error) {
+                                    mac_address.id = macAddressRef.key();
+                                    onComplete(error, mac_address);
+                                });
+                            }
+                        });
+                    }
                 }
             }
         });
