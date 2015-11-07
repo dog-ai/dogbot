@@ -2,12 +2,11 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
-
-var _ = require('lodash');
-var moment = require('moment');
-
-var macvendor = require('macvendor');
+var logger = require('../../utils/logger.js'),
+    _ = require('lodash'),
+    moment = require('moment'),
+    macvendor = require('macvendor'),
+    Promise = require("bluebird");
 
 function mac_address() {
     var communication = undefined;
@@ -34,12 +33,15 @@ mac_address.prototype.unload = function () {
 };
 
 mac_address.prototype.start = function () {
+    this.communication.on('person:macAddress:clean', this._clean);
     this.communication.on('monitor:arp:create', this._onMacAddressOnline);
     this.communication.on('monitor:arp:update', this._onMacAddressOnline);
     this.communication.on('monitor:arp:delete', this._onMacAddressOffline);
     this.communication.on('synchronization:incoming:person:macAddress:createOrUpdate', this._onCreateOrUpdateMacAddressIncomingSynchronization);
     this.communication.on('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+
+    this.communication.emit('worker:job:enqueue', 'person:macAddress:clean', null, '6 hours');
 };
 
 mac_address.prototype.stop = function () {
@@ -49,6 +51,28 @@ mac_address.prototype.stop = function () {
     this.communication.removeListener('synchronization:incoming:person:macAddress:createOrUpdate', this._onCreateOrUpdateMacAddressIncomingSynchronization);
     this.communication.removeListener('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
     this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+};
+
+mac_address.prototype._clean = function (callback) {
+    instance._findAllBeforeLastPresenceDateAndWithoutDevice(moment().subtract(1, 'month').toDate())
+        .then(function (rows) {
+            if (rows !== undefined) {
+                var promises = [];
+                _.forEach(rows, function (row) {
+                    row.is_to_be_deleted = true;
+                    row.is_synced = false;
+                    row.updated_date = new Date();
+                    return instance._updateByAddress(row.address, row);
+                });
+                return Promise.all(promises);
+            }
+        })
+        .then(function () {
+            callback();
+        })
+        .catch(function (error) {
+            callback(error);
+        });
 };
 
 mac_address.prototype._onMacAddressOnline = function (address) {
@@ -68,16 +92,14 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                 row.last_presence_date = now;
                 row.is_synced = false;
 
-                instance._updateByAddress(row.address, row, function (error) {
-                    if (error) {
-                        logger.error(error.stack);
-                    } else {
+                instance._updateByAddress(row.address, row)
+                    .then(function () {
                         if (!was_present) {
                             instance.communication.emit('person:mac_address:online', row);
                         }
 
                         // lookup vendor
-                        if (row.vendor === undefined) {
+                        if (row.vendor === undefined || row.vendor === null || row.vendor.length > 60) {
                             macvendor(row.address, function (error, vendor) {
                                 if (error) {
                                     logger.error(error.stack);
@@ -87,16 +109,16 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                                         row.is_synced = false;
                                         row.updated_date = new Date();
 
-                                        instance._updateByAddress(row.address, row, function (error) {
-                                            if (error) {
-                                                logger.error(error.stack);
-                                            }
-                                        });
+                                        instance._updateByAddress(row.address, row)
+                                            .catch(function (error) {
+                                                logger.error(error);
+                                            });
                                     }
                                 }
                             });
                         }
-                    }
+                    }).catch(function (error) {
+                    logger.error(error);
                 });
             } else {
 
@@ -116,7 +138,7 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                         instance.communication.emit('person:mac_address:online', row);
 
                         // lookup vendor
-                        if (row.vendor === undefined) {
+                        if (row.vendor === undefined || row.vendor === null || row.vendor.length > 60) {
                             macvendor(row.address, function (error, vendor) {
                                 if (error) {
                                     logger.error(error.stack);
@@ -126,10 +148,9 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                                         row.is_synced = false;
                                         row.updated_date = new Date();
 
-                                        instance._updateByAddress(row.address, row, function (error) {
-                                            if (error) {
-                                                logger.error(error.stack);
-                                            }
+                                        instance._updateByAddress(row.address, row)
+                                            .catch(function (error) {
+                                                logger.error(error);
                                         });
                                     }
                                 }
@@ -155,13 +176,13 @@ mac_address.prototype._onMacAddressOffline = function (mac_address) {
                 row.is_present = false;
                 row.is_synced = false;
 
-                instance._updateByAddress(row.address, row, function (error) {
-                    if (error) {
-                        logger.error(error.stack);
-                    } else {
+                instance._updateByAddress(row.address, row)
+                    .then(function () {
                         instance.communication.emit('person:mac_address:offline', row);
-                    }
-                });
+                    })
+                    .catch(function (error) {
+                        logger.error(error);
+                    });
             }
         }
 
@@ -189,10 +210,9 @@ mac_address.prototype._onCreateOrUpdateMacAddressIncomingSynchronization = funct
                                 mac_address.device_id = null;
                             }
 
-                            instance._updateByAddress(mac_address.address, mac_address, function (error) {
-                                if (error) {
-                                    logger.error('Failed to synchronize MAC address from server: ' + mac_address + ' due to: ' + error);
-                                }
+                            instance._updateByAddress(mac_address.address, mac_address)
+                                .catch(function (error) {
+                                    logger.error('Failed to synchronize MAC address from server: ' + mac_address.toJSON() + ' due to: ' + error);
                             });
                         }
                     } else {
@@ -246,14 +266,20 @@ mac_address.prototype._onMacAddressOutgoingSynchronization = function (callback)
                         if (error) {
                             logger.error(error)
                         } else {
-                            row.id = mac_address.id;
-                            row.is_synced = true;
+                            if (mac_address.is_to_be_deleted) {
+                                instance._deleteById(row.id)
+                                    .catch(function (error) {
+                                        logger.error(error);
+                                    });
+                            } else {
+                                row.id = mac_address.id;
+                                row.is_synced = true;
 
-                            instance._updateByAddress(row.address, row, function (error) {
-                                if (error) {
-                                    logger.error(error.stack);
-                                }
-                            });
+                                instance._updateByAddress(row.address, row)
+                                    .catch(function (error) {
+                                        logger.error(error);
+                                    });
+                            }
                         }
                     });
                 }
@@ -299,7 +325,16 @@ mac_address.prototype._add = function (mac_address, callback) {
         callback);
 };
 
-mac_address.prototype._updateByAddress = function (address, mac_address, callback) {
+mac_address.prototype._findAllBeforeLastPresenceDateAndWithoutDevice = function (lastPresenceDate) {
+    lastPresenceDate = lastPresenceDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
+    return this.communication.emitAsync('database:person:retrieveAll',
+        "SELECT * FROM mac_address WHERE last_presence_date < Datetime(?) AND device_id IS NULL;",
+        [lastPresenceDate]
+    );
+};
+
+mac_address.prototype._updateByAddress = function (address, mac_address) {
     if (mac_address.created_date !== undefined && mac_address.created_date !== null && mac_address.created_date instanceof Date) {
         mac_address.created_date = mac_address.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
@@ -315,11 +350,15 @@ mac_address.prototype._updateByAddress = function (address, mac_address, callbac
     var keys = _.keys(mac_address);
     var values = _.values(mac_address);
 
-    instance.communication.emit('database:person:update',
+    return instance.communication.emitAsync('database:person:update',
         'UPDATE mac_address SET ' + keys.map(function (key) {
             return key + ' = ?';
         }) + ' WHERE address = \'' + address + '\';',
-        values, callback);
+        values);
+};
+
+mac_address.prototype._deleteById = function (id) {
+    return instance.communication.emitAsync('database:person:delete', 'DELETE FROM mac_address WHERE id = ?;', [id]);
 };
 
 var instance = new mac_address();

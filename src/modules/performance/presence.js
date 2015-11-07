@@ -569,7 +569,7 @@ presence.prototype._computeEmployeeAlltimeTotalDuration = function (employee) {
 };
 
 presence.prototype._synchronizeEmployeeAlltimeStats = function (employee, stats) {
-    this.latestAlltimeStats = stats;
+    this.latestAlltimeStats[employee.id] = stats;
     return instance.communication.emitAsync('synchronization:outgoing:performance:alltime:stats', employee, 'presence', stats);
 };
 
