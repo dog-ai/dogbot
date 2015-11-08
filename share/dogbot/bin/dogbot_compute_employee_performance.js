@@ -21,7 +21,7 @@ var _ = require('lodash'),
     synchronization = require('../../../src/core/synchronization.js');
 
 
-var _computeAlltimeStats = function (employeeId, performanceName, alltimePerformance) {
+var _computeAlltimeStats = function (companyId, employeeId, performanceName, alltimePerformance) {
     _.forEach(_.sortBy(_.keys(alltimePerformance)), function (year) {
         if (year.indexOf('_') == '0') {
             return;
@@ -29,14 +29,14 @@ var _computeAlltimeStats = function (employeeId, performanceName, alltimePerform
 
         var yearPerformance = alltimePerformance[year];
 
-        _computeYearlyStats(employeeId, performanceName, yearPerformance, year);
+        _computeYearlyStats(companyId, employeeId, performanceName, yearPerformance, year);
 
         console.log(presence.latestYearlyStats[employeeId]);
 
     });
 };
 
-var _computeYearlyStats = function (employeeId, performanceName, yearPerformance, year) {
+var _computeYearlyStats = function (companyId, employeeId, performanceName, yearPerformance, year) {
     _.forEach(_.sortBy(_.keys(yearPerformance)), function (month) {
         if (month.indexOf('_') == '0') {
             return;
@@ -44,11 +44,11 @@ var _computeYearlyStats = function (employeeId, performanceName, yearPerformance
 
         var monthPerformance = yearPerformance[month];
 
-        _computeMonthlyStats(employeeId, performanceName, monthPerformance, year, month);
+        _computeMonthlyStats(companyId, employeeId, performanceName, monthPerformance, year, month);
 
         console.log(presence.latestMonthlyStats[employeeId]);
 
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/_stats')
+        firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/_stats')
             .set(presence.latestMonthlyStats[employeeId], function (error) {
                 if (error) {
                     logger.error(error.stack);
@@ -59,7 +59,7 @@ var _computeYearlyStats = function (employeeId, performanceName, yearPerformance
     });
 };
 
-var _computeMonthlyStats = function (employeeId, performanceName, monthPerformance, year, month) {
+var _computeMonthlyStats = function (companyId, employeeId, performanceName, monthPerformance, year, month) {
     _.forEach(_.sortBy(_.keys(monthPerformance)), function (day) {
         if (day.indexOf('_') == '0') {
             return;
@@ -75,12 +75,12 @@ var _computeMonthlyStats = function (employeeId, performanceName, monthPerforman
 
         var dayPerformance = monthPerformance[day];
 
-        _computeDailyStats(employeeId, performanceName, dayPerformance, year, month, day);
+        _computeDailyStats(companyId, employeeId, performanceName, dayPerformance, year, month, day);
 
         presence.latestDailyStats[employeeId] = null;
         presence.latestDailyStats[employeeId] = dayPerformance['_stats'];
 
-        firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/' + day + '/_stats')
+        firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/' + day + '/_stats')
             .set(presence.latestDailyStats[employeeId], function (error) {
                 if (error) {
                     logger.error(error.stack);
@@ -103,7 +103,7 @@ var _computeMonthlyStats = function (employeeId, performanceName, monthPerforman
     });
 };
 
-var _computeDailyStats = function (employeeId, performanceName, dayPerformance, year, month, day) {
+var _computeDailyStats = function (companyId, employeeId, performanceName, dayPerformance, year, month, day) {
 
     var date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD');
 
@@ -145,21 +145,22 @@ firebase.authWithCustomToken(FIREBASE_CUSTOM_USER_ADMIN_TOKEN, function (error) 
     if (error) {
         throw error;
     } else {
-        var employeeId = process.argv[2];
-        var performanceName = process.argv[3];
+        var companyId = process.argv[2];
+        var employeeId = process.argv[3];
+        var performanceName = process.argv[4];
 
         if (employeeId !== undefined && employeeId !== null && performanceName !== undefined && performanceName !== null) {
 
-            firebase.child('employee_performances/' + employeeId + '/' + performanceName).once("value", function (snapshot) {
+            firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName).once("value", function (snapshot) {
                 var alltimePerformance = snapshot.val();
 
                 if (alltimePerformance !== null) {
 
-                    _computeAlltimeStats(employeeId, performanceName, alltimePerformance);
+                    _computeAlltimeStats(companyId, employeeId, performanceName, alltimePerformance);
 
                     console.log(presence.latestAlltimeStats[employeeId]);
 
-                    firebase.child('employee_performances/' + employeeId + '/' + performanceName + '/_stats')
+                    firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName + '/_stats')
                         .set(presence.latestAlltimeStats[employeeId], function (error) {
                             if (error) {
                                 logger.error(error.stack);
