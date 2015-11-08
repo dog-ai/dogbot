@@ -215,7 +215,7 @@ synchronization.prototype._synchronize = function (callback) {
                             onComplete(error, mac_address);
                         });
                     } else {
-                        var macAddressesRef = firebase.child('mac_addresses');
+                        var macAddressesRef = firebase.child('company_mac_addresses/' + instance.companyId);
                         macAddressRef = macAddressesRef.push(val, function (error) {
                             if (error) {
                                 logger.error(error);
