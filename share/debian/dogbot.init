@@ -45,6 +45,7 @@ do_start()
 {
     cd $DOGBOT_HOME
 
+    mkdir -p var/db > /dev/null 2>&1
     mkdir -p var/log > /dev/null 2>&1
     mkdir -p var/tmp > /dev/null 2>&1
     mkdir -p var/run > /dev/null 2>&1
