@@ -27,6 +27,7 @@ var logger = new winston.Logger({
             json: false,
             colorize: false,
             zippedArchive: true,
+            maxFiles: 8,
             timestamp: timeFormat
         }),
         new winston.transports.Console({
