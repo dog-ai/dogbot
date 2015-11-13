@@ -2,13 +2,11 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
-
-var _ = require('lodash');
-var os = require('os');
+var logger = require('../../utils/logger.js'),
+    _ = require('lodash'),
+    os = require('os');
 
 function ip() {
-    var communication = {};
 }
 
 ip.prototype.type = "MONITOR";
@@ -32,28 +30,29 @@ ip.prototype.unload = function () {
 };
 
 ip.prototype.start = function () {
-    this.communication.on('monitor:ip:discover', this._discover);
-    this.communication.on('monitor:bonjour:create', this._handleBonjour);
-    this.communication.on('monitor:bonjour:update', this._handleBonjour);
+    this.communication.on('monitor:ip:discover', this.discover);
+
+    this.communication.on('monitor:bonjour:create', this.onBonjourCreate);
 
     this.communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, '1 minute');
 };
 
 ip.prototype.stop = function () {
-    this.communication.removeListener('monitor:ip:discover', this._discover);
-    this.communication.removeListener('monitor:bonjour:create', this._handleBonjour);
-    this.communication.removeListener('monitor:bonjour:update', this._handleBonjour);
+    this.communication.removeListener('monitor:ip:discover', this.discover);
+
+    this.communication.removeListener('monitor:bonjour:create', this.onBonjourCreate);
 };
 
-ip.prototype._discover = function (callback) {
-    try {
-        instance._scan(function () {
-            instance._clean();
-        });
 
-        if (callback !== undefined) {
-            callback();
-        }
+ip.prototype.discover = function (params, callback) {
+    try {
+        instance._execFping(function () {
+            instance._clean(function () {
+                if (callback !== undefined) {
+                    callback();
+                }
+            });
+        });
     } catch (error) {
         logger.error(error.stack);
 
@@ -63,7 +62,7 @@ ip.prototype._discover = function (callback) {
     }
 };
 
-ip.prototype._handleBonjour = function (bonjour) {
+ip.prototype.onBonjourCreate = function (bonjour) {
     instance._addOrUpdate(bonjour.ip_address, function (error) {
         if (error) {
             logger.error(error.stack);
@@ -71,7 +70,8 @@ ip.prototype._handleBonjour = function (bonjour) {
     });
 };
 
-ip.prototype._scan = function (callback) {
+
+ip.prototype._execFping = function (callback) {
     var self = this;
 
     var networkInterfaces = os.networkInterfaces();
@@ -126,18 +126,28 @@ ip.prototype._scan = function (callback) {
     });
 };
 
-ip.prototype._clean = function () {
+ip.prototype._clean = function (callback) {
     var self = this;
 
     var currentDate = new Date();
-    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error, ip) {
-        if (error !== null) {
-            logger.error(error.stack);
-        } else {
-            self.communication.emit('monitor:ipAddress:delete', ip.ip_address);
-        }
-    });
+    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error) {
+            if (error) {
+                logger.error(error.stack);
+            }
+
+            if (callback !== undefined) {
+                callback();
+            }
+        },
+        function (error, ip) {
+            if (error !== null) {
+                logger.error(error.stack);
+            } else {
+                self.communication.emit('monitor:ipAddress:delete', ip.ip_address);
+            }
+        });
 };
+
 
 ip.prototype._addOrUpdate = function (ipAddress, callback) {
     var self = this;
@@ -153,7 +163,7 @@ ip.prototype._addOrUpdate = function (ipAddress, callback) {
                 if (row === undefined) {
                     self._addPresence(ipAddress, function (error) {
                         if (error === null) {
-                            self.communication.emit('monitor:ipAddress:create', ipAddress);
+                            self.communication.emit('monitor:ip:create', ipAddress);
                         }
 
                         if (callback !== undefined) {
@@ -163,7 +173,7 @@ ip.prototype._addOrUpdate = function (ipAddress, callback) {
                 } else {
                     self._update(ipAddress, function (error) {
                         if (error === null) {
-                            self.communication.emit('monitor:ipAddress:update', ipAddress);
+                            self.communication.emit('monitor:ip:update', ipAddress);
                         }
 
                         if (callback !== undefined) {
@@ -202,31 +212,39 @@ ip.prototype._update = function (ipAddress, callback) {
         });
 };
 
-ip.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
+ip.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
     var self = this;
 
-    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.communication.emit('database:monitor:retrieveOneByOne',
+    this.communication.emit('database:monitor:retrieveAll',
         "SELECT * FROM ip WHERE updated_date < Datetime(?);", [updatedDate],
-        function (error, row) {
-            if (error !== null) {
-                if (callback !== undefined) {
-                    callback(error.stack);
+        function (error, rows) {
+            if (!error) {
+                if (rows !== undefined) {
+
+                    rows.forEach(function (row) {
+                        self.communication.emit('database:monitor:delete',
+                            "DELETE FROM ip WHERE id = ?;", [row.id],
+                            function (error) {
+                                if (error) {
+                                    logger.error(error.stack);
+                                } else {
+                                    if (onDelete !== undefined) {
+                                        onDelete(row);
+                                    }
+                                }
+                            });
+                    });
                 }
-            } else {
-                if (row !== undefined) {
-                    self.communication.emit('database:monitor:delete',
-                        "DELETE FROM ip WHERE id = ?;", [row.id],
-                        function (error) {
-                            if (callback !== undefined) {
-                                callback(error, row);
-                            }
-                        });
+
+                if (callback !== undefined) {
+                    callback(error);
                 }
             }
         });
 };
+
 
 var instance = new ip();
 

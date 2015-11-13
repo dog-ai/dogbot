@@ -5,7 +5,6 @@
 var logger = require('../../utils/logger.js');
 
 function arp() {
-    var communication = undefined;
 }
 
 arp.prototype.type = "MONITOR";
@@ -29,32 +28,39 @@ arp.prototype.unload = function () {
 };
 
 arp.prototype.start = function () {
-    this.communication.on('monitor:arp:discover', this._discover);
-    this.communication.on('monitor:ipAddress:create', this._handleIpAddress);
-    this.communication.on('monitor:ipAddress:update', this._handleIpAddress);
+    this.communication.on('monitor:arp:discover', this.discover);
+    this.communication.on('monitor:arp:resolve', this.resolve);
+
+    this.communication.on('monitor:ip:create', this.onIpCreateOrUpdate);
+    this.communication.on('monitor:ip:update', this.onIpCreateOrUpdate);
+
 
     this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, '1 minute');
 };
 
 arp.prototype.stop = function () {
-    this.communication.removeListener('monitor:arp:discover', this._discover);
-    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
-    this.communication.removeListener('monitor:ipAddress:create', this._handleIpAddress);
+    this.communication.removeListener('monitor:arp:discover', this.discover);
+    this.communication.removeListener('monitor:arp:resolve', this.resolve);
+
+    this.communication.removeListener('monitor:ip:create', this.onIpCreateOrUpdate);
+    this.communication.removeListener('monitor:ip:update', this.onIpCreateOrUpdate);
+
 };
 
-arp.prototype._discover = function (callback) {
+
+arp.prototype.discover = function (params, callback) {
     try {
         instance.communication.emit('monitor:arp:discover:begin');
 
-        instance._scan(function () {
+        instance._execArpScan(function () {
             instance._clean(function () {
                 instance.communication.emit('monitor:arp:discover:finish');
+
+                if (callback !== undefined) {
+                    callback();
+                }
             });
         });
-
-        if (callback !== undefined) {
-            callback();
-        }
     } catch (error) {
         if (callback !== undefined) {
             callback(error);
@@ -62,21 +68,32 @@ arp.prototype._discover = function (callback) {
     }
 };
 
-arp.prototype._handleIpAddress = function (ipAddress) {
-    instance._resolve(ipAddress, function (error, macAddress) {
+arp.prototype.resolve = function (ip, callback) {
+    instance._execArp(ip, function (error, macAddress) {
         if (error) {
-            logger.error(error.stack);
+            callback(error);
         } else {
-            instance._addOrUpdate(ipAddress, macAddress, function (error) {
-                if (error) {
-                    logger.error(error.stack);
-                }
-            });
+            if (macAddress !== null) {
+                instance._addOrUpdate(ip, macAddress, function (error) {
+                    if (error) {
+                        callback(error);
+                    } else {
+                        callback();
+                    }
+                });
+            } else {
+                callback();
+            }
         }
     })
 };
 
-arp.prototype._scan = function (callback) {
+arp.prototype.onIpCreateOrUpdate = function (ip) {
+    instance.communication.emit('worker:job:enqueue', 'monitor:arp:resolve', ip);
+};
+
+
+arp.prototype._execArpScan = function (callback) {
     var self = this;
 
     var _interface = process.platform === 'linux' ? "wlan0" : "en0";
@@ -96,14 +113,13 @@ arp.prototype._scan = function (callback) {
         var macAddress = values[1];
 
         self._addOrUpdate(ipAddress, macAddress, function (error) {
-            if (error !== null) {
-                logger.error(error.stack);
-            }
         });
     });
 
     _process.stderr.on('data', function (data) {
-        logger.error(new Error(data));
+        if (callback !== undefined) {
+            callback(new Error(data));
+        }
     });
 
     _process.on('close', function () {
@@ -113,48 +129,71 @@ arp.prototype._scan = function (callback) {
     });
 };
 
-arp.prototype._clean = function (callback) {
-    var self = this;
-
-    var currentDate = new Date();
-    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error) {
-        if (error) {
-            logger.error(error.stack);
-        }
-
-        if (callback !== undefined) {
-            callback();
-        }
-    }, function (arp) {
-        self.communication.emit('monitor:arp:delete', arp.mac_address);
-    });
-};
-
-arp.prototype._resolve = function (ipAddress, callback) {
+arp.prototype._execArp = function (ipAddress, callback) {
     var spawn = require('child_process').spawn,
         _process = spawn('arp', ['-n', ipAddress]);
 
     _process.stdout.setEncoding('utf8');
     _process.stdout.pipe(require('split')()).on('data', function (line) {
         if (line !== null && line.length === 0 || line.lastIndexOf('A', 0) === 0) {
-            return;
+            callback(null, null);
+        } else {
+            var values = line.replace(/\s\s+/g, ' ').split(' ');
+
+            var macAddress;
+            if (process.platform === 'linux') {
+                macAddress = values[2];
+            } else {
+                macAddress = values[3];
+
+                if (macAddress.indexOf(':') > -1) { // We need to fix malformed MAC addresses coming from OSX arp binary
+                    values = macAddress.split(':');
+                    macAddress = '';
+                    for (var i = 0; i < values.length; i++) {
+                        if (values[i].length == 1) {
+                            values[i] = '0' + values[i];
+                        }
+
+                        if (macAddress !== '') {
+                            macAddress += ':';
+                        }
+
+                        macAddress += values[i];
+                    }
+                }
+            }
+
+            if (!/^(([a-f0-9]{2}:){5}[a-f0-9]{2},?)+$/i.test(macAddress)) {
+                macAddress = null;
+            }
+
+            callback(null, macAddress);
         }
-
-        var values = line.replace(/\s\s+/g, ' ').split(' ');
-
-        var macAddress = values[2];
-
-        if (!/^(([a-f0-9]{2}:){5}[a-f0-9]{2},?)+$/i.test(macAddress)) {
-            return;
-        }
-
-        callback(null, macAddress);
     });
 
     _process.stderr.on('data', function (data) {
-        //callback(new Error(data));
+        callback(new Error(data));
     });
 };
+
+arp.prototype._clean = function (callback) {
+    var self = this;
+
+    var currentDate = new Date();
+    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error) {
+        if (callback !== undefined) {
+            callback(error);
+        }
+    }, function (arp) {
+        self.communication.emit('monitor:arp:delete', arp.mac_address);
+    });
+};
+
+
+
+
+
+
 
 arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
     var self = this;
@@ -255,6 +294,7 @@ arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
             }
         });
 };
+
 
 var instance = new arp();
 

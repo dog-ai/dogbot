@@ -31,8 +31,8 @@ var dogbot = {
                     function (callback) {
                         communication.on('worker:job:enqueue', callback);
                     },
-                    function (event) {
-                        return communication.emitAsync(event);
+                    function (event, params) {
+                        return communication.emitAsync(event, params);
                     }
                 );
             } catch (error) {

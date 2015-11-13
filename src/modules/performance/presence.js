@@ -148,7 +148,7 @@ presence.prototype._onIncomingEmployeeAlltimeStatsSynchronization = function (em
 };
 
 
-presence.prototype._generateDailyStats = function (callback) {
+presence.prototype._generateDailyStats = function (params, callback) {
     var date = moment().subtract(1, 'day');
     instance._findAllEmployees()
         .then(function (employees) {
@@ -245,7 +245,7 @@ presence.prototype._synchronizeEmployeeDailyStats = function (employee, date, st
 };
 
 
-presence.prototype._generateMonthlyStats = function (callback) {
+presence.prototype._generateMonthlyStats = function (params, callback) {
     var date = moment().subtract(1, 'day');
     instance._findAllEmployees()
         .then(function (employees) {
@@ -398,7 +398,7 @@ presence.prototype._synchronizeEmployeeMonthlyStats = function (employee, date, 
 };
 
 
-presence.prototype._generateYearlyStats = function (callback) {
+presence.prototype._generateYearlyStats = function (params, callback) {
     instance._findAllEmployees()
         .then(function (employee) {
             return instance._computeEmployeeYearlyStats(employee, date)
@@ -427,7 +427,7 @@ presence.prototype._synchronizeEmployeeYearlyStats = function (employee, date, s
 };
 
 
-presence.prototype._generateAlltimeStats = function (callback) {
+presence.prototype._generateAlltimeStats = function (params, callback) {
     var date = moment().subtract(1, 'day');
     instance._findAllEmployees()
         .then(function (employees) {

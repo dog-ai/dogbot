@@ -37,6 +37,7 @@ device.prototype.start = function () {
     this.moduleManager.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
     this.moduleManager.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.moduleManager.on('person:device:is_present', this._isPresent);
+    this.moduleManager.on('person:device:discover', this._discover);
 };
 
 device.prototype.stop = function () {
@@ -45,6 +46,32 @@ device.prototype.stop = function () {
     this.moduleManager.removeListener('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
     this.moduleManager.removeListener('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.moduleManager.removeListener('person:device:is_present', this._isPresent);
+    this.moduleManager.removeListener('person:device:discover', this._discover);
+};
+
+device.prototype._discover = function (macAddress, callback) {
+    try {
+        instance._findIpAdressByMacAddress(macAddress.address, function (error, ipAddress) {
+            if (error) {
+                throw error;
+            }
+
+            if (ipAddress !== undefined) {
+                logger.debug(macAddress.address + " -> " + ipAddress.toString());
+
+                // nmap -sV -O -v --osscan-guess --max-os-tries=1 10.172.161.212
+                // nmap -O --osscan-guess --max-os-tries=1 10.172.161.212
+
+            } else {
+                logger.debug ("No IP for: " + macAddress.address);
+            }
+
+
+            callback();
+        });
+    } catch (error) {
+        callback(error);
+    }
 };
 
 device.prototype._isPresent = function (device, callback) {
@@ -190,6 +217,8 @@ device.prototype._onMacAddressOnline = function (mac_address) {
                 }
             }
         });
+    } else {
+        instance.moduleManager.emit('worker:job:enqueue', 'person:device:discover', mac_address);
     }
 };
 
@@ -243,6 +272,12 @@ device.prototype._findMacAddressesById = function (id, callback) {
 
             callback(error, rows);
         });
+};
+
+device.prototype._findIpAdressByMacAddress = function (macAddress, callback) {
+    this.moduleManager.emit('database:monitor:retrieveOne',
+        "SELECT ip_address FROM arp WHERE mac_address = ?;", [macAddress],
+        callback);
 };
 
 device.prototype._findById = function (id, callback) {
