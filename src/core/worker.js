@@ -29,10 +29,12 @@ worker.prototype.start = function (database, enqueue, processJob) {
     this.queue.process('worker', function (job, done) {
         logger.debug('Job ' + job.id + ' started');
 
-        processJob(job.data.event).then(function () {
+        processJob(job.data.event, job.data.params).then(function () {
             done();
         }).catch(function (error) {
             done(error);
+        }).finally(function () {
+            logger.debug('Job ' + job.id + ' completed');
         });
     });
 
@@ -42,7 +44,6 @@ worker.prototype.start = function (database, enqueue, processJob) {
                 logger.debug('Queued ' + job.data.event + ' with job id ' + id);
             });
         }).on('job complete', function (id, result) {
-            logger.debug('Job ' + id + ' completed');
             kue.Job.get(id, function (error, job) {
                 if (error) {
                     return;

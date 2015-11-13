@@ -177,7 +177,7 @@ synchronization.prototype._init = function (callback) {
     });
 };
 
-synchronization.prototype._synchronize = function (callback) {
+synchronization.prototype._synchronize = function (params, callback) {
 
     if (instance.companyRef !== undefined && instance.companyRef !== null) {
 
