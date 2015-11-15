@@ -143,7 +143,8 @@ arp.prototype._execArp = function (ipAddress, callback) {
             var macAddress;
             if (process.platform === 'linux') {
                 macAddress = values[2];
-                log.info("MAC ADDRESS FROM EXEC ARP: " + macAddress);
+                logger.info(line);
+                logger.info("MAC ADDRESS FROM EXEC ARP: " + macAddress);
             } else {
                 macAddress = values[3];
 
