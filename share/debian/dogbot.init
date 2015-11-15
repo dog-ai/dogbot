@@ -50,7 +50,9 @@ do_start()
     mkdir -p var/tmp > /dev/null 2>&1
     mkdir -p var/run > /dev/null 2>&1
 
-    DOGBOT_SECRET=$DOGBOT_SECRET $forever start \
+    DOGBOT_SECRET=$DOGBOT_SECRET \
+    DOGBOT_LOG_LEVEL=$DOGBOT_LOG_LEVEL \
+    $forever start \
     --silent \
     --pidFile $PIDFILE \
     --workingDir $DOGBOT_HOME \
