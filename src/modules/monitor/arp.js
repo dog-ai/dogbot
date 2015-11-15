@@ -143,10 +143,11 @@ arp.prototype._execArp = function (ipAddress, callback) {
             var macAddress;
             if (process.platform === 'linux') {
                 macAddress = values[2];
+                log.info("MAC ADDRESS FROM EXEC ARP: " + macAddress);
             } else {
                 macAddress = values[3];
 
-                if (macAddress.indexOf(':') > -1) { // We need to fix malformed MAC addresses coming from OSX arp binary
+                if (macAddress.indexOf(':') > -1) { // fix malformed MAC addresses coming from OSX arp binary
                     values = macAddress.split(':');
                     macAddress = '';
                     for (var i = 0; i < values.length; i++) {

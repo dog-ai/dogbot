@@ -161,7 +161,7 @@ var dogbot = {
 
     error: function (error, callback) {
         //var traces = stackTrace.parse(error);
-        logger.error(error.stack, callback);
+        logger.error(error.stack === undefined ? error : error.stack, callback);
 
         /*if (traces !== undefined && traces !== null) {
             traces.forEach(function (trace) {
