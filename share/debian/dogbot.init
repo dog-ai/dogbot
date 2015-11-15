@@ -95,7 +95,7 @@ do_reload() {
     $git reset --hard origin/master
     RETVAL="$?"
 
-    [ "$RETVAL" ] && $npm install
+    #[ "$RETVAL" ] && $npm update
 
     return "$RETVAL"
 }
