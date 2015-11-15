@@ -27,7 +27,7 @@ var timeFormat = function () {
 var logger = new winston.Logger({
     transports: [
         new winston.transports.DailyRotateFile({
-            level: 'info',
+            level: LOG_LEVEL,
             filename: LOG_DIR + '/dogbot.log',
             json: false,
             colorize: false,
