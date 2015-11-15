@@ -7,12 +7,17 @@ var winston = require('winston'),
     moment = require('moment');
 
 var LOG_DIR = __dirname + '/../../var/log';
+var LOG_LEVEL = process.env.DOGBOT_LOG_LEVEL;
 
 winston.emitErrs = true;
 
 // create log directory if it does not exist
 if (!fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR);
+}
+
+if (LOG_LEVEL === undefined || LOG_LEVEL === null || !/(debug|info|warn|error)/i.test(LOG_LEVEL)) {
+    LOG_LEVEL = 'info';
 }
 
 var timeFormat = function () {
