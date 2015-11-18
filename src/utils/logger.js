@@ -7,6 +7,7 @@ var winston = require('winston'),
     moment = require('moment');
 
 var LOG_DIR = __dirname + '/../../var/log';
+var TMP_DIR = __dirname + '/../../var/tmp';
 var LOG_LEVEL = process.env.DOGBOT_LOG_LEVEL;
 
 winston.emitErrs = true;
@@ -24,24 +25,38 @@ var timeFormat = function () {
     return moment().format('YYYY-MM-DDTHH:mm:ss,SSSZ');
 };
 
+var transports = [
+    new winston.transports.DailyRotateFile({
+        level: LOG_LEVEL,
+        filename: LOG_DIR + '/dogbot.log',
+        json: false,
+        colorize: false,
+        zippedArchive: true,
+        maxFiles: 8,
+        timestamp: timeFormat
+    }),
+    new winston.transports.Console({
+        level: LOG_LEVEL,
+        json: false,
+        colorize: true,
+        timestamp: timeFormat
+    })
+];
+
+if (LOG_LEVEL === 'debug') {
+    transports.push(new winston.transports.DailyRotateFile({
+        level: LOG_LEVEL,
+        filename: TMP_DIR + '/dogbot.log',
+        json: false,
+        colorize: false,
+        zippedArchive: true,
+        maxFiles: 2,
+        timestamp: timeFormat
+    }));
+}
+
 var logger = new winston.Logger({
-    transports: [
-        new winston.transports.DailyRotateFile({
-            level: LOG_LEVEL,
-            filename: LOG_DIR + '/dogbot.log',
-            json: false,
-            colorize: false,
-            zippedArchive: true,
-            maxFiles: 8,
-            timestamp: timeFormat
-        }),
-        new winston.transports.Console({
-            level: 'debug',
-            json: false,
-            colorize: true,
-            timestamp: timeFormat
-        })
-    ],
+    transports: transports,
     exitOnError: false
 });
 
