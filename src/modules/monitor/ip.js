@@ -75,54 +75,56 @@ ip.prototype._execFping = function (callback) {
     var self = this;
 
     var networkInterfaces = os.networkInterfaces();
-    _.forEach(networkInterfaces, function (addresses) {
-        _.forEach(addresses, function (address) {
-            if (address.family === 'IPv4' && !address.internal && address.mac !== '00:00:00:00:00:00') {
-                var subnet = require('ip').subnet(address.address, address.netmask);
+    _.forEach(networkInterfaces, function (addresses, networkInterface) {
+        if (networkInterface === 'en0' || networkInterface === 'wlan0') {
+            _.forEach(addresses, function (address) {
+                if (address.family === 'IPv4' && !address.internal && address.mac !== '00:00:00:00:00:00') {
+                    var subnet = require('ip').subnet(address.address, address.netmask);
 
-                if (subnet.subnetMaskLength < 20) {
-                    return;
-                }
-
-                var process = require('child_process')
-                    .spawn('fping', [
-                        '-q',
-                        '-c 1',
-                        '-r 0',
-                        '-i 10',
-                        '-t 100',
-                        '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
-                    ]);
-
-                process.stdout.setEncoding('utf8');
-
-                process.stdout.pipe(require('split')()).on('data', function (line) {
-
-                });
-
-                process.stderr.pipe(require('split')()).on('data', function (line) {
-                    if (line.indexOf('min/avg/max') === -1) {
+                    if (subnet.subnetMaskLength < 20) {
                         return;
                     }
 
-                    var values = line.split(' ');
+                    var process = require('child_process')
+                        .spawn('fping', [
+                            '-q',
+                            '-c 1',
+                            '-r 0',
+                            '-i 10',
+                            '-t 100',
+                            '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
+                        ]);
 
-                    var ipAddress = values[0];
+                    process.stdout.setEncoding('utf8');
 
-                    self._addOrUpdate(ipAddress, function (error) {
-                        if (error !== null) {
-                            logger.error(error.stack);
+                    process.stdout.pipe(require('split')()).on('data', function (line) {
+
+                    });
+
+                    process.stderr.pipe(require('split')()).on('data', function (line) {
+                        if (line.indexOf('min/avg/max') === -1) {
+                            return;
+                        }
+
+                        var values = line.split(' ');
+
+                        var ipAddress = values[0];
+
+                        self._addOrUpdate(ipAddress, function (error) {
+                            if (error !== null) {
+                                logger.error(error.stack);
+                            }
+                        });
+                    });
+
+                    process.on('close', function () {
+                        if (callback !== undefined) {
+                            callback();
                         }
                     });
-                });
-
-                process.on('close', function () {
-                    if (callback !== undefined) {
-                        callback();
-                    }
-                });
-            }
-        });
+                }
+            });
+        }
     });
 };
 
