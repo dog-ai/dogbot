@@ -50,28 +50,56 @@ device.prototype.stop = function () {
 };
 
 device.prototype._discover = function (macAddress, callback) {
+    return callback();
     try {
-        instance._findIpAdressByMacAddress(macAddress.address, function (error, ipAddress) {
+        instance._findIpAdressByMacAddress(macAddress.address, function (error, row) {
             if (error) {
-                throw error;
-            }
-
-            if (ipAddress !== undefined) {
-                logger.debug(macAddress.address + " -> " + ipAddress.toString());
-
-                // nmap -sV -O -v --osscan-guess --max-os-tries=1 10.172.161.212
-                // nmap -O --osscan-guess --max-os-tries=1 10.172.161.212
-
+                callback(error);
             } else {
-                logger.debug ("No IP for: " + macAddress.address);
+                if (row !== undefined && row !== null) {
+                    instance._execNmap(row.ip_address, function (error) {
+                        callback(error);
+                    });
+                } else {
+                    callback(new Error('Unknown IP address for MAC address: ' + macAddress.address));
+                }
             }
-
-
-            callback();
         });
     } catch (error) {
         callback(error);
     }
+};
+
+device.prototype._execNmap = function (ip, callback) {
+    // nmap -sV -O -v --osscan-guess --max-os-tries=1 10.172.161.212
+    // nmap -O --osscan-guess --max-os-tries=1 10.172.161.212
+
+    var spawn = require('child_process').spawn,
+        _process = spawn('nmap', ['-sV', '-O', '-v', '--osscan-guess', '--max-os-tries=1', ip]);
+
+    _process.stdout.setEncoding('utf8');
+    _process.stdout.pipe(require('split')()).on('data', function (line) {
+        if (line !== null && line.length === 0) {
+
+        } else {
+
+            if (line.indexOf('MAC Address:') == 0 ||
+                line.indexOf('Device type:') == 0 ||
+                line.indexOf('Running:') == 0 ||
+                line.indexOf('OS CPE:') == 0 ||
+                line.indexOf('OS details:') == 0
+            ) {
+                logger.info(line);
+            }
+        }
+    });
+
+    _process.on('exit', function () {
+        logger.info("Exiting " + ip);
+        if (callback !== undefined) {
+            callback();
+        }
+    });
 };
 
 device.prototype._isPresent = function (device, callback) {
@@ -218,7 +246,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
             }
         });
     } else {
-        instance.moduleManager.emit('worker:job:enqueue', 'person:device:discover', mac_address);
+        instance.moduleManager.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
     }
 };
 
