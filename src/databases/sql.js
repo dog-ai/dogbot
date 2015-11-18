@@ -5,6 +5,7 @@
 var sqlite3 = require("sqlite3").verbose();
 
 var DB_DIR = __dirname + "/../../var/db";
+var TMP_DIR = __dirname + "/../../var/tmp";
 
 function sql() {
     this.file = undefined;
@@ -13,8 +14,9 @@ function sql() {
 
 sql.prototype.type = 'SQL';
 
-sql.prototype._open = function (name) {
-    this.file = DB_DIR + '/' + name + '.db';
+sql.prototype._open = function (name, isTemp) {
+    this.file = (isTemp !== undefined && isTemp ? TMP_DIR : DB_DIR) + '/' + name + '.db';
+
     this.db = new sqlite3.Database(this.file);
 };
 

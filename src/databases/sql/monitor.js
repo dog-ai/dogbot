@@ -18,7 +18,7 @@ monitor.prototype.name = "monitor";
 monitor.prototype.start = function (communication) {
     this.communication = communication;
 
-    this._open(this.name);
+    this._open(this.name, true);
 
     this.communication.on('database:' + this.name + ':setup', this._run.bind(this));
     this.communication.on('database:' + this.name + ':create', this._run.bind(this));
