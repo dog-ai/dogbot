@@ -27,6 +27,7 @@ var timeFormat = function () {
 
 var transports = [
     new winston.transports.DailyRotateFile({
+        name: 'log', // http://stackoverflow.com/a/17374968
         level: LOG_LEVEL,
         filename: LOG_DIR + '/dogbot.log',
         json: false,
@@ -45,6 +46,7 @@ var transports = [
 
 if (LOG_LEVEL === 'debug') {
     transports.push(new winston.transports.DailyRotateFile({
+        name: 'tmp', // http://stackoverflow.com/a/17374968
         level: LOG_LEVEL,
         filename: TMP_DIR + '/dogbot.log',
         json: false,
