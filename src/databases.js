@@ -52,8 +52,9 @@ databases.prototype.startAll = function (callback) {
                         "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                        "ip_address TEXT NOT NULL UNIQUE, " +
-                        "mac_address TEXT NOT NULL" +
+                        "ip_address TEXT NOT NULL, " +
+                        "mac_address TEXT NOT NULL," +
+                        "UNIQUE(ip_address, mac_address)" +
                         ");",
                         [], callback);
                 }
