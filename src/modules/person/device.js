@@ -50,7 +50,6 @@ device.prototype.stop = function () {
 };
 
 device.prototype._discover = function (macAddress, callback) {
-    return callback();
     try {
         instance._findIpAdressByMacAddress(macAddress.address, function (error, row) {
             if (error) {

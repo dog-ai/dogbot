@@ -53,8 +53,7 @@ mac_address.prototype.stop = function () {
     this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 };
 
-mac_address.prototype._clean = function (callback) {
-    return callback();
+mac_address.prototype._clean = function (params, callback) {
     instance._findAllBeforeLastPresenceDateAndWithoutDevice(moment().subtract(1, 'month').toDate())
         .then(function (rows) {
             if (rows !== undefined) {

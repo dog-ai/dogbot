@@ -122,6 +122,12 @@ arp.prototype._execArpScan = function (callback) {
         }
     });
 
+    _process.on('error', function (error) {
+        if (callback !== undefined) {
+            callback(new Error(error));
+        }
+    });
+
     _process.on('close', function () {
         if (callback !== undefined) {
             callback();
@@ -173,6 +179,12 @@ arp.prototype._execArp = function (ipAddress, callback) {
 
     _process.stderr.on('data', function (data) {
         callback(new Error(data));
+    });
+
+    _process.on('error', function (error) {
+        if (callback !== undefined) {
+            callback(new Error(error));
+        }
     });
 };
 
