@@ -54,6 +54,7 @@ mac_address.prototype.stop = function () {
 };
 
 mac_address.prototype._clean = function (callback) {
+    return callback();
     instance._findAllBeforeLastPresenceDateAndWithoutDevice(moment().subtract(1, 'month').toDate())
         .then(function (rows) {
             if (rows !== undefined) {

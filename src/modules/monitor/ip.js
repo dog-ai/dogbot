@@ -117,7 +117,7 @@ ip.prototype._execFping = function (callback) {
                         });
                     });
 
-                    process.on('close', function () {
+                    process.on('exit', function () {
                         if (callback !== undefined) {
                             callback();
                         }
