@@ -117,6 +117,12 @@ ip.prototype._execFping = function (callback) {
                         });
                     });
 
+                    process.on('error', function (error) {
+                        if (callback !== undefined) {
+                            callback(new Error(error));
+                        }
+                    });
+
                     process.on('exit', function () {
                         if (callback !== undefined) {
                             callback();

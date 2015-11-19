@@ -26,7 +26,7 @@ worker.prototype.start = function (database, enqueue, processJob) {
         prefix: database.name
     });
 
-    this.queue.process('worker', function (job, done) {
+    var process = function (job, done) {
         logger.debug('Job ' + job.id + ' started' +
             (job.data.params !== undefined && job.data.params !== null ? ' with params ' + JSON.stringify(job.data.params) : ''));
 
@@ -37,7 +37,11 @@ worker.prototype.start = function (database, enqueue, processJob) {
         }).finally(function () {
             logger.debug('Job ' + job.id + ' completed');
         });
-    });
+    };
+
+    this.queue.process('worker', process);
+
+    this.queue.process('slow', 10, process);
 
     this.queue
         .on('job enqueue', function (id, type) {
@@ -95,11 +99,23 @@ worker.prototype.stop = function (callback) {
 };
 
 worker.prototype._enqueue = function (event, params, schedule) {
-    var job = instance.queue.create('worker', {
+    var type = event === 'person:device:discover' ? 'slow' : 'worker';
+
+    var job = instance.queue.create(type, {
         event: event,
         params: params
 
     });
+
+    switch (type) {
+        case 'worker':
+            job.ttl(120000); // 2 minutes
+            job.attempts(3).backoff({type: 'exponential'});
+            break;
+        case 'slow':
+            job.ttl(600000); // 10 minutes
+            break;
+    }
 
     if (schedule !== undefined && schedule !== null) {
         instance.queue.every(schedule, job);
