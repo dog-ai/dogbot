@@ -156,7 +156,7 @@ device.prototype._execNmap = function (ip) {
 
 device.prototype._isPresent = function (device, callback) {
     function handleArpDiscover() {
-        instance.moduleManager.removeListener('monitor:arp:discover:finish', handleArpDiscover);
+        instance.communication.removeListener('monitor:arp:discover:finish', handleArpDiscover);
 
         instance._findMacAddressesById(device.id, function (error, mac_addresses) {
             if (error) {
@@ -164,7 +164,7 @@ device.prototype._isPresent = function (device, callback) {
             } else {
                 if (mac_addresses !== undefined) {
                     var values = _.pluck(mac_addresses, 'address');
-                    instance.moduleManager.emit('database:monitor:retrieveAll',
+                    instance.communication.emit('database:monitor:retrieveAll',
                         'SELECT * FROM arp WHERE mac_address IN (' + values.map(function () {
                             return '?';
                         }) + ');',
@@ -181,11 +181,11 @@ device.prototype._isPresent = function (device, callback) {
         });
     }
 
-    instance.moduleManager.on('monitor:arp:discover:finish', handleArpDiscover);
+    instance.communication.on('monitor:arp:discover:finish', handleArpDiscover);
 };
 
 device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
-    instance.moduleManager.emit('database:person:retrieveAll', 'PRAGMA table_info(device)', [], function (error, rows) {
+    instance.communication.emit('database:person:retrieveAll', 'PRAGMA table_info(device)', [], function (error, rows) {
         if (error !== null) {
             throw error();
         }
@@ -214,9 +214,9 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                                 device = _.extend(device, {is_present: row.is_present});
 
                                 if (row.employee_id !== null && device.employee_id === null) {
-                                    instance.moduleManager.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
+                                    instance.communication.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
                                 } else if (row.employee_id === null && device.employee_id !== null) {
-                                    instance.moduleManager.emit('person:device:addedToEmployee', device, {id: device.employee_id});
+                                    instance.communication.emit('person:device:addedToEmployee', device, {id: device.employee_id});
                                 }
                             }
                         });
@@ -226,7 +226,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                         if (error) {
                             logger.error(error.stack);
                         } else {
-                            instance.moduleManager.emit('person:device:is_present', device, function (is_present) {
+                            instance.communication.emit('person:device:is_present', device, function (is_present) {
 
                                 if (device.is_present != is_present) {
 
@@ -238,9 +238,9 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                                             logger.error(error.stack);
                                         } else {
                                             if (device.is_present) {
-                                                instance.moduleManager.emit('person:device:online', device);
+                                                instance.communication.emit('person:device:online', device);
                                             } else {
-                                                instance.moduleManager.emit('person:device:offline', device);
+                                                instance.communication.emit('person:device:offline', device);
                                             }
                                         }
                                     });
@@ -255,20 +255,20 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 };
 
 device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
-    instance.moduleManager.emit('database:person:delete',
+    instance.communication.emit('database:person:delete',
         'SELECT * FROM device WHERE id = ?',
         [device.id], function (error, row) {
             if (error) {
                 logger.error(error);
             } else {
-                instance.moduleManager.emit('database:person:delete',
+                instance.communication.emit('database:person:delete',
                     'DELETE FROM device WHERE id = ?',
                     [device.id], function (error) {
                         if (error) {
                             logger.error(error);
                         } else {
                             if (row.is_present) {
-                                instance.moduleManager.emit('person:device:offline', row);
+                                instance.communication.emit('person:device:offline', row);
                             }
                         }
                     });
@@ -291,7 +291,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
                         if (error) {
                             logger.error(error.stack);
                         } else {
-                            instance.moduleManager.emit('person:device:online', device);
+                            instance.communication.emit('person:device:online', device);
                         }
                     });
                 }
@@ -299,7 +299,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
         });
     }
 
-    instance.moduleManager.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
+    instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
 
 };
 
@@ -325,7 +325,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
                                     if (error) {
                                         logger.error(error.stack);
                                     } else {
-                                        instance.moduleManager.emit('person:device:offline', device);
+                                        instance.communication.emit('person:device:offline', device);
                                     }
                                 });
                             }
@@ -385,7 +385,7 @@ device.prototype._add = function (device, callback) {
     var keys = _.keys(device);
     var values = _.values(device);
 
-    instance.moduleManager.emit('database:person:create',
+    instance.communication.emit('database:person:create',
         'INSERT INTO device (' + keys + ') VALUES (' + values.map(function () {
             return '?';
         }) + ');',
@@ -404,7 +404,7 @@ device.prototype._updateById = function (id, device, callback) {
     var keys = _.keys(device);
     var values = _.values(device);
 
-    instance.moduleManager.emit('database:person:update',
+    instance.communication.emit('database:person:update',
         'UPDATE device SET ' + keys.map(function (key) {
             return key + ' = ?';
         }) + ' WHERE id = \'' + id + '\';',
