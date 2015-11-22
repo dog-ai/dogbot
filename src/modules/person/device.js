@@ -2,13 +2,13 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+var logger = require('../../utils/logger.js'),
+    _ = require('lodash'),
+    moment = require('moment'),
+    Promise = require('bluebird');
 
-var _ = require('lodash');
-var moment = require('moment');
 
 function device() {
-    var moduleManager = {};
 }
 
 device.prototype.type = "PERSON";
@@ -21,8 +21,8 @@ device.prototype.info = function () {
         this.type.toLowerCase() + " module_";
 };
 
-device.prototype.load = function (moduleManager) {
-    this.moduleManager = moduleManager;
+device.prototype.load = function (communication) {
+    this.communication = communication;
 
     this.start();
 };
@@ -32,73 +32,126 @@ device.prototype.unload = function () {
 };
 
 device.prototype.start = function () {
-    this.moduleManager.on('person:mac_address:online', this._onMacAddressOnline);
-    this.moduleManager.on('person:mac_address:offline', this._onMacAddressOffline);
-    this.moduleManager.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
-    this.moduleManager.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
-    this.moduleManager.on('person:device:is_present', this._isPresent);
-    this.moduleManager.on('person:device:discover', this._discover);
+    this.communication.on('person:mac_address:online', this._onMacAddressOnline);
+    this.communication.on('person:mac_address:offline', this._onMacAddressOffline);
+    this.communication.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
+    this.communication.on('person:device:is_present', this._isPresent);
+    this.communication.on('person:device:discover', this._discover);
 };
 
 device.prototype.stop = function () {
-    this.moduleManager.removeListener('person:mac_address:online', this._onMacAddressOnline);
-    this.moduleManager.removeListener('person:mac_address:offline', this._onMacAddressOffline);
-    this.moduleManager.removeListener('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
-    this.moduleManager.removeListener('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
-    this.moduleManager.removeListener('person:device:is_present', this._isPresent);
-    this.moduleManager.removeListener('person:device:discover', this._discover);
+    this.communication.removeListener('person:mac_address:online', this._onMacAddressOnline);
+    this.communication.removeListener('person:mac_address:offline', this._onMacAddressOffline);
+    this.communication.removeListener('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
+    this.communication.removeListener('person:device:is_present', this._isPresent);
+    this.communication.removeListener('person:device:discover', this._discover);
 };
 
 device.prototype._discover = function (macAddress, callback) {
-    try {
-        instance._findIpAdressByMacAddress(macAddress.address, function (error, row) {
-            if (error) {
-                callback(error);
-            } else {
-                if (row !== undefined && row !== null) {
-                    instance._execNmap(row.ip_address, function (error) {
-                        callback(error);
-                    });
-                } else {
-                    callback(new Error('Unknown IP address for MAC address: ' + macAddress.address));
+    var device = {};
+
+    instance._findIpAdressByMacAddress(macAddress.address)
+        .then(function (row) {
+            if (row === undefined || row === null) {
+                throw new Error('Unknown IP address for MAC address: ' + macAddress.address);
+            }
+
+            device.ip = row.ip_address;
+            device.mac_address = macAddress.address;
+            device.vendor = macAddress.vendor;
+
+            return instance._execNmap(row.ip_address).then(function (result) {
+                    device = _.extend(device, result);
+                })
+                .then(instance._execHost(row.ip_address)
+                    .then(function (result) {
+                        device = _.extend(device, result);
+                    }))
+                .then(function () {
+                    return device;
+                });
+        })
+        .then(function (device) {
+            console.log(JSON.stringify(device));
+
+            callback();
+        })
+        .catch(function (error) {
+            callback(error);
+        });
+};
+
+device.prototype._execHost = function (ip) {
+    return new Promise(function (resolve, reject) {
+        var result = {};
+
+        var spawn = require('child_process').spawn,
+            _process = spawn('host', [
+                ip
+            ]);
+
+        _process.stdout.setEncoding('utf8');
+        _process.stdout.pipe(require('split')()).on('data', function (line) {
+            if (line !== null && line.length !== 0) {
+                if (line.indexOf('domain name pointer') !== -1) {
+                    result.hostname = line.split(' ')[4];
+                    result.hostname = result.hostname.split('.')[0];
                 }
             }
         });
-    } catch (error) {
-        callback(error);
-    }
+
+        _process.on('error', reject);
+        _process.on('exit', function () {
+            resolve(result);
+        });
+    })
 };
 
-device.prototype._execNmap = function (ip, callback) {
-    // nmap -sV -O -v --osscan-guess --max-os-tries=1 10.172.161.212
-    // nmap -O --osscan-guess --max-os-tries=1 10.172.161.212
+device.prototype._execNmap = function (ip) {
+    return new Promise(function (resolve, reject) {
 
-    var spawn = require('child_process').spawn,
-        _process = spawn('nmap', ['-sV', '-O', '-v', '--osscan-guess', '--max-os-tries=1', ip]);
+        var result = {};
 
-    _process.stdout.setEncoding('utf8');
-    _process.stdout.pipe(require('split')()).on('data', function (line) {
-        if (line !== null && line.length === 0) {
+        var spawn = require('child_process').spawn,
+            _process = spawn('nmap', [
+                '-sV',
+                '-O',
+                '-v',
+                '--osscan-guess',
+                '--max-os-tries=3',
+                ip
+            ]);
 
-        } else {
+        _process.stdout.setEncoding('utf8');
+        _process.stdout.pipe(require('split')()).on('data', function (line) {
+            if (line !== null && line.length === 0) {
 
-            if (line.indexOf('MAC Address:') == 0 ||
-                line.indexOf('Device type:') == 0 ||
-                line.indexOf('Running:') == 0 ||
-                line.indexOf('OS CPE:') == 0 ||
-                line.indexOf('OS details:') == 0
-            ) {
-                logger.info(line);
+            } else {
+
+                if (line.indexOf('Device type:') == 0) {
+                    result.type = line.split(': ')[1];
+                    if (result.type.indexOf('|') !== -1) {
+                        result.type = result.type.split('|');
+                    }
+                }
+
+                if (line.indexOf('Running:') == 0) {
+                    result.os = line.split(': ')[1];
+                    result.os = result.os.replace(/(\s)?[\w]+\.[\w]+(\.[\w]+)?/g, '').replace(/\|/g, '');
+                    if (result.os.indexOf(', ') !== -1) {
+                        result.os = result.os.split(', ');
+                    }
+                }
             }
-        }
-    });
+        });
 
-    _process.on('exit', function () {
-        logger.info("Exiting " + ip);
-        if (callback !== undefined) {
-            callback();
-        }
-    });
+        _process.on('error', reject);
+        _process.on('exit', function () {
+            resolve(result);
+        });
+    })
 };
 
 device.prototype._isPresent = function (device, callback) {
@@ -244,9 +297,10 @@ device.prototype._onMacAddressOnline = function (mac_address) {
                 }
             }
         });
-    } else {
-        instance.moduleManager.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
     }
+
+    instance.moduleManager.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
+
 };
 
 device.prototype._onMacAddressOffline = function (mac_address) {
@@ -286,7 +340,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
 };
 
 device.prototype._findMacAddressesById = function (id, callback) {
-    this.moduleManager.emit('database:person:retrieveAll',
+    this.communication.emit('database:person:retrieveAll',
         "SELECT * FROM mac_address WHERE device_id = ?;", [id],
         function (error, rows) {
             if (rows !== undefined) {
@@ -301,14 +355,13 @@ device.prototype._findMacAddressesById = function (id, callback) {
         });
 };
 
-device.prototype._findIpAdressByMacAddress = function (macAddress, callback) {
-    this.moduleManager.emit('database:monitor:retrieveOne',
-        "SELECT ip_address FROM arp WHERE mac_address = ?;", [macAddress],
-        callback);
+device.prototype._findIpAdressByMacAddress = function (macAddress) {
+    return this.communication.emitAsync('database:monitor:retrieveOne',
+        "SELECT ip_address FROM arp WHERE mac_address = ?;", [macAddress]);
 };
 
 device.prototype._findById = function (id, callback) {
-    this.moduleManager.emit('database:person:retrieveOne',
+    this.communication.emit('database:person:retrieveOne',
         "SELECT * FROM device WHERE id = ?;", [id],
         function (error, row) {
             if (row !== undefined) {

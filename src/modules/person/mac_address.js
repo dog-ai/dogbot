@@ -99,13 +99,20 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                         }
 
                         // lookup vendor
-                        if (row.vendor === undefined || row.vendor === null || row.vendor.length > 60) {
+                        if (row.vendor === undefined || row.vendor === null || row.vendor.length > 60 ||
+                            row.vendor === row.vendor.toUpperCase ||
+                            /(,(\s)?|(\s)?inc\.|(\s)?corporate|(\s)?corp|(\s)?co\.|(\s)?ltd|\.com)/gi.test(row.vendor)
+                        ) {
+
                             macvendor(row.address, function (error, vendor) {
                                 if (error) {
                                     logger.error(error.stack);
                                 } else {
                                     if (vendor !== undefined && vendor !== null && vendor.length < 60) {
-                                        row.vendor = vendor;
+                                        row.vendor = vendor.toLowerCase().replace(/(?:^|\s)\S/g, function (s) {
+                                            return s.toUpperCase();
+                                        });
+                                        row.vendor = row.vendor.replace(/(,(\s)?|(\s)?inc\.|(\s)?corporate|(\s)?corp|(\s)?co\.|(\s)?ltd|\.com)/gi, '');
                                         row.is_synced = false;
                                         row.updated_date = new Date();
 
@@ -138,24 +145,25 @@ mac_address.prototype._onMacAddressOnline = function (address) {
                         instance.communication.emit('person:mac_address:online', row);
 
                         // lookup vendor
-                        if (row.vendor === undefined || row.vendor === null || row.vendor.length > 60) {
-                            macvendor(row.address, function (error, vendor) {
-                                if (error) {
-                                    logger.error(error.stack);
-                                } else {
-                                    if (vendor !== undefined && vendor !== null && vendor.length < 60) {
-                                        row.vendor = vendor;
-                                        row.is_synced = false;
-                                        row.updated_date = new Date();
+                        macvendor(row.address, function (error, vendor) {
+                            if (error) {
+                                logger.error(error.stack);
+                            } else {
+                                if (vendor !== undefined && vendor !== null && vendor.length < 60) {
+                                    row.vendor = vendor.replace(/(?:^|\s)\S/g, function (s) {
+                                        return s.toUpperCase();
+                                    });
+                                    row.vendor = row.vendor.replace(/(,(\s)?|(\s)?inc\.|(\s)?corporate|(\s)?corp|(\s)?co\.|(\s)?ltd|\.com)/, '');
+                                    row.is_synced = false;
+                                    row.updated_date = new Date();
 
-                                        instance._updateByAddress(row.address, row)
-                                            .catch(function (error) {
-                                                logger.error(error);
+                                    instance._updateByAddress(row.address, row)
+                                        .catch(function (error) {
+                                            logger.error(error);
                                         });
-                                    }
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                 });
             }
