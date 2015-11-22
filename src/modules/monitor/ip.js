@@ -87,8 +87,7 @@ ip.prototype._execFping = function (callback) {
 
                     var process = require('child_process')
                         .spawn('fping', [
-                            '-q',
-                            '-c 1',
+                            '-a',
                             '-r 0',
                             '-i 10',
                             '-t 100',
@@ -98,19 +97,11 @@ ip.prototype._execFping = function (callback) {
                     process.stdout.setEncoding('utf8');
 
                     process.stdout.pipe(require('split')()).on('data', function (line) {
-
-                    });
-
-                    process.stderr.pipe(require('split')()).on('data', function (line) {
-                        if (line.indexOf('min/avg/max') === -1) {
+                        if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(line)) {
                             return;
                         }
 
-                        var values = line.split(' ');
-
-                        var ipAddress = values[0];
-
-                        self._addOrUpdate(ipAddress, function (error) {
+                        self._addOrUpdate(line, function (error) {
                             if (error !== null) {
                                 logger.error(error.stack);
                             }

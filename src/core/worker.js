@@ -41,7 +41,7 @@ worker.prototype.start = function (database, enqueue, processJob) {
 
     this.queue.process('worker', process);
 
-    this.queue.process('slow', 10, process);
+    this.queue.process('slow', 4, process);
 
     this.queue
         .on('job enqueue', function (id, type) {
