@@ -366,7 +366,7 @@ device.prototype._findIpAdressByMacAddress = function (macAddress) {
 };
 
 device.prototype._findById = function (id) {
-    return communication.emitAsync('database:person:retrieveOne', "SELECT * FROM device WHERE id = ?;", [id])
+    return this.communication.emitAsync('database:person:retrieveOne', "SELECT * FROM device WHERE id = ?;", [id])
         .then(function (row) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
