@@ -221,6 +221,9 @@ employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
         if (employee.updated_date !== undefined && employee.updated_date !== null) {
             employee.updated_date = employee.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
         }
+        if (employee.last_presence_date !== undefined && employee.last_presence_date !== null) {
+            employee.last_presence_date = employee.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+        }
 
         var keys = _.keys(employee);
         var values = _.values(employee);

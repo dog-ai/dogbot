@@ -348,6 +348,9 @@ synchronization.prototype._onDeviceChanged = function (snapshot) {
         if (device.updated_date !== undefined && device.updated_date !== null) {
             device.updated_date = new Date(device.updated_date);
         }
+        if (device.last_presence_date !== undefined && device.last_presence_date !== null) {
+            device.last_presence_date = new Date(device.last_presence_date);
+        }
 
         instance.onDeviceCreatedOrUpdatedCallback(_.extend({id: snapshot.key()}, device));
     }
@@ -471,6 +474,9 @@ synchronization.prototype._onEmployeeChanged = function (snapshot) {
         if (employee.updated_date !== undefined && employee.updated_date !== null) {
             employee.updated_date = new Date(employee.updated_date);
         }
+        if (employee.last_presence_date !== undefined && employee.last_presence_date !== null) {
+            employee.last_presence_date = new Date(employee.last_presence_date);
+        }
 
         instance.onEmployeeCreatedOrUpdatedCallback(_.extend({id: snapshot.key()}, employee));
     }
@@ -480,11 +486,15 @@ synchronization.prototype._onEmployeeChanged = function (snapshot) {
 synchronization.prototype._updateDevice = function (device) {
     logger.debug('sending device: %s', JSON.stringify(device));
 
-    firebase.child('company_devices/' + instance.companyId + '/' + device.id).update({
-        updated_date: moment().format(),
-        is_present: device.is_present,
-        last_presence_date: device.last_presence_date
-    }, function (error) {
+    var val = {};
+    val.updated_date = moment().format();
+    val.is_present = device.is_present;
+
+    if (device.last_presence_date !== undefined && device.last_presence_date !== null) {
+        val.last_presence_date = moment(device.last_presence_date).format();
+    }
+
+    firebase.child('company_devices/' + instance.companyId + '/' + device.id).update(val, function (error) {
         if (error) {
             logger.error(error.stack);
         }
@@ -494,11 +504,15 @@ synchronization.prototype._updateDevice = function (device) {
 synchronization.prototype._updateEmployee = function (employee) {
     logger.debug('sending employee: %s', JSON.stringify(employee));
 
-    firebase.child('company_employees/' + instance.companyId + '/' + employee.id).update({
-        updated_date: moment().format(),
-        is_present: employee.is_present,
-        last_presence_date: employee.last_presence_date
-    }, function (error) {
+    var val = {};
+    val.updated_date = moment().format();
+    val.is_present = employee.is_present;
+
+    if (employee.last_presence_date !== undefined && employee.last_presence_date !== null) {
+        val.last_presence_date = moment(employee.last_presence_date).format();
+    }
+
+    firebase.child('company_employees/' + instance.companyId + '/' + employee.id).update(val, function (error) {
         if (error) {
             logger.error(error.stack);
         }
