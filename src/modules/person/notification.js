@@ -43,11 +43,11 @@ notification.prototype.stop = function () {
 };
 
 notification.prototype._handleEmployeeNearby = function (employee) {
-    logger.info(new Date() + ' ' + employee.full_name + ' is nearby');
+    logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is nearby');
 };
 
 notification.prototype._handleEmployeeFaraway = function (employee) {
-    logger.info(new Date() + ' ' + employee.full_name + ' is faraway');
+    logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is faraway');
 };
 
 notification.prototype._handleEmployeeOnline = function (employee) {
