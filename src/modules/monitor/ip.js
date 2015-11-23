@@ -121,6 +121,8 @@ ip.prototype._execFping = function (callback) {
                     });
                 }
             });
+        } else {
+            callback();
         }
     });
 };
