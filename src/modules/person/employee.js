@@ -230,8 +230,8 @@ employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
                 logger.error(error.stack);
             } else {
                 if (row !== undefined && moment(employee.updated_date).isAfter(row.updated_date)) {
-                    keys = _.keys(_.omit(employee, 'is_present'));
-                    values = _.values(_.omit(employee, 'is_present'));
+                    keys = _.keys(_.omit(employee, ['is_present', 'last_presence_date']));
+                    values = _.values(_.omit(employee, ['is_present', 'last_presence_date']));
                 }
 
                 instance.moduleManager.emit('database:person:create',
