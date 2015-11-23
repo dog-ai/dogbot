@@ -80,7 +80,11 @@ presence.prototype._onEmployeePresence = function (employee) {
             return;
         }
 
-        return instance._createPresence({employee_id: employee.id, is_present: employee.is_present});
+        return instance._createPresence({
+            employee_id: employee.id,
+            is_present: employee.is_present,
+            created_date: employee.last_presence_date
+        });
     }).catch(function (error) {
         logger.error(error.stack);
     });

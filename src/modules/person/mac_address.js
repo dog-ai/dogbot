@@ -34,9 +34,9 @@ mac_address.prototype.unload = function () {
 
 mac_address.prototype.start = function () {
     this.communication.on('person:macAddress:clean', this._clean);
-    this.communication.on('monitor:arp:create', this._onMacAddressOnline);
-    this.communication.on('monitor:arp:update', this._onMacAddressOnline);
-    this.communication.on('monitor:arp:delete', this._onMacAddressOffline);
+    this.communication.on('monitor:arp:create', this._onArpCreateOrUpdate);
+    this.communication.on('monitor:arp:update', this._onArpCreateOrUpdate);
+    this.communication.on('monitor:arp:delete', this._onArpDelete);
     this.communication.on('synchronization:incoming:person:macAddress:createOrUpdate', this._onCreateOrUpdateMacAddressIncomingSynchronization);
     this.communication.on('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
@@ -45,9 +45,9 @@ mac_address.prototype.start = function () {
 };
 
 mac_address.prototype.stop = function () {
-    this.communication.removeListener('monitor:arp:create', this._onMacAddressOnline);
-    this.communication.removeListener('monitor:arp:update', this._onMacAddressOnline);
-    this.communication.removeListener('monitor:arp:delete', this._onMacAddressOffline);
+    this.communication.removeListener('monitor:arp:create', this._onArpCreateOrUpdate);
+    this.communication.removeListener('monitor:arp:update', this._onArpCreateOrUpdate);
+    this.communication.removeListener('monitor:arp:delete', this._onArpDelete);
     this.communication.removeListener('synchronization:incoming:person:macAddress:createOrUpdate', this._onCreateOrUpdateMacAddressIncomingSynchronization);
     this.communication.removeListener('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
     this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
@@ -75,7 +75,7 @@ mac_address.prototype._clean = function (params, callback) {
         });
 };
 
-mac_address.prototype._onMacAddressOnline = function (address) {
+mac_address.prototype._onArpCreateOrUpdate = function (address) {
     instance._findByAddress(address, function (error, row) {
 
         if (error) {
@@ -171,8 +171,8 @@ mac_address.prototype._onMacAddressOnline = function (address) {
     });
 };
 
-mac_address.prototype._onMacAddressOffline = function (mac_address) {
-    instance._findByAddress(mac_address, function (error, row) {
+mac_address.prototype._onArpDelete = function (arp) {
+    instance._findByAddress(arp.mac_address, function (error, row) {
         if (error) {
             logger.error(error.stack);
         } else {
@@ -183,6 +183,7 @@ mac_address.prototype._onMacAddressOffline = function (mac_address) {
                 row.updated_date = now;
                 row.is_present = false;
                 row.is_synced = false;
+                row.last_presence_date = arp.updated_date;
 
                 instance._updateByAddress(row.address, row)
                     .then(function () {

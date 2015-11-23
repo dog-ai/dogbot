@@ -197,7 +197,7 @@ arp.prototype._clean = function (callback) {
             callback(error);
         }
     }, function (arp) {
-        self.communication.emit('monitor:arp:delete', arp.mac_address);
+        self.communication.emit('monitor:arp:delete', arp);
     });
 };
 

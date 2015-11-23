@@ -83,6 +83,7 @@ employee.prototype._handleDeviceOnline = function (device) {
 
                 if (employee !== undefined && !employee.is_present) {
                     employee.is_present = true;
+                    employee.last_presence_date = device.last_presence_date;
 
                     instance._updateByAddress(employee.id, employee.is_present, function (error) {
                         if (error) {
@@ -115,6 +116,7 @@ employee.prototype._handleDeviceOffline = function (device) {
                             if (devices && devices.length == 0 && employee.is_present) {
 
                                 employee.is_present = false;
+                                employee.last_presence_date = device.last_presence_date;
 
                                 instance._updateByAddress(employee.id, employee.is_present, function (error) {
                                     if (error) {
