@@ -207,14 +207,17 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                             device.employee_id = null;
                         }
 
-                        device = _.omit(device, 'is_present');
+                        device = _.omit(device, 'is_present', 'last_presence_date');
 
                         instance._updateById(device.id, device, function (error) {
                         if (error) {
                             logger.error(error.stack);
                         } else {
 
-                            device = _.extend(device, {is_present: row.is_present});
+                            device = _.extend(device, {
+                                is_present: row.is_present,
+                                last_presence_date: row.last_presence_date
+                            });
 
                             if (row.employee_id !== null && device.employee_id === null) {
                                 instance.communication.emit('person:device:removedFromEmployee', device, {id: row.employee_id});

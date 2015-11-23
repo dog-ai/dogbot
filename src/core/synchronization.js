@@ -482,7 +482,8 @@ synchronization.prototype._updateDevice = function (device) {
 
     firebase.child('company_devices/' + instance.companyId + '/' + device.id).update({
         updated_date: moment().format(),
-        is_present: device.is_present
+        is_present: device.is_present,
+        last_presence_date: device.last_presence_date
     }, function (error) {
         if (error) {
             logger.error(error.stack);
@@ -495,7 +496,8 @@ synchronization.prototype._updateEmployee = function (employee) {
 
     firebase.child('company_employees/' + instance.companyId + '/' + employee.id).update({
         updated_date: moment().format(),
-        is_present: employee.is_present
+        is_present: employee.is_present,
+        last_presence_date: employee.last_presence_date
     }, function (error) {
         if (error) {
             logger.error(error.stack);
