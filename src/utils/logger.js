@@ -9,6 +9,7 @@ var winston = require('winston'),
 
 var LOG_DIR = __dirname + '/../../var/log';
 var TMP_DIR = __dirname + '/../../var/tmp';
+var LOG_TYPE = process.env.DOGBOT_LOG_TYPE;
 var LOG_LEVEL = process.env.DOGBOT_LOG_LEVEL;
 
 winston.emitErrs = true;
@@ -16,6 +17,10 @@ winston.emitErrs = true;
 // create log directory if it does not exist
 if (!fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR);
+}
+
+if (LOG_TYPE === undefined || LOG_LEVEL === null) {
+    LOG_TYPE = 'console';
 }
 
 if (LOG_LEVEL === undefined || LOG_LEVEL === null || !/(debug|info|warn|error)/i.test(LOG_LEVEL)) {
@@ -27,37 +32,44 @@ var timeFormat = function () {
 };
 
 var transports = [
-    new winston.transports.DailyRotateFile({
-        name: 'log', // http://stackoverflow.com/a/17374968
-        level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
-        filename: LOG_DIR + '/dogbot.log',
-        json: false,
-        colorize: false,
-        zippedArchive: true,
-        maxFiles: 8,
-        timestamp: timeFormat,
-        handleExceptions: true
-    }),
-    new winston.transports.Console({
-        level: LOG_LEVEL,
-        json: false,
-        colorize: true,
-        timestamp: timeFormat,
-        handleExceptions: true
-    })
 ];
 
-if (LOG_LEVEL === 'debug') {
-    transports.push(new winston.transports.DailyRotateFile({
-        name: 'tmp', // http://stackoverflow.com/a/17374968
-        level: LOG_LEVEL,
-        filename: TMP_DIR + '/dogbot.log',
-        json: false,
-        colorize: false,
-        zippedArchive: true,
-        maxFiles: 2,
-        timestamp: timeFormat
-    }));
+switch (LOG_TYPE) {
+    case 'console':
+        transports.push(new winston.transports.Console({
+            level: LOG_LEVEL,
+            json: false,
+            colorize: true,
+            timestamp: timeFormat,
+            handleExceptions: true
+        }));
+        break;
+    case 'file':
+        transports.push(new winston.transports.DailyRotateFile({
+            name: 'log', // http://stackoverflow.com/a/17374968
+            level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
+            filename: LOG_DIR + '/dogbot.log',
+            json: false,
+            colorize: false,
+            zippedArchive: true,
+            maxFiles: 8,
+            timestamp: timeFormat,
+            handleExceptions: true
+        }));
+
+        if (LOG_LEVEL === 'debug') {
+            transports.push(new winston.transports.DailyRotateFile({
+                name: 'tmp', // http://stackoverflow.com/a/17374968
+                level: LOG_LEVEL,
+                filename: TMP_DIR + '/dogbot.log',
+                json: false,
+                colorize: false,
+                zippedArchive: true,
+                maxFiles: 2,
+                timestamp: timeFormat
+            }));
+        }
+        break;
 }
 
 var logger = new winston.Logger({
@@ -67,8 +79,7 @@ var logger = new winston.Logger({
 
 module.exports = logger;
 
-// A custom logger interface that wraps winston, making it easy to instrument code
-
+/*
 module.exports.debug = module.exports.log = function () {
     logger.debug.apply(logger, formatLogArguments(arguments))
 };
@@ -85,9 +96,6 @@ module.exports.error = function () {
     logger.error.apply(logger, formatLogArguments(arguments))
 };
 
-/**
- * Attempts to add file and line number info to the given log arguments.
- */
 function formatLogArguments(args) {
     args = Array.prototype.slice.call(args);
 
@@ -107,9 +115,6 @@ function formatLogArguments(args) {
     return args
 }
 
-/**
- * Parses and returns info about the call stack at the given index.
- */
 function getStackInfo(stackIndex) {
     // get call stack, and analyze it
     // get all file, method, and line numbers
@@ -135,9 +140,11 @@ function getStackInfo(stackIndex) {
         }
     }
 }
+ */
 
 module.exports.stream = {
     write: function (message, encoding) {
         logger.info(message);
     }
 };
+
