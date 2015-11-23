@@ -371,6 +371,9 @@ device.prototype._findById = function (id) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
                 row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                if (row.last_presence_date !== undefined && row.last_presence_date !== null) {
+                    row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                }
             }
 
             return row;

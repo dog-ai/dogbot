@@ -146,7 +146,8 @@ databases.prototype.startAll = function (callback) {
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "employee_id INTEGER REFERENCES employee(id), " +
                         "is_present INTEGER NOT NULL DEFAULT 0, " +
-                        "is_manual INTEGER NOT NULL DEFAULT 0" +
+                        "is_manual INTEGER NOT NULL DEFAULT 0, " +
+                        "last_presence_date DATETIME" +
                         ");", [], callback);
                 }
             });
