@@ -392,6 +392,10 @@ device.prototype._add = function (device, callback) {
         device.updated_date = device.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
+    if (device.last_presence_date !== undefined && device.last_presence_date !== null && device.last_presence_date instanceof Date) {
+        device.last_presence_date = device.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
     var keys = _.keys(device);
     var values = _.values(device);
 
@@ -409,6 +413,10 @@ device.prototype._updateById = function (id, device, callback) {
 
     if (device.updated_date !== undefined && device.updated_date !== null && device.updated_date instanceof Date) {
         device.updated_date = device.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (device.last_presence_date !== undefined && device.last_presence_date !== null && device.last_presence_date instanceof Date) {
+        device.last_presence_date = device.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
     var keys = _.keys(device);
