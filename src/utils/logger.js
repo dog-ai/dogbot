@@ -19,7 +19,7 @@ if (!fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR);
 }
 
-if (LOG_TYPE === undefined || LOG_LEVEL === null) {
+if (LOG_TYPE === undefined || LOG_LEVEL === null || !/(console|file)/i.test(LOG_TYPE)) {
     LOG_TYPE = 'console';
 }
 
