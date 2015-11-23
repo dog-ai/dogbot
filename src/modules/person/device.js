@@ -50,6 +50,11 @@ device.prototype.stop = function () {
 };
 
 device.prototype._discover = function (macAddress, callback) {
+    return callback();
+
+    // retrieve existing device or start with a blank one with is_manual=false
+    // if retrieved device is is_manual=true then the party is over
+
     var device = {};
 
     instance._findIpAdressByMacAddress(macAddress.address)
@@ -192,10 +197,8 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 
         device = _.pick(device, _.pluck(rows, 'name'));
 
-        instance._findById(device.id, function (error, row) {
-            if (error) {
-                logger.error(error.stack);
-            } else {
+        instance._findById(device.id)
+            .then(function (row) {
                 if (row !== undefined) {
 
                     if (moment(device.updated_date).isAfter(row.updated_date)) {
@@ -207,20 +210,20 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                         device = _.omit(device, 'is_present');
 
                         instance._updateById(device.id, device, function (error) {
-                            if (error) {
-                                logger.error(error.stack);
-                            } else {
+                        if (error) {
+                            logger.error(error.stack);
+                        } else {
 
-                                device = _.extend(device, {is_present: row.is_present});
+                            device = _.extend(device, {is_present: row.is_present});
 
-                                if (row.employee_id !== null && device.employee_id === null) {
-                                    instance.communication.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
-                                } else if (row.employee_id === null && device.employee_id !== null) {
-                                    instance.communication.emit('person:device:addedToEmployee', device, {id: device.employee_id});
-                                }
+                            if (row.employee_id !== null && device.employee_id === null) {
+                                instance.communication.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
+                            } else if (row.employee_id === null && device.employee_id !== null) {
+                                instance.communication.emit('person:device:addedToEmployee', device, {id: device.employee_id});
                             }
-                        });
-                    }
+                        }
+                    });
+                }
                 } else {
                     instance._add(device, function (error) {
                         if (error) {
@@ -248,9 +251,11 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                             });
                         }
                     });
-                }
             }
-        });
+            })
+            .catch(function (error) {
+                logger.error(error.stack);
+            });
     });
 };
 
@@ -278,14 +283,12 @@ device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
 
 device.prototype._onMacAddressOnline = function (mac_address) {
     if (mac_address.device_id !== undefined && mac_address.device_id !== null) {
-        instance._findById(mac_address.device_id, function (error, device) {
-            if (error !== null) {
-                logger.error(error.stack);
-            } else {
-
+        instance._findById(mac_address.device_id)
+            .then(function (device) {
                 if (device !== undefined && !device.is_present) {
                     device.updated_date = new Date();
                     device.is_present = true;
+                    device.last_presence_date = mac_address.last_presence_date;
 
                     instance._updateById(device.id, device, function (error) {
                         if (error) {
@@ -295,7 +298,9 @@ device.prototype._onMacAddressOnline = function (mac_address) {
                         }
                     });
                 }
-            }
+            })
+            .catch(function (error) {
+                logger.error(error.stack);
         });
     }
 
@@ -313,13 +318,11 @@ device.prototype._onMacAddressOffline = function (mac_address) {
                     mac_addresses = _.filter(mac_addresses, _.matches({'is_present': 1}));
 
                     if (mac_addresses.length == 0) {
-                        instance._findById(mac_address.device_id, function (error, device) {
-                            if (error !== null) {
-                                logger.error(error.stack);
-                            } else {
-
+                        instance._findById(mac_address.device_id)
+                            .then(function (device) {
                                 device.updated_date = new Date();
                                 device.is_present = false;
+                                device.last_presence_date = mac_address.last_presence_date;
 
                                 instance._updateById(device.id, device, function (error) {
                                     if (error) {
@@ -328,8 +331,10 @@ device.prototype._onMacAddressOffline = function (mac_address) {
                                         instance.communication.emit('person:device:offline', device);
                                     }
                                 });
-                            }
-                        });
+                            })
+                            .catch(function (error) {
+                                logger.error(error.stack);
+                            });
                     }
                 }
             }
@@ -360,16 +365,15 @@ device.prototype._findIpAdressByMacAddress = function (macAddress) {
         "SELECT ip_address FROM arp WHERE mac_address = ?;", [macAddress]);
 };
 
-device.prototype._findById = function (id, callback) {
-    this.communication.emit('database:person:retrieveOne',
-        "SELECT * FROM device WHERE id = ?;", [id],
-        function (error, row) {
+device.prototype._findById = function (id) {
+    return communication.emitAsync('database:person:retrieveOne', "SELECT * FROM device WHERE id = ?;", [id])
+        .then(function (row) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
                 row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
             }
 
-            callback(error, row);
+            return row;
         });
 };
 

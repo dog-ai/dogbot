@@ -34,13 +34,15 @@ var transports = [
         colorize: false,
         zippedArchive: true,
         maxFiles: 8,
-        timestamp: timeFormat
+        timestamp: timeFormat,
+        handleExceptions: true
     }),
     new winston.transports.Console({
         level: LOG_LEVEL,
         json: false,
         colorize: true,
-        timestamp: timeFormat
+        timestamp: timeFormat,
+        handleExceptions: true
     })
 ];
 
