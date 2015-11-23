@@ -51,6 +51,7 @@ do_start()
     mkdir -p var/run > /dev/null 2>&1
 
     DOGBOT_SECRET=$DOGBOT_SECRET \
+    DOGBOT_LOG_TYPE=$DOGBOT_LOG_TYPE \
     DOGBOT_LOG_LEVEL=$DOGBOT_LOG_LEVEL \
     $forever start \
     --silent \
