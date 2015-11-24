@@ -118,7 +118,7 @@ employee.prototype._handleDeviceOffline = function (device) {
                                 employee.is_present = false;
                                 employee.last_presence_date = device.last_presence_date;
 
-                                instance._updateById(employee.id, employee.is_present, function (error) {
+                                instance._updateById(employee.id, employee, function (error) {
                                     if (error) {
                                         logger.error(error.stack);
                                     } else {
