@@ -271,6 +271,12 @@ device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
             if (error) {
                 logger.error(error.stack);
             } else {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                if (row.last_presence_date !== undefined && row.last_presence_date !== null) {
+                    row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                }
+
                 instance.communication.emit('database:person:delete',
                     'DELETE FROM device WHERE id = ?',
                     [device.id], function (error) {
@@ -412,20 +418,22 @@ device.prototype._add = function (device, callback) {
 };
 
 device.prototype._updateById = function (id, device, callback) {
-    if (device.created_date !== undefined && device.created_date !== null && device.created_date instanceof Date) {
-        device.created_date = device.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var _device = _.clone(device);
+
+    if (_device.created_date !== undefined && _device.created_date !== null && _device.created_date instanceof Date) {
+        _device.created_date = _device.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    if (device.updated_date !== undefined && device.updated_date !== null && device.updated_date instanceof Date) {
-        device.updated_date = device.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    if (_device.updated_date !== undefined && _device.updated_date !== null && _device.updated_date instanceof Date) {
+        _device.updated_date = _device.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    if (device.last_presence_date !== undefined && device.last_presence_date !== null && device.last_presence_date instanceof Date) {
-        device.last_presence_date = device.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    if (_device.last_presence_date !== undefined && _device.last_presence_date !== null && _device.last_presence_date instanceof Date) {
+        _device.last_presence_date = _device.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    var keys = _.keys(device);
-    var values = _.values(device);
+    var keys = _.keys(_device);
+    var values = _.values(_device);
 
     instance.communication.emit('database:person:update',
         'UPDATE device SET ' + keys.map(function (key) {

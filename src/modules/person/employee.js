@@ -161,6 +161,7 @@ employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
 
             if (device.is_present && employee !== undefined && !employee.is_present) {
                 employee.is_present = true;
+                employee.last_presence_date = device.last_presence_date;
 
                 instance._updateById(employee.id, employee, function (error) {
                     if (error) {
@@ -191,6 +192,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
                         if (devices && devices.length == 0 && employee.is_present) {
 
                             employee.is_present = false;
+                            employee.last_presence_date = device.last_presence_date;
 
                             instance._updateById(employee.id, employee, function (error) {
                                 if (error) {
