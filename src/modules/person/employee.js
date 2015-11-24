@@ -85,19 +85,11 @@ employee.prototype._handleDeviceOnline = function (device) {
                     employee.is_present = true;
                     employee.last_presence_date = device.last_presence_date;
 
-                    instance._updateByAddress(employee.id, employee.is_present, function (error) {
+                    instance._updateById(employee.id, employee, function (error) {
                         if (error) {
                             logger.error(error.stack);
                         } else {
                             instance.moduleManager.emit('person:employee:nearby', employee);
-                        }
-                    });
-                } else {
-                    employee.last_presence_date = device.last_presence_date;
-
-                    instance._updateByAddress(employee.id, employee.is_present, function (error) {
-                        if (error) {
-                            logger.error(error.stack);
                         }
                     });
                 }
@@ -126,19 +118,11 @@ employee.prototype._handleDeviceOffline = function (device) {
                                 employee.is_present = false;
                                 employee.last_presence_date = device.last_presence_date;
 
-                                instance._updateByAddress(employee.id, employee.is_present, function (error) {
+                                instance._updateById(employee.id, employee.is_present, function (error) {
                                     if (error) {
                                         logger.error(error.stack);
                                     } else {
                                         instance.moduleManager.emit('person:employee:faraway', employee);
-                                    }
-                                });
-                            } else {
-                                employee.last_presence_date = device.last_presence_date;
-
-                                instance._updateByAddress(employee.id, employee.is_present, function (error) {
-                                    if (error) {
-                                        logger.error(error.stack);
                                     }
                                 });
                             }
@@ -178,7 +162,7 @@ employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
             if (device.is_present && employee !== undefined && !employee.is_present) {
                 employee.is_present = true;
 
-                instance._updateByAddress(employee.id, employee.is_present, function (error) {
+                instance._updateById(employee.id, employee, function (error) {
                     if (error) {
                         logger.error(error.stack);
                     } else {
@@ -208,7 +192,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
 
                             employee.is_present = false;
 
-                            instance._updateByAddress(employee.id, employee.is_present, function (error) {
+                            instance._updateById(employee.id, employee, function (error) {
                                 if (error) {
                                     logger.error(error.stack);
                                 } else {
@@ -376,6 +360,10 @@ employee.prototype._updateById = function (id, employee, callback) {
         employee.updated_date = employee.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
+    if (employee.last_presence_date !== undefined && employee.last_presence_date !== null && employee.last_presence_date instanceof Date) {
+        employee.last_presence_date = employee.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
     var keys = _.keys(employee);
     var values = _.values(employee);
 
@@ -384,30 +372,6 @@ employee.prototype._updateById = function (id, employee, callback) {
             return key + ' = ?';
         }) + ' WHERE id = \'' + id + '\';',
         values, callback);
-};
-
-employee.prototype._updateByAddress = function (id, is_present, callback) {
-    var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-    this.moduleManager.emit('database:person:update',
-        "UPDATE employee SET updated_date = ?, is_present = ? WHERE id = ? AND is_present != ?;",
-        [
-            updatedDate,
-            is_present,
-            id,
-            is_present
-        ],
-        function (error, id, changes) {
-            if (error) {
-                if (callback !== undefined) {
-                    callback(error);
-                }
-            } else {
-                if (changes > 0 && callback !== undefined) { // quick fix for racing condition of two consecutive updates
-                    callback(null);
-                }
-            }
-        });
 };
 
 var instance = new employee();
