@@ -109,7 +109,7 @@ ip.prototype._execFping = function (callback) {
                     });
 
                     process.stderr.on('data', function (data) {
-                        if (data.indexOf('ICMP Host') === 0) {
+                        if (data === undefined || data.indexOf('ICMP Host') === 0) {
                             return;
                         }
 
