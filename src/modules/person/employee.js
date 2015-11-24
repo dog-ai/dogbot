@@ -352,20 +352,22 @@ employee.prototype._retrieveAllOnlineDevicesByEmployeeId = function (id, callbac
 };
 
 employee.prototype._updateById = function (id, employee, callback) {
-    if (employee.created_date !== undefined && employee.created_date !== null && employee.created_date instanceof Date) {
-        employee.created_date = employee.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var _employee = _.clone(employee);
+
+    if (_employee.created_date !== undefined && _employee.created_date !== null && _employee.created_date instanceof Date) {
+        _employee.created_date = _employee.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    if (employee.updated_date !== undefined && employee.updated_date !== null && employee.updated_date instanceof Date) {
-        employee.updated_date = employee.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    if (_employee.updated_date !== undefined && _employee.updated_date !== null && _employee.updated_date instanceof Date) {
+        _employee.updated_date = _employee.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    if (employee.last_presence_date !== undefined && employee.last_presence_date !== null && employee.last_presence_date instanceof Date) {
-        employee.last_presence_date = employee.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    if (_employee.last_presence_date !== undefined && _employee.last_presence_date !== null && _employee.last_presence_date instanceof Date) {
+        _employee.last_presence_date = _employee.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    var keys = _.keys(employee);
-    var values = _.values(employee);
+    var keys = _.keys(_employee);
+    var values = _.values(_employee);
 
     instance.moduleManager.emit('database:person:update',
         'UPDATE employee SET ' + keys.map(function (key) {

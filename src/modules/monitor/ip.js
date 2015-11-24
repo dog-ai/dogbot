@@ -109,12 +109,12 @@ ip.prototype._execFping = function (callback) {
                     });
 
                     process.stderr.pipe(require('split')()).on('data', function (line) {
-                        if (line === undefined || line.indexOf('ICMP Host') === 0) {
+                        if (line === undefined || line.length === 0 || line.indexOf('ICMP Host') === 0) {
                             return;
                         }
 
                         if (callback !== undefined) {
-                            callback(new Error(data));
+                            callback(new Error(line));
                         }
                     });
 
