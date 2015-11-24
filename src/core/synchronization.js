@@ -131,7 +131,7 @@ synchronization.prototype._init = function (callback) {
             // listen for dog modules events
             if (dog.modules !== undefined) {
                 self.dogRef.child('modules').on('child_changed', self._onModuleChanged, function (error) {
-                    logger.error(error.stack);
+                    logger.error(error.message);
                 });
                 _.forEach(dog.modules, function (modules, type) {
                     _.forEach(modules, function (moduleConfiguration, moduleName) {
@@ -183,7 +183,7 @@ synchronization.prototype._synchronize = function (params, callback) {
 
         instance.onMacAddressPush(function (error, mac_address, onComplete) {
             if (error) {
-                logger.error(error.stack);
+                logger.error(error.message);
             } else {
 
                 logger.debug('sending mac address: %s', JSON.stringify(mac_address));
@@ -235,7 +235,7 @@ synchronization.prototype._synchronize = function (params, callback) {
         _.forEach(performanceNames, function (performanceName) {
             instance.onPerformancePush(performanceName, function (error, employeeId, type, performance, onComplete) {
                 if (error) {
-                    logger.error(error.stack);
+                    logger.error(error.message);
                 } else {
 
                     logger.debug('sending performance ' + performanceName + ': %s', JSON.stringify(performance));
@@ -496,7 +496,7 @@ synchronization.prototype._updateDevice = function (device) {
 
     firebase.child('company_devices/' + instance.companyId + '/' + device.id).update(val, function (error) {
         if (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
         }
     });
 };
@@ -514,7 +514,7 @@ synchronization.prototype._updateEmployee = function (employee) {
 
     firebase.child('company_employees/' + instance.companyId + '/' + employee.id).update(val, function (error) {
         if (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
         }
     });
 };

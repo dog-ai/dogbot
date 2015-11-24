@@ -78,7 +78,7 @@ slack.prototype.start = function () {
             self._discoverUsers();
 
         } catch (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
         }
 
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));

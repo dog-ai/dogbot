@@ -290,7 +290,7 @@ arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
                             "DELETE FROM arp WHERE id = ?;", [row.id],
                             function (error) {
                                 if (error) {
-                                    logger.error(error.stack);
+                                    logger.error(error.message);
                                 } else {
                                     if (onDelete !== undefined) {
                                         onDelete(row);

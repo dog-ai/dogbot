@@ -50,7 +50,7 @@ eventreminder.prototype.process = function() {
     var google = this.moduleManager.findLoadedModuleByName('google');
     google.getAccounts(function(error, accounts) {
         if (error !== undefined && error !== null) {
-            logger.error(error.stack);
+            logger.error(error.message);
         } else {
             var calendar = self.moduleManager.findLoadedModuleByName('calendar');
 
@@ -58,7 +58,7 @@ eventreminder.prototype.process = function() {
 
                 calendar.retrieveEventListForToday(account.user_id, account.access_token, function(error, eventList) {
                     if (error !== undefined && error !== null) {
-                        logger.error(error.stack);
+                        logger.error(error.message);
                     } else {
                         eventList.items.forEach(function(event) {
                             var reminder = _.find(reminders, function(r) {

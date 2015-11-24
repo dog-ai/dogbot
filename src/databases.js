@@ -164,7 +164,8 @@ databases.prototype.startAll = function (callback) {
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "full_name TEXT NOT NULL UNIQUE, " +
                         "is_present INTEGER NOT NULL DEFAULT 0, " +
-                        "slack_id TEXT" +
+                        "slack_id TEXT, " +
+                        "last_presence_date DATETIME" +
                         ");", [], callback);
                 }
             });
@@ -182,7 +183,7 @@ databases.prototype.startAll = function (callback) {
         }
     ], function (error) {
         if (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
         }
 
         callback(self.started);

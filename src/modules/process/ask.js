@@ -53,7 +53,7 @@ ask.prototype.process = function(message, callback) {
 
       this.wolfram.query(question, function (error, result) {
         if (error !== undefined && error !== null) {
-          logger.error(error.stack);
+          logger.error(error.message);
           callback("Can you repeat that again?");
         } else if (result !== undefined && result !== null) {
 
@@ -61,7 +61,7 @@ ask.prototype.process = function(message, callback) {
             var response = self._handleResult(result);
             callback(response);
           } catch (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
             callback("Oops! Something went wrong...please call the maintenance team!");
           }
         }
