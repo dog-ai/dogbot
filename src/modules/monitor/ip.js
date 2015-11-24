@@ -108,8 +108,8 @@ ip.prototype._execFping = function (callback) {
                         });
                     });
 
-                    process.stderr.on('data', function (data) {
-                        if (data === undefined || data.indexOf('ICMP Host') === 0) {
+                    process.stderr.pipe(require('split')()).on('data', function (line) {
+                        if (line === undefined || line.indexOf('ICMP Host') === 0) {
                             return;
                         }
 
