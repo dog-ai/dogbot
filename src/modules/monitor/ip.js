@@ -141,7 +141,7 @@ ip.prototype._clean = function (callback) {
             }
         },
         function (error, ip) {
-            if (error !== null) {
+            if (error) {
                 logger.error("monitor 5 " + error.stack);
             } else {
                 self.communication.emit('monitor:ipAddress:delete', ip.ip_address);
@@ -232,7 +232,7 @@ ip.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
                                     logger.error("monitor 6 " + error.stack);
                                 } else {
                                     if (onDelete !== undefined) {
-                                        onDelete(row);
+                                        onDelete(null, row);
                                     }
                                 }
                             });
