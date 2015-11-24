@@ -233,28 +233,27 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                         if (error) {
                             logger.error(error.stack);
                         } else {
-                            instance.communication.emit('person:device:is_present', device, function (is_present) {
 
-                                if (device.is_present != is_present) {
+                            if (device.is_present) {
+                                instance.communication.emit('person:device:is_present', device, function (is_present) {
 
-                                    device.updated_date = new Date();
-                                    device.is_present = is_present;
+                                    if (!is_present) {
 
-                                    instance._updateById(device.id, device, function (error) {
-                                        if (error) {
-                                            logger.error(error.stack);
-                                        } else {
-                                            device.last_presence_date = last_presence_date;
+                                        device.updated_date = new Date();
+                                        device.is_present = false;
 
-                                            if (device.is_present) {
-                                                instance.communication.emit('person:device:online', device);
+                                        instance._updateById(device.id, device, function (error) {
+                                            if (error) {
+                                                logger.error(error.stack);
                                             } else {
+                                                device.last_presence_date = last_presence_date;
+
                                                 instance.communication.emit('person:device:offline', device);
                                             }
-                                        }
-                                    });
-                                }
-                            });
+                                        });
+                                    }
+                                });
+                            }
                         }
                     });
             }
