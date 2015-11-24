@@ -346,20 +346,22 @@ mac_address.prototype._findAllBeforeLastPresenceDateAndWithoutDevice = function 
 };
 
 mac_address.prototype._updateByAddress = function (address, mac_address) {
-    if (mac_address.created_date !== undefined && mac_address.created_date !== null && mac_address.created_date instanceof Date) {
-        mac_address.created_date = mac_address.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var _macAddress = _.clone(mac_address);
+
+    if (_macAddress.created_date !== undefined && _macAddress.created_date !== null && _macAddress.created_date instanceof Date) {
+        _macAddress.created_date = _macAddress.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    if (mac_address.updated_date !== undefined && mac_address.updated_date !== null && mac_address.updated_date instanceof Date) {
-        mac_address.updated_date = mac_address.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    if (_macAddress.updated_date !== undefined && _macAddress.updated_date !== null && _macAddress.updated_date instanceof Date) {
+        _macAddress.updated_date = _macAddress.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    if (mac_address.last_presence_date !== undefined && mac_address.last_presence_date !== null && mac_address.last_presence_date instanceof Date) {
-        mac_address.last_presence_date = mac_address.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    if (_macAddress.last_presence_date !== undefined && _macAddress.last_presence_date !== null && _macAddress.last_presence_date instanceof Date) {
+        _macAddress.last_presence_date = _macAddress.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
-    var keys = _.keys(mac_address);
-    var values = _.values(mac_address);
+    var keys = _.keys(_macAddress);
+    var values = _.values(_macAddress);
 
     return instance.communication.emitAsync('database:person:update',
         'UPDATE mac_address SET ' + keys.map(function (key) {
