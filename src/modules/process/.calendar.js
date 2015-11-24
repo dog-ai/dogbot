@@ -44,7 +44,7 @@ calendar.prototype.process = function(message, callback) {
     var google = this.moduleManager.findLoadedModuleByName('google');
     google.getAccounts(function(error, accounts) {
       if (error !== undefined && error !== null) {
-        logger.error(error.message);
+        logger.error(error.stack);
       } else {
         accounts.forEach(function(account) {
 

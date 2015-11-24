@@ -57,7 +57,7 @@ worker.prototype.start = function (database, enqueue, processJob) {
 
                 job.remove(function (error) {
                     if (error) {
-                        logger.error(error);
+                        logger.error("core" + error.stack);
                     }
                 });
             });
@@ -122,7 +122,7 @@ worker.prototype._enqueue = function (event, params, schedule) {
     } else {
         job.save(function (error) {
             if (error) {
-                logger.error(error);
+                logger.error("core" + error.stack);
             }
         });
     }

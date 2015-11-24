@@ -36,7 +36,7 @@ slack.prototype.start = function () {
         try {
             self._clean();
         } catch (error) {
-            logger.error(error.message);
+            logger.error("monitor" + error.stack);
         }
     }, 2 * 60 * 1000);
 
@@ -97,7 +97,7 @@ slack.prototype._retrieve = function (slackId, callback) {
         ],
         function (error, row) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error("monitor" + error.stack);
             } else {
                 callback(row);
             }
@@ -115,7 +115,7 @@ slack.prototype._addPresence = function (slackId, username, name) {
         ],
         function (error) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error("monitor" + error.stack);
             } else {
                 self.moduleManager.emit('person:slack:active', {slack_id: slackId, username: username, name: name});
             }
@@ -134,7 +134,7 @@ slack.prototype._update = function (slackId, username, name) {
         ],
         function (error) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error("monitor" + error.stack);
             }
         });
 };
@@ -145,14 +145,14 @@ slack.prototype._deleteAllBeforeDate = function (slackId) {
         "SELECT * FROM slack WHERE slack_id LIKE ?;", [slackId],
         function (error, row) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error("monitor" + error.stack);
             } else {
                 var that = self;
                 self.moduleManager.emit('database:monitor:delete',
                     "DELETE FROM slack WHERE slack_id = ?;", [slackId],
                     function (error) {
                         if (error !== undefined && error !== null) {
-                            logger.error(error.message);
+                            logger.error("monitor" + error.stack);
                         } else {
                             if (row !== undefined && row !== null) {
                                 that.moduleManager.emit('person:slack:away', {
@@ -176,14 +176,14 @@ slack.prototype._deleteAllByUpdatedDate = function (oldestDate) {
         "SELECT * FROM slack WHERE updated_date < Datetime(?);", [updatedDate],
         function (error, row) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error("monitor" + error.stack);
             } else {
                 var that = self;
                 self.moduleManager.emit('database:monitor:delete',
                     "DELETE FROM slack WHERE id = ?;", [row.id],
                     function (error) {
                         if (error !== undefined && error !== null) {
-                            logger.error(error.message);
+                            logger.error("monitor" + error.stack);
                         } else {
                             that.moduleManager.emit('person:slack:away', {
                                 slack_id: row.slack_id,

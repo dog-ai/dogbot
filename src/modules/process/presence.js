@@ -75,7 +75,7 @@ presence.prototype._retrieveSample = function (callback) {
         "SELECT Datetime(date, 'localtime') as date, value FROM arp;", [],
         function (error, rows) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error(error.stack);
             } else {
                 callback(rows);
             }

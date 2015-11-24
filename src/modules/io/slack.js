@@ -68,7 +68,7 @@ slack.prototype.start = function () {
     });
 
     this.client.on('error', function(error) {
-        logger.error(error)
+        logger.error(error.stack)
     });
 
     var time = 60 * 1000;
@@ -78,7 +78,7 @@ slack.prototype.start = function () {
             self._discoverUsers();
 
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error.stack);
         }
 
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));

@@ -86,7 +86,7 @@ presence.prototype._onEmployeePresence = function (employee) {
             created_date: employee.last_presence_date
         });
     }).catch(function (error) {
-        logger.error(error.message);
+        logger.error(error.stack);
     });
 };
 
@@ -102,7 +102,7 @@ presence.prototype._onIncomingPresenceSynchronization = function (syncingPresenc
                 return instance._createPresence(syncingPresence);
             }
         }).catch(function (error) {
-            logger.error(error.message);
+            logger.error(error.stack);
         });
     });
 };
@@ -111,7 +111,7 @@ presence.prototype._onOutgoingPresenceSynchronization = function (callback) {
     instance.communication.emit('database:performance:retrieveOneByOne',
         'SELECT * FROM presence WHERE is_synced = 0', [], function (error, row) {
             if (error) {
-                logger.error(error.message);
+                logger.error(error.stack);
             } else {
 
                 if (row !== undefined) {
@@ -120,12 +120,12 @@ presence.prototype._onOutgoingPresenceSynchronization = function (callback) {
 
                     callback(error, row.employee_id, 'presence', row, function (error) {
                         if (error) {
-                            logger.error(error)
+                            logger.error(error.stack)
                         } else {
                             instance.communication.emit('database:performance:update',
                                 'UPDATE presence SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
                                     if (error) {
-                                        logger.error(error.message);
+                                        logger.error(error.stack);
                                     }
                                 });
                         }
@@ -188,7 +188,7 @@ presence.prototype._computeEmployeeDailyStats = function (employee, date) {
             return _stats;
         })
         .catch(function (error) {
-            logger.error(error);
+            logger.error(error.stack);
         });
 };
 

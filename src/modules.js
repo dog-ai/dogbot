@@ -66,7 +66,7 @@ modules.prototype._load = function (type, file, config) {
             logger.info('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
             if (!(error.message.indexOf('platform is not supported') > -1 ||
                 error.message.indexOf('invalid configuration') > -1)) {
-                logger.error(error.message);
+                logger.error(error.stack);
             }
         }
     });
