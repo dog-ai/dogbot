@@ -131,7 +131,7 @@ synchronization.prototype._init = function (callback) {
             // listen for dog modules events
             if (dog.modules !== undefined) {
                 self.dogRef.child('modules').on('child_changed', self._onModuleChanged, function (error) {
-                    logger.error(error.message);
+                    logger.error("core" + error.stack);
                 });
                 _.forEach(dog.modules, function (modules, type) {
                     _.forEach(modules, function (moduleConfiguration, moduleName) {
@@ -183,7 +183,7 @@ synchronization.prototype._synchronize = function (params, callback) {
 
         instance.onMacAddressPush(function (error, mac_address, onComplete) {
             if (error) {
-                logger.error(error.message);
+                logger.error("core" + error.stack);
             } else {
 
                 logger.debug('sending mac address: %s', JSON.stringify(mac_address));
@@ -191,7 +191,7 @@ synchronization.prototype._synchronize = function (params, callback) {
                 if (mac_address.is_to_be_deleted) {
                     instance.companyRef.child('mac_addresses/' + mac_address.id).remove(function (error) {
                         if (error) {
-                            logger.error(error);
+                            logger.error("core" + error.stack);
                         } else {
                             var macAddressRef = firebase.child('company_mac_addresses/' + instance.companyId + '/' + mac_address.id);
                             macAddressRef.remove(function (error) {
@@ -218,7 +218,7 @@ synchronization.prototype._synchronize = function (params, callback) {
                         var macAddressesRef = firebase.child('company_mac_addresses/' + instance.companyId);
                         macAddressRef = macAddressesRef.push(val, function (error) {
                             if (error) {
-                                logger.error(error);
+                                logger.error("core" + error.stack);
                             } else {
                                 instance.companyRef.child('mac_addresses/' + macAddressRef.key()).set(true, function (error) {
                                     mac_address.id = macAddressRef.key();
@@ -235,7 +235,7 @@ synchronization.prototype._synchronize = function (params, callback) {
         _.forEach(performanceNames, function (performanceName) {
             instance.onPerformancePush(performanceName, function (error, employeeId, type, performance, onComplete) {
                 if (error) {
-                    logger.error(error.message);
+                    logger.error("core" + error.stack);
                 } else {
 
                     logger.debug('sending performance ' + performanceName + ': %s', JSON.stringify(performance));
@@ -496,7 +496,7 @@ synchronization.prototype._updateDevice = function (device) {
 
     firebase.child('company_devices/' + instance.companyId + '/' + device.id).update(val, function (error) {
         if (error) {
-            logger.error(error.message);
+            logger.error("core" + error.stack);
         }
     });
 };
@@ -514,7 +514,7 @@ synchronization.prototype._updateEmployee = function (employee) {
 
     firebase.child('company_employees/' + instance.companyId + '/' + employee.id).update(val, function (error) {
         if (error) {
-            logger.error(error.message);
+            logger.error("core" + error.stack);
         }
     });
 };

@@ -47,7 +47,7 @@ volume.prototype.process = function(message, callback) {
         .exec('amixer -c 1 set Headphone ' + percentage,
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error(error.stack);
             }
           });
     } else {
@@ -55,7 +55,7 @@ volume.prototype.process = function(message, callback) {
         .exec("amixer -c 1 get Headphone | tail -n 1 | cut -d ' ' -f 7",
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-                logger.error(error.message);
+                logger.error(error.stack);
             } else {
               callback(stdout.replace('[', '').replace(']', ''));
             }

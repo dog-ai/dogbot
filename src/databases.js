@@ -183,7 +183,7 @@ databases.prototype.startAll = function (callback) {
         }
     ], function (error) {
         if (error) {
-            logger.error(error.message);
+            logger.error(error.stack);
         }
 
         callback(self.started);

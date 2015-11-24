@@ -42,7 +42,7 @@ var dogbot = {
             synchronization.start(self.secret,
                 function (error, dogId) {
                     if (error) {
-                        logger.error(error.message);
+                        logger.error("core" + error.stack);
 
                         //modules.loadAll();
                     } else {
@@ -144,7 +144,7 @@ var dogbot = {
 
         revision.hasRevisionChanged(function (error, changed, revision) {
             if (error) {
-                logger.error(error.message);
+                logger.error("core" + error.stack);
             } else {
                 if (changed) {
                     logger.info('Detected new code revision: ' + revision);

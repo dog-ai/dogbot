@@ -286,11 +286,14 @@ arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
                 if (rows !== undefined) {
 
                     rows.forEach(function (row) {
+                        row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                        row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+
                         self.communication.emit('database:monitor:delete',
                             "DELETE FROM arp WHERE id = ?;", [row.id],
                             function (error) {
                                 if (error) {
-                                    logger.error(error.message);
+                                    logger.error("monitor" + error.stack);
                                 } else {
                                     if (onDelete !== undefined) {
                                         onDelete(row);

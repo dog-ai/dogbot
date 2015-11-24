@@ -42,7 +42,7 @@ bonjour.prototype.start = function () {
                 self._clean();
             });
         } catch (error) {
-            logger.error(error.message);
+            logger.error("monitor" + error.stack);
         }
 
         self.timeout = setTimeout(monitor, time * (1 + Math.random()));
@@ -82,7 +82,7 @@ bonjour.prototype._scan = function (callback) {
 
         self._addOrUpdate(type, name, address, hostname, port, txt, function (error) {
             if (error !== null) {
-                logger.error(error.message);
+                logger.error("monitor" + error.stack);
             }
         });
     });
@@ -104,7 +104,7 @@ bonjour.prototype._clean = function () {
     var currentDate = new Date();
     this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error, bonjour) {
         if (error !== null) {
-            logger.error(error.message);
+            logger.error("monitor" + error.stack);
         } else {
             self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         }
