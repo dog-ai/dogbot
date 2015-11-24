@@ -54,7 +54,7 @@ ip.prototype.discover = function (params, callback) {
             });
         });
     } catch (error) {
-        logger.error("monitor 7" + error.stack);
+        logger.error(error.stack);
 
         if (callback !== undefined) {
             callback(error);
@@ -65,7 +65,7 @@ ip.prototype.discover = function (params, callback) {
 ip.prototype.onBonjourCreate = function (bonjour) {
     instance._addOrUpdate(bonjour.ip_address, function (error) {
         if (error) {
-            logger.error("monitor 2 " + error.stack);
+            logger.error(error.stack);
         }
     });
 };
@@ -103,9 +103,19 @@ ip.prototype._execFping = function (callback) {
 
                         self._addOrUpdate(line, function (error) {
                             if (error !== null) {
-                                logger.error("monitor 3 " + error.stack);
+                                logger.error(error.stack);
                             }
                         });
+                    });
+
+                    process.stderr.on('data', function (data) {
+                        if (data.indexOf('ICMP Host') === 0) {
+                            return;
+                        }
+
+                        if (callback !== undefined) {
+                            callback(new Error(data));
+                        }
                     });
 
                     process.on('error', function (error) {
@@ -133,7 +143,7 @@ ip.prototype._clean = function (callback) {
     var currentDate = new Date();
     this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error) {
             if (error) {
-                logger.error("monitor 4 " + error.stack);
+                logger.error(error.stack);
             }
 
             if (callback !== undefined) {
@@ -142,7 +152,7 @@ ip.prototype._clean = function (callback) {
         },
         function (error, ip) {
             if (error) {
-                logger.error("monitor 5 " + error.stack);
+                logger.error(error.stack);
             } else {
                 self.communication.emit('monitor:ipAddress:delete', ip.ip_address);
             }
@@ -229,7 +239,7 @@ ip.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
                             "DELETE FROM ip WHERE id = ?;", [row.id],
                             function (error) {
                                 if (error) {
-                                    logger.error("monitor 6 " + error.stack);
+                                    logger.error(error.stack);
                                 } else {
                                     if (onDelete !== undefined) {
                                         onDelete(null, row);
