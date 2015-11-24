@@ -165,7 +165,7 @@ device.prototype._isPresent = function (device, callback) {
 
         instance._findMacAddressesById(device.id, function (error, mac_addresses) {
             if (error) {
-                logger.error(error.stack);
+                logger.error(error.message);
             } else {
                 if (mac_addresses !== undefined) {
                     var values = _.pluck(mac_addresses, 'address');
@@ -176,7 +176,7 @@ device.prototype._isPresent = function (device, callback) {
                         values,
                         function (error, rows) {
                             if (error) {
-                                logger.error(error.stack);
+                                logger.error(error.message);
                             } else {
                                 callback(rows !== undefined && rows !== null && rows.length > 0);
                             }
@@ -196,6 +196,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
         }
 
         device = _.pick(device, _.pluck(rows, 'name'));
+        var last_presence_date = device.last_presence_date;
 
         instance._findById(device.id)
             .then(function (row) {
@@ -211,7 +212,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 
                         instance._updateById(device.id, device, function (error) {
                         if (error) {
-                            logger.error(error.stack);
+                            logger.error(error.message);
                         } else {
 
                             device = _.extend(device, {
@@ -230,7 +231,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                 } else {
                     instance._add(device, function (error) {
                         if (error) {
-                            logger.error(error.stack);
+                            logger.error(error.message);
                         } else {
                             instance.communication.emit('person:device:is_present', device, function (is_present) {
 
@@ -241,8 +242,10 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 
                                     instance._updateById(device.id, device, function (error) {
                                         if (error) {
-                                            logger.error(error.stack);
+                                            logger.error(error.message);
                                         } else {
+                                            device.last_presence_date = last_presence_date;
+
                                             if (device.is_present) {
                                                 instance.communication.emit('person:device:online', device);
                                             } else {
@@ -257,7 +260,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
             }
             })
             .catch(function (error) {
-                logger.error(error.stack);
+                logger.error(error.message);
             });
     });
 };
@@ -295,15 +298,16 @@ device.prototype._onMacAddressOnline = function (mac_address) {
 
                     instance._updateById(device.id, device, function (error) {
                         if (error) {
-                            logger.error(error.stack);
+                            logger.error(error.message);
                         } else {
+                            device.last_presence_date = mac_address.last_presence_date;
                             instance.communication.emit('person:device:online', device);
                         }
                     });
                 }
             })
             .catch(function (error) {
-                logger.error(error.stack);
+                logger.error(error.message);
         });
     }
 
@@ -315,7 +319,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
     if (mac_address.device_id !== undefined && mac_address.device_id !== null) {
         instance._findMacAddressesById(mac_address.device_id, function (error, mac_addresses) {
             if (error) {
-                logger.error(error.stack);
+                logger.error(error.message);
             } else {
                 if (mac_addresses !== undefined) {
                     mac_addresses = _.filter(mac_addresses, _.matches({'is_present': 1}));
@@ -329,14 +333,14 @@ device.prototype._onMacAddressOffline = function (mac_address) {
 
                                 instance._updateById(device.id, device, function (error) {
                                     if (error) {
-                                        logger.error(error.stack);
+                                        logger.error(error.message);
                                     } else {
                                         instance.communication.emit('person:device:offline', device);
                                     }
                                 });
                             })
                             .catch(function (error) {
-                                logger.error(error.stack);
+                                logger.error(error.message);
                             });
                     }
                 }
@@ -355,7 +359,9 @@ device.prototype._findMacAddressesById = function (id, callback) {
                 rows.forEach(function (row) {
                     row.created_date = new Date(row.created_date.replace(' ', 'T'));
                     row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
-                    row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                    if (row.last_presence_date !== undefined && row.last_presence_date !== null) {
+                        row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                    }
                 });
             }
 

@@ -104,7 +104,7 @@ voice.prototype._play = function(urls, current, total, callback) {
                 }
             });
     } catch (error) {
-        logger.error(error.stack);
+        logger.error(error.message);
     }
 };
 

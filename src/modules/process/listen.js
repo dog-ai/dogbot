@@ -60,14 +60,14 @@ listen.prototype._listen = function(callback) {
 
     self._sample(sampleFile, sampleDuration, function(error) {
       if (error !== undefined && error !== null) {
-        logger.error(error.stack);
+        logger.error(error.message);
         fs.unlink(sampleFile);
       } else {
         voice.send(null, 'Let me think...');
 
         self._upload(sampleFile, function(error, text) {
           if (error !== undefined && error !== null) {
-            logger.error(error.stack);
+            logger.error(error.message);
           } else {
             callback('I heard "' + text + '"');
 

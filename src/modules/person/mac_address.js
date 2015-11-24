@@ -79,7 +79,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
     instance._findByAddress(address, function (error, row) {
 
         if (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
         } else {
             var now = new Date();
 
@@ -95,6 +95,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
                 instance._updateByAddress(row.address, row)
                     .then(function () {
                         if (!was_present) {
+                            row.last_presence_date = now;
                             instance.communication.emit('person:mac_address:online', row);
                         }
 
@@ -106,7 +107,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
 
                             macvendor(row.address, function (error, vendor) {
                                 if (error) {
-                                    logger.error(error.stack);
+                                    logger.error(error.message);
                                 } else {
                                     if (vendor !== undefined && vendor !== null && vendor.length < 60) {
                                         row.vendor = vendor.toLowerCase().replace(/(?:^|\s)\S/g, function (s) {
@@ -140,14 +141,15 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
 
                 instance._add(row, function (error) {
                     if (error) {
-                        logger.error(error.stack);
+                        logger.error(error.message);
                     } else {
+                        row.last_presence_date = now;
                         instance.communication.emit('person:mac_address:online', row);
 
                         // lookup vendor
                         macvendor(row.address, function (error, vendor) {
                             if (error) {
-                                logger.error(error.stack);
+                                logger.error(error.message);
                             } else {
                                 if (vendor !== undefined && vendor !== null && vendor.length < 60) {
                                     row.vendor = vendor.replace(/(?:^|\s)\S/g, function (s) {
@@ -174,7 +176,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
 mac_address.prototype._onArpDelete = function (arp) {
     instance._findByAddress(arp.mac_address, function (error, row) {
         if (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
         } else {
 
             if (row !== undefined) {
@@ -201,7 +203,7 @@ mac_address.prototype._onArpDelete = function (arp) {
 mac_address.prototype._onCreateOrUpdateMacAddressIncomingSynchronization = function (mac_address) {
     instance.communication.emit('database:person:retrieveAll', 'PRAGMA table_info(mac_address)', [], function (error, rows) {
         if (error) {
-            logger.error(error.stack);
+            logger.error(error.message);
         } else {
 
             // filter only required mac_address properties
@@ -263,7 +265,7 @@ mac_address.prototype._onMacAddressOutgoingSynchronization = function (callback)
     instance.communication.emit('database:person:retrieveOneByOne',
         'SELECT * FROM mac_address WHERE is_synced = 0', [], function (error, row) {
             if (error) {
-                logger.error(error.stack);
+                logger.error(error.message);
             } else {
                 if (row !== undefined) {
                     row.created_date = new Date(row.created_date.replace(' ', 'T'));

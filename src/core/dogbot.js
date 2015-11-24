@@ -144,7 +144,7 @@ var dogbot = {
 
         revision.hasRevisionChanged(function (error, changed, revision) {
             if (error) {
-                logger.error(error.stack);
+                logger.error(error.message);
             } else {
                 if (changed) {
                     logger.info('Detected new code revision: ' + revision);
