@@ -113,7 +113,7 @@ employee.prototype._handleDeviceOffline = function (device) {
                             logger.error(error.stack);
                         } else {
 
-                            if (devices && devices.length == 0 && employee.is_present) {
+                            if (devices.length == 0 && employee.is_present) {
 
                                 employee.is_present = false;
                                 employee.last_presence_date = device.last_presence_date;
@@ -344,13 +344,7 @@ employee.prototype._retrieveByName = function (name, callback) {
 employee.prototype._retrieveAllOnlineDevicesByEmployeeId = function (id, callback) {
     this.moduleManager.emit('database:person:retrieveAll',
         'SELECT * FROM device WHERE employee_id = ? AND is_present = 1;', [id],
-        function (error, rows) {
-            if (error) {
-                callback(error);
-            } else {
-                callback(null, rows);
-            }
-        });
+        callback);
 };
 
 employee.prototype._updateById = function (id, employee, callback) {
