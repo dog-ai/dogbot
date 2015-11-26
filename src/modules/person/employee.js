@@ -82,6 +82,8 @@ employee.prototype._handleDeviceOnline = function (device) {
             } else {
 
                 if (employee !== undefined && !employee.is_present) {
+                    logger.debug("Employee in database: " + JSON.stringify(employee));
+
                     employee.is_present = true;
                     employee.last_presence_date = device.last_presence_date;
 
