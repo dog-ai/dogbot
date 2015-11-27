@@ -80,9 +80,9 @@ employee.prototype._handleDeviceOnline = function (device) {
             if (error) {
                 logger.error(error.stack);
             } else {
+                logger.debug("Employee in database: " + JSON.stringify(employee));
 
                 if (employee !== undefined && !employee.is_present) {
-                    logger.debug("Employee in database: " + JSON.stringify(employee));
 
                     employee.is_present = true;
                     employee.last_presence_date = device.last_presence_date;
@@ -114,6 +114,8 @@ employee.prototype._handleDeviceOffline = function (device) {
                         if (error) {
                             logger.error(error.stack);
                         } else {
+
+                            logger.debug("All online devices in database: " + JSON.stringify(devices));
 
                             if (devices.length == 0 && employee.is_present) {
 
