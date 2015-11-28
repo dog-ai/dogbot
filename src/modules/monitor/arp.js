@@ -197,7 +197,7 @@ arp.prototype._clean = function (callback) {
             callback(error);
         }
     }, function (arp) {
-        logger.info("Deleting ARP: " + JSON.stringify(arp));
+        logger.debug("Deleting ARP: " + JSON.stringify(arp));
 
         self.communication.emit('monitor:arp:delete', arp);
     });
