@@ -197,7 +197,7 @@ arp.prototype._clean = function (callback) {
             callback(error);
         }
     }, function (arp) {
-        logger.debug("Deleting ARP: " + JSON.stringify(arp));
+        logger.info("Deleting ARP: " + JSON.stringify(arp));
 
         self.communication.emit('monitor:arp:delete', arp);
     });
@@ -295,8 +295,9 @@ arp.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
                             "DELETE FROM arp WHERE id = ?;", [row.id],
                             function (error) {
                                 if (error) {
-                                    logger.error("monitor 1" + error.stack);
+                                    logger.error(error.stack);
                                 } else {
+
                                     if (onDelete !== undefined) {
                                         onDelete(row);
                                     }

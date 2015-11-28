@@ -80,7 +80,7 @@ employee.prototype._handleDeviceOnline = function (device) {
             if (error) {
                 logger.error(error.stack);
             } else {
-                logger.debug("Employee in database: " + JSON.stringify(employee));
+                logger.info("Employee in database: " + JSON.stringify(employee));
 
                 if (employee !== undefined && !employee.is_present) {
 
@@ -101,21 +101,37 @@ employee.prototype._handleDeviceOnline = function (device) {
 };
 
 employee.prototype._handleDeviceOffline = function (device) {
+    logger.info("Handling device offline 1: " + JSON.stringify(device));
+
     if (device.employee_id !== undefined && device.employee_id !== null) {
+
+        logger.info("Handling device offline 2: " + JSON.stringify(device));
+
         instance._findById(device.employee_id, function (error, employee) {
+
+            logger.info("Handling device offline 3: " + JSON.stringify(device));
+
             if (error) {
                 logger.error(error.stack);
             } else {
 
+                logger.info("Handling device offline 4: " + JSON.stringify(device));
+
                 if (employee !== undefined) {
+
+                    logger.info("Handling device offline 5: " + JSON.stringify(device));
+
                     // only emit farway if the employee does not have any other device online
                     instance._retrieveAllOnlineDevicesByEmployeeId(employee.id, function (error, devices) {
+
+                        logger.info("Handling device offline 6: " + JSON.stringify(device));
+
 
                         if (error) {
                             logger.error(error.stack);
                         } else {
 
-                            logger.debug("All online devices in database: " + JSON.stringify(devices));
+                            logger.info("All online devices in database: " + JSON.stringify(devices));
 
                             if (devices.length == 0 && employee.is_present) {
 
