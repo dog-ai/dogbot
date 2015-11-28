@@ -50,42 +50,71 @@ device.prototype.stop = function () {
 };
 
 device.prototype._discover = function (macAddress, callback) {
-    return callback();
-
     // retrieve existing device or start with a blank one with is_manual=false
     // if retrieved device is is_manual=true then the party is over
 
-    var device = {};
+    instance._findByMacAddress(macAddress.address)
+        .then(function (device) {
+            if (device === undefined || !device.is_manual) {
 
-    instance._findIpAdressByMacAddress(macAddress.address)
-        .then(function (row) {
-            if (row === undefined || row === null) {
-                throw new Error('Unknown IP address for MAC address: ' + macAddress.address);
+                return instance._findIpAdressByMacAddress(macAddress.address)
+                    .then(function (row) {
+                        if (row === undefined || row === null) {
+                            throw new Error('Unknown IP address for MAC address: ' + macAddress.address);
+                        }
+
+                        return Promise.props({
+                            mdns: instance._execDig(row.ip_address),
+                            nmap: instance._execNmap(row.ip_address),
+                            dns: instance._execHost(row.ip_address)
+                        });
+                    })
+                    .then(function (result) {
+                        logger.debug(JSON.stringify("Discovery result: " + JSON.stringify(result)));
+
+
+                    })
             }
 
-            device.ip = row.ip_address;
-            device.mac_address = macAddress.address;
-            device.vendor = macAddress.vendor;
 
-            return instance._execNmap(row.ip_address).then(function (result) {
-                    device = _.extend(device, result);
-                })
-                .then(instance._execHost(row.ip_address)
-                    .then(function (result) {
-                        device = _.extend(device, result);
-                    }))
-                .then(function () {
-                    return device;
-                });
         })
-        .then(function (device) {
-            console.log(JSON.stringify(device));
-
+        .then(function () {
             callback();
         })
         .catch(function (error) {
             callback(error);
         });
+};
+
+device.prototype._execDig = function (ip) {
+    return new Promise(function (resolve, reject) {
+        var result = {};
+
+        var spawn = require('child_process').spawn,
+            _process = spawn('dig', [
+                '+short',
+                '+time=1',
+                '+tries=0',
+                '+retry=0',
+                '@224.0.0.251',
+                '-p5353',
+                '-x', ip
+            ]);
+
+        _process.stdout.setEncoding('utf8');
+        _process.stdout.pipe(require('split')()).on('data', function (line) {
+            if (line !== null && line.length !== 0) {
+                if (line.indexOf('.local.') !== -1) {
+                    result.hostname = line.split('.')[0];
+                }
+            }
+        });
+
+        _process.on('error', reject);
+        _process.on('exit', function () {
+            resolve(result);
+        });
+    })
 };
 
 device.prototype._execHost = function (ip) {
@@ -381,6 +410,22 @@ device.prototype._findIpAdressByMacAddress = function (macAddress) {
 
 device.prototype._findById = function (id) {
     return this.communication.emitAsync('database:person:retrieveOne', "SELECT * FROM device WHERE id = ?;", [id])
+        .then(function (row) {
+            if (row !== undefined) {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                if (row.last_presence_date !== undefined && row.last_presence_date !== null) {
+                    row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                }
+            }
+
+            return row;
+        });
+};
+
+device.prototype._findByMacAddress = function (macAddress) {
+    return this.communication.emitAsync('database:person:retrieveOne',
+        "SELECT d.* FROM device d, mac_address ma WHERE d.id = ma.device_id AND ma.address = ?;", [macAddress])
         .then(function (row) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
