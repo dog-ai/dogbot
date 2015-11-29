@@ -82,6 +82,10 @@ var dogbot = {
                     // request mac address changes
                     communication.emit('synchronization:outgoing:person:mac_address', callback);
                 },
+                function (callback) {
+                    // request device changes
+                    communication.emit('synchronization:outgoing:person:device', callback);
+                },
                 function (performanceName, callback) {
                     // request performance changes
                     communication.emit('synchronization:outgoing:performance:' + performanceName, callback);

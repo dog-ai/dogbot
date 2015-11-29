@@ -22,6 +22,7 @@ synchronization.prototype.start = function (token, callback,
                                             onEmployeeDeletedCallback,
 
                                             onMacAddressPush,
+                                            onDevicePush,
                                             onPerformancePush,
 
                                             onPerformancePull,
@@ -34,16 +35,17 @@ synchronization.prototype.start = function (token, callback,
     var self = this;
 
     this.onModuleUpdatedCallback = onModuleUpdatedCallback;
+    this.onMacAddressCreatedOrUpdatedCallback = onMacAddressCreatedOrUpdatedCallback;
+    this.onMacAddressDeletedCallback = onMacAddressDeletedCallback;
     this.onDeviceCreatedOrUpdatedCallback = onDeviceCreatedOrUpdatedCallback;
     this.onDeviceDeletedCallback = onDeviceDeletedCallback;
     this.onEmployeeCreatedOrUpdatedCallback = onEmployeeCreatedOrUpdatedCallback;
     this.onEmployeeDeletedCallback = onEmployeeDeletedCallback;
 
     this.onMacAddressPush = onMacAddressPush;
-    this.onMacAddressCreatedOrUpdatedCallback = onMacAddressCreatedOrUpdatedCallback;
-    this.onMacAddressDeletedCallback = onMacAddressDeletedCallback;
-
+    this.onDevicePush = onDevicePush;
     this.onPerformancePush = onPerformancePush;
+
     this.onPerformancePull = onPerformancePull;
     this.onPerformanceStatsPull = onPerformanceStatsPull;
 
@@ -352,7 +354,10 @@ synchronization.prototype._onDeviceChanged = function (snapshot) {
             device.last_presence_date = new Date(device.last_presence_date);
         }
 
-        instance.onDeviceCreatedOrUpdatedCallback(_.extend({id: snapshot.key()}, device));
+        instance.onDeviceCreatedOrUpdatedCallback(_.extend({
+            id: snapshot.key(),
+            is_synced: true
+        }, device));
     }
 };
 
@@ -483,12 +488,19 @@ synchronization.prototype._onEmployeeChanged = function (snapshot) {
 };
 
 
-synchronization.prototype._updateDevice = function (device) {
+synchronization.prototype._updateDevice = function (device, callback) {
     logger.debug('sending device: %s', JSON.stringify(device));
 
     var val = {};
     val.updated_date = moment().format();
     val.is_present = device.is_present;
+
+    /*if (!device.is_manual) {
+     val.is_manual = device.is_manual;
+     val.name = device.name;
+     val.type = device.type;
+     val.os = device.os;
+     }*/
 
     if (device.last_presence_date !== undefined && device.last_presence_date !== null) {
         val.last_presence_date = moment(device.last_presence_date).format();
@@ -497,6 +509,10 @@ synchronization.prototype._updateDevice = function (device) {
     firebase.child('company_devices/' + instance.companyId + '/' + device.id).update(val, function (error) {
         if (error) {
             logger.error(error.stack);
+        }
+
+        if (callback !== undefined) {
+            callback();
         }
     });
 };

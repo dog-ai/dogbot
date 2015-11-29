@@ -141,13 +141,17 @@ databases.prototype.startAll = function (callback) {
                 } else {
                     self.communication.emit('database:person:setup',
                         "CREATE TABLE device (" +
-                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "id TEXT DEFAULT NULL, " +
                         "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         "employee_id INTEGER REFERENCES employee(id), " +
                         "is_present INTEGER NOT NULL DEFAULT 0, " +
                         "is_manual INTEGER NOT NULL DEFAULT 0, " +
-                        "last_presence_date DATETIME" +
+                        "last_presence_date DATETIME, " +
+                        "is_synced INTEGER NOT NULL DEFAULT 0, " +
+                        "name TEXT DEFAULT NULL, " +
+                        "type TEXT DEFAULT NULL, " +
+                        "os TEXT DEFAULT NULL" +
                         ");", [], callback);
                 }
             });

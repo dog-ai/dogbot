@@ -72,7 +72,30 @@ device.prototype._discover = function (macAddress, callback) {
                     .then(function (result) {
                         logger.debug(JSON.stringify("Discovery result: " + JSON.stringify(result)));
 
+                        device = device || {};
 
+                        if (result.mdns.hostname !== undefined && result.mdns.hostname !== null) {
+                            device.name = result.mdns.hostname.replace('-', ' ');
+                        } else if (result.dns.hostname !== undefined) {
+                            if (device.name !== undefined) {
+                                device.name = result.dns.hostname;
+                            }
+                        }
+
+                        if (result.nmap.type !== undefined && result.nmap.type !== null) {
+                            if (device.type === undefined || result.nmap.type.length > device.type.length) {
+                                device.type = result.nmap.type instanceof Array ? result.nmap.type[result.nmap.type.length - 1] : result.nmap.type;
+                            }
+                        }
+
+                        if (result.nmap.os !== undefined && result.nmap.os !== null) {
+                            device.os = result.nmap.os;
+                        }
+
+                        if (device.name !== undefined && device.type !== undefined && device.os !== undefined) {
+                            device.last_presence_date = new Date();
+                            return instance._add(device);
+                        }
                     })
             }
 
@@ -240,29 +263,26 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                         device = _.omit(device, 'is_present', 'last_presence_date');
 
                         instance._updateById(device.id, device, function (error) {
-                        if (error) {
-                            logger.error(error.stack);
-                        } else {
+                            if (error) {
+                                logger.error(error.stack);
+                            } else {
 
-                            device = _.extend(device, {
-                                is_present: row.is_present,
-                                last_presence_date: row.last_presence_date
-                            });
+                                device = _.extend(device, {
+                                    is_present: row.is_present,
+                                    last_presence_date: row.last_presence_date
+                                });
 
-                            if (row.employee_id !== null && device.employee_id === null) {
-                                instance.communication.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
-                            } else if (row.employee_id === null && device.employee_id !== null) {
-                                instance.communication.emit('person:device:addedToEmployee', device, {id: device.employee_id});
+                                if (row.employee_id !== null && device.employee_id === null) {
+                                    instance.communication.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
+                                } else if (row.employee_id === null && device.employee_id !== null) {
+                                    instance.communication.emit('person:device:addedToEmployee', device, {id: device.employee_id});
+                                }
                             }
-                        }
-                    });
-                }
+                        });
+                    }
                 } else {
-                    instance._add(device, function (error) {
-                        if (error) {
-                            logger.error(error.stack);
-                        } else {
-
+                    return instance._add(device)
+                        .then(function () {
                             if (device.is_present) {
                                 instance.communication.emit('person:device:is_present', device, function (is_present) {
 
@@ -283,9 +303,8 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                                     }
                                 });
                             }
-                        }
-                    });
-            }
+                        });
+                }
             })
             .catch(function (error) {
                 logger.error(error.stack);
@@ -342,7 +361,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
             })
             .catch(function (error) {
                 logger.error(error.stack);
-        });
+            });
     }
 
     instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
@@ -439,7 +458,7 @@ device.prototype._findByMacAddress = function (macAddress) {
         });
 };
 
-device.prototype._add = function (device, callback) {
+device.prototype._add = function (device) {
     if (device.created_date !== undefined && device.created_date !== null && device.created_date instanceof Date) {
         device.created_date = device.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
@@ -455,11 +474,11 @@ device.prototype._add = function (device, callback) {
     var keys = _.keys(device);
     var values = _.values(device);
 
-    instance.communication.emit('database:person:create',
+    return instance.communication.emitAsync('database:person:create',
         'INSERT INTO device (' + keys + ') VALUES (' + values.map(function () {
             return '?';
         }) + ');',
-        values, callback);
+        values);
 };
 
 device.prototype._updateById = function (id, device, callback) {
