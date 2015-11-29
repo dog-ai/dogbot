@@ -108,6 +108,7 @@ employee.prototype._handleDeviceOffline = function (device) {
         logger.debug("Handling device offline 2: " + JSON.stringify(device));
 
         instance._findById(device.employee_id, function (error, employee) {
+            logger.debug("Employee in database: " + JSON.stringify(employee));
 
             logger.debug("Handling device offline 3: " + JSON.stringify(device));
 
@@ -135,13 +136,22 @@ employee.prototype._handleDeviceOffline = function (device) {
 
                             if (devices.length == 0 && employee.is_present) {
 
+                                logger.debug("Handling device offline 7: " + JSON.stringify(employee));
+
+
                                 employee.is_present = false;
                                 employee.last_presence_date = device.last_presence_date;
 
                                 instance._updateById(employee.id, employee, function (error) {
+                                    logger.debug("Handling device offline 8: " + JSON.stringify(employee));
+
+
                                     if (error) {
                                         logger.error(error.stack);
                                     } else {
+                                        logger.debug("Handling device offline 9: " + JSON.stringify(employee));
+
+
                                         instance.moduleManager.emit('person:employee:faraway', employee);
                                     }
                                 });
