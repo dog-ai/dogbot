@@ -243,8 +243,8 @@ device.prototype._isPresent = function (device, callback) {
 
 device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
     instance.communication.emit('database:person:retrieveAll', 'PRAGMA table_info(device)', [], function (error, rows) {
-        if (error !== null) {
-            throw error();
+        if (error) {
+            logger.error(error.stack);
         }
 
         device = _.pick(device, _.pluck(rows, 'name'));
