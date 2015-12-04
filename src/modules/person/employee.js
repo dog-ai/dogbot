@@ -140,7 +140,7 @@ employee.prototype._isPresent = function (employee, callback) {
                 }
             })
             .catch(function (error) {
-                logger.error(error.stack);
+                callback(error);
             });
     }
 
@@ -350,6 +350,10 @@ employee.prototype._updateById = function (id, employee) {
             return key + ' = ?';
         }) + ' WHERE id = \'' + id + '\';',
         values);
+};
+
+employee.prototype._deleteById = function (id) {
+    return instance.communication.emitAsync('database:person:delete', 'DELETE FROM employee WHERE id = ?;', [id]);
 };
 
 var instance = new employee();
