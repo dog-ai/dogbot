@@ -45,225 +45,200 @@ ip.prototype.stop = function () {
 
 
 ip.prototype.discover = function (params, callback) {
-    try {
-        instance._execFping(function () {
-            instance._clean(function () {
-                if (callback !== undefined) {
-                    callback();
-                }
-            });
-        });
-    } catch (error) {
-        logger.error(error.stack);
-
-        if (callback !== undefined) {
+    return instance._execFping()
+        .then(function () {
+            return instance._clean();
+        })
+        .then(function () {
+            callback();
+        })
+        .catch(function (error) {
             callback(error);
-        }
-    }
+        });
 };
 
-ip.prototype.onBonjourCreateOrUpdate = function (bonjour) {
+ip.prototype.onBonjourCreateOrUpdate = function (bonjour, callback) {
     var date = new Date(new Date().setSeconds(new Date().getSeconds() - 10));
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     return instance.communication.emitAsync('database:monitor:retrieveOne',
         "SELECT * FROM ip WHERE ip_address = ? AND updated_date < Datetime(?);", [bonjour.ip_address, updatedDate])
         .then(function (row) {
-            logger.error("AQUI 5");
-
             if (row === undefined) {
-                instance._addOrUpdate(bonjour.ip_address, function (error) {
-                    if (error) {
-                        logger.error(error.stack);
-                    }
-                });
+                var ip = {
+                    ip_address: bonjour.ip_address
+                };
+
+                return instance._createOrUpdate(ip);
             }
+        })
+        .then(function () {
+            callback();
+        })
+        .catch(function (error) {
+            callback(error);
         });
 };
 
 
-ip.prototype._execFping = function (callback) {
-    var self = this;
+ip.prototype._execFping = function () {
+    return new Promise(function (resolve, reject) {
 
-    var networkInterfaces = os.networkInterfaces();
-    _.forEach(networkInterfaces, function (addresses, networkInterface) {
-        if (networkInterface === 'en0' || networkInterface === 'wlan0') {
-            _.forEach(addresses, function (address) {
-                if (address.family === 'IPv4' && !address.internal && address.mac !== '00:00:00:00:00:00') {
-                    var subnet = require('ip').subnet(address.address, address.netmask);
+        var networkInterfaces = os.networkInterfaces();
+        _.forEach(networkInterfaces, function (addresses, networkInterface) {
+            if (networkInterface === 'en0' || networkInterface === 'wlan0') {
+                _.forEach(addresses, function (address) {
+                    if (address.family === 'IPv4' && !address.internal && address.mac !== '00:00:00:00:00:00') {
+                        var subnet = require('ip').subnet(address.address, address.netmask);
 
-                    if (subnet.subnetMaskLength < 20) {
-                        return;
-                    }
-
-                    var process = require('child_process')
-                        .spawn('fping', [
-                            '-a',
-                            '-r 0',
-                            '-i 10',
-                            '-t 100',
-                            '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
-                        ]);
-
-                    process.stdout.setEncoding('utf8');
-
-                    process.stdout.pipe(require('split')()).on('data', function (line) {
-                        if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(line)) {
+                        if (subnet.subnetMaskLength < 20) {
                             return;
                         }
 
-                        self._addOrUpdate(line, function (error) {
-                            if (error !== null) {
-                                logger.error(error.stack);
+                        var process = require('child_process')
+                            .spawn('fping', [
+                                '-a',
+                                '-r 0',
+                                '-i 10',
+                                '-t 100',
+                                '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
+                            ]);
+
+                        process.stdout.setEncoding('utf8');
+
+                        process.stdout.pipe(require('split')()).on('data', function (line) {
+                            if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(line)) {
+                                return;
                             }
+
+                            var ip = {
+                                ip_address: line
+                            };
+
+                            instance._createOrUpdate(ip);
                         });
-                    });
 
-                    process.stderr.pipe(require('split')()).on('data', function (line) {
-                        if (line === undefined || line.length === 0 || line.indexOf('ICMP Host') === 0) {
-                            return;
-                        }
+                        process.stderr.pipe(require('split')()).on('data', function (line) {
+                            if (line === undefined || line.length === 0 || line.indexOf('ICMP Host') === 0) {
+                                return;
+                            }
 
-                        if (callback !== undefined) {
-                            callback(new Error(line));
-                        }
-                    });
+                            reject(new Error(data));
+                        });
 
-                    process.on('error', function (error) {
-                        if (callback !== undefined) {
-                            callback(new Error(error));
-                        }
-                    });
+                        process.on('error', function (data) {
+                            reject(new Error(data))
+                        });
 
-                    process.on('exit', function () {
-                        if (callback !== undefined) {
-                            callback();
-                        }
-                    });
-                }
-            });
-        } else {
-            callback();
-        }
+                        process.on('exit', resolve);
+                    }
+                });
+            } else {
+                callback();
+            }
+        });
     });
 };
 
-ip.prototype._clean = function (callback) {
-    var self = this;
+ip.prototype._clean = function () {
+    var now = new Date();
+    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
+        function (ip) {
+            instance.communication.emit('monitor:ipAddress:delete', ip.ip_address);
+        });
+};
 
-    var currentDate = new Date();
-    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 10)), function (error) {
-            if (error) {
-                logger.error(error.stack);
-            }
 
-            if (callback !== undefined) {
-                callback();
-            }
-        },
-        function (error, ip) {
-            if (error) {
-                logger.error(error.stack);
+ip.prototype._createOrUpdate = function (ip) {
+    return instance._findByIpAddress(ip.ip_address)
+        .then(function (row) {
+            if (row === undefined) {
+                return instance._create(ip)
+                    .then(function () {
+                        instance.communication.emit('monitor:ip:create', ip);
+                    });
             } else {
-                self.communication.emit('monitor:ipAddress:delete', ip.ip_address);
-            }
-        });
-};
-
-
-ip.prototype._addOrUpdate = function (ipAddress, callback) {
-    var self = this;
-
-    this.communication.emit('database:monitor:retrieveOne',
-        "SELECT * FROM ip WHERE ip_address = ?;", [ipAddress],
-        function (error, row) {
-            if (error !== null) {
-                if (callback !== undefined) {
-                    callback(error)
-                }
-            } else {
-                if (row === undefined) {
-                    self._addPresence(ipAddress, function (error) {
-                        if (error === null) {
-                            self.communication.emit('monitor:ip:create', ipAddress);
-                        }
-
-                        if (callback !== undefined) {
-                            callback(error)
-                        }
+                ip.updated_date = new Date();
+                instance._updateByIpAddress(ip.ip_address, ip)
+                    .then(function () {
+                        instance.communication.emit('monitor:ip:update', ip);
                     });
-                } else {
-                    self._update(ipAddress, function (error) {
-                        if (error === null) {
-                            self.communication.emit('monitor:ip:update', ipAddress);
-                        }
-
-                        if (callback !== undefined) {
-                            callback(error)
-                        }
-                    });
-                }
             }
         });
 };
 
-ip.prototype._addPresence = function (ipAddress, callback) {
-    this.communication.emit('database:monitor:create',
-        "INSERT INTO ip (ip_address) VALUES (?);", [
-            ipAddress
-        ],
-        function (error) {
-            if (callback !== undefined) {
-                callback(error);
+ip.prototype._create = function (ip) {
+    var _ip = _.clone(ip);
+
+    if (_ip.created_date !== undefined && _ip.created_date !== null && _ip.created_date instanceof Date) {
+        _ip.created_date = _ip.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (_ip.updated_date !== undefined && _ip.updated_date !== null && _ip.updated_date instanceof Date) {
+        _ip.updated_date = _ip.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    var keys = _.keys(_ip);
+    var values = _.values(_ip);
+
+    return instance.communication.emitAsync('database:monitor:create',
+        'INSERT INTO ip (' + keys + ') VALUES (' + values.map(function () {
+            return '?';
+        }) + ');',
+        values).then(function () {
+        return _ip;
+    });
+};
+
+ip.prototype._updateByIpAddress = function (ipAddress, ip) {
+    var _ip = _.clone(ip);
+
+    if (_ip.created_date !== undefined && _ip.created_date !== null && _ip.created_date instanceof Date) {
+        _ip.created_date = _ip.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (_ip.updated_date !== undefined && _ip.updated_date !== null && _ip.updated_date instanceof Date) {
+        _ip.updated_date = _ip.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    var keys = _.keys(_ip);
+    var values = _.values(_ip);
+
+    return instance.communication.emitAsync('database:monitor:update',
+        'UPDATE ip SET ' + keys.map(function (key) {
+            return key + ' = ?';
+        }) + ' WHERE ip_address = \'' + ipAddress + '\';',
+        values);
+};
+
+ip.prototype._findByIpAddress = function (ipAddress) {
+    return instance.communication.emitAsync('database:monitor:retrieveOne',
+        "SELECT * FROM ip WHERE ip_address = ?;", [ipAddress])
+        .then(function (row) {
+            if (row !== undefined) {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
             }
+            return row;
         });
 };
 
-ip.prototype._update = function (ipAddress, callback) {
-    var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+ip.prototype._deleteAllBeforeDate = function (date, callback) {
+    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.communication.emit('database:monitor:update',
-        "UPDATE ip SET updated_date = ? WHERE ip_address = ?;", [
-            updatedDate,
-            ipAddress
-        ],
-        function (error) {
-            if (callback !== undefined) {
-                callback(error);
-            }
-        });
-};
+    return instance.communication.emitAsync('database:monitor:retrieveAll',
+        "SELECT * FROM ip WHERE updated_date < Datetime(?);", [updatedDate])
+        .then(function (rows) {
+            var promises = [];
 
-ip.prototype._deleteAllBeforeDate = function (date, callback, onDelete) {
-    var self = this;
+            _.forEach(rows, function (row) {
+                promises.push(instance.communication.emitAsync('database:monitor:delete', "DELETE FROM ip WHERE id = ?;", [row.id])
+                    .then(function () {
+                        return callback();
+                    }));
+            });
 
-    var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-    this.communication.emit('database:monitor:retrieveAll',
-        "SELECT * FROM ip WHERE updated_date < Datetime(?);", [updatedDate],
-        function (error, rows) {
-            if (!error) {
-                if (rows !== undefined) {
-
-                    rows.forEach(function (row) {
-                        self.communication.emit('database:monitor:delete',
-                            "DELETE FROM ip WHERE id = ?;", [row.id],
-                            function (error) {
-                                if (error) {
-                                    logger.error(error.stack);
-                                } else {
-                                    if (onDelete !== undefined) {
-                                        onDelete(null, row);
-                                    }
-                                }
-                            });
-                    });
-                }
-
-                if (callback !== undefined) {
-                    callback(error);
-                }
-            }
+            return Promise.all(promises);
         });
 };
 
