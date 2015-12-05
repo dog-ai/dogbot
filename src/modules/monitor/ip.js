@@ -48,7 +48,6 @@ ip.prototype.stop = function () {
 ip.prototype._discover = function (params, callback) {
     return instance._execFping()
         .then(function (ips) {
-            logger.info(ips);
             return Promise.each(ips, function (ip) {
                     return instance._createOrUpdate(ip);
                 })
