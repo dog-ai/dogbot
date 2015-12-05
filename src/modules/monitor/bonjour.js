@@ -106,6 +106,7 @@ bonjour.prototype._createOrUpdate = function (bonjour) {
                         instance.communication.emit('monitor:bonjour:create', bonjour);
                     });
             } else {
+                bonjour.updated_date = new Date();
                 return instance._updateByTypeAndName(bonjour.type, bonjour.name, bonjour)
                     .then(function () {
                         instance.communication.emit('monitor:bonjour:update', bonjour);
