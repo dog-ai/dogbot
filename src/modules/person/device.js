@@ -57,7 +57,7 @@ device.prototype._discover = function (macAddress, callback) {
 
     instance._findByMacAddress(macAddress.address)
         .then(function (device) {
-            if (device === undefined || !device.is_manual) {
+            //if (device === undefined || !device.is_manual) {
 
                 return instance._findIpAdressByMacAddress(macAddress.address)
                     .then(function (row) {
@@ -68,7 +68,8 @@ device.prototype._discover = function (macAddress, callback) {
                         return Promise.props({
                             mdns: instance._execDig(row.ip_address),
                             nmap: instance._execNmap(row.ip_address),
-                            dns: instance._execHost(row.ip_address)
+                            dns: instance._execHost(row.ip_address),
+                            bonjours: instance._findAllBonjoursByIpAddress(row.ip_address)
                         });
                     })
                     .then(function (result) {
@@ -94,9 +95,23 @@ device.prototype._discover = function (macAddress, callback) {
                             device.os = result.nmap.os;
                         }
 
+                        // TODO:
+                        if (macAddress.vendor !== undefined && macAddress.vendor.match(/apple/i)) {
+
+                            var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) || _.find(result.bonjours, {type: '_smb._tcp'});
+                            if (bonjour !== undefined && bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
+                                device.name = bonjour.name;
+                            }
+                        }
+
                         if (device.name !== undefined && device.type !== undefined && device.os !== undefined) {
                             device.is_present = true;
                             device.last_presence_date = macAddress.last_presence_date;
+
+                            if (device.is_manual) {
+                                console.log(JSON.stringify(device));
+                                return;
+                            }
 
                             return instance._add(device)
                                 .then(function (row) {
@@ -105,18 +120,18 @@ device.prototype._discover = function (macAddress, callback) {
                                 });
                         }
                     })
-            }
+        }//
 
 
-        })
+};
+)
         .then(function () {
             callback();
         })
         .catch(function (error) {
             callback(error);
         });
-};
-
+}
 device.prototype._generatePushID = (function () {
     // Modeled after base64 web-safe chars, but ordered by ASCII.
     var PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
@@ -472,12 +487,27 @@ device.prototype._findMacAddressesByDeviceId = function (id) {
         "SELECT * FROM mac_address WHERE device_id = ?;", [id])
         .then(function (rows) {
             if (rows !== undefined) {
-                rows.forEach(function (row) {
+                _.forEach(rows, function (row) {
                     row.created_date = new Date(row.created_date.replace(' ', 'T'));
                     row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
                     if (row.last_presence_date !== undefined && row.last_presence_date !== null) {
                         row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
                     }
+                });
+            }
+
+            return rows;
+        });
+};
+
+device.prototype._findAllBonjoursByIpAddress = function (ipAddress) {
+    return instance.communication.emitAsync('database:monitor:retrieveAll',
+        "SELECT * FROM bonjour WHERE ip_address = ?;", [ipAddress])
+        .then(function (rows) {
+            if (rows !== undefined) {
+                _.forEach(rows, function (row) {
+                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                    row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
                 });
             }
 
