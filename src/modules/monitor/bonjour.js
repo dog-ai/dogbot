@@ -37,7 +37,6 @@ bonjour.prototype.start = function () {
     this.communication.on('monitor:bonjour:discover', this.discover);
 
     this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, '3 minute');
-    this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover');
 };
 
 bonjour.prototype.stop = function () {
@@ -75,7 +74,7 @@ bonjour.prototype._execAvahiBrowse = function () {
                 name: values[3],
                 type: values[4],
                 hostname: values[6],
-                ip_createress: values[7],
+                ip_address: values[7],
                 port: values[8],
                 txt: values[9]
             };
@@ -99,7 +98,7 @@ bonjour.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 15)),
         function (bonjour) {
-            self.communication.emit('monitor:bonjour:delete', bonjour.ip_createress);
+            self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         });
 };
 
