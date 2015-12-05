@@ -52,8 +52,13 @@ bonjour.prototype._discover = function (params, callback) {
                 promises.push(instance._createOrUpdate(bonjour));
             });
 
+            console.log("AQUI 1");
             return Promise.all(promises)
-                .then(instance.clean);
+                .then(function () {
+                    console.log("AQUI 2");
+
+                    return instance.clean();
+                });
         })
         .then(function () {
             callback();
