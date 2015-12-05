@@ -2,7 +2,9 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+var logger = require('../../utils/logger.js'),
+    _ = require('lodash'),
+    Promise = require('bluebird');
 
 function bonjour() {
 }
@@ -32,196 +34,163 @@ bonjour.prototype.unload = function () {
 };
 
 bonjour.prototype.start = function () {
-    var self = this;
+    this.communication.on('monitor:bonjour:discover', this.discover);
 
-    var time = 60 * 1000;
-
-    function monitor() {
-        try {
-            self._discover(function () {
-                self._clean();
-            });
-        } catch (error) {
-            logger.error("monitor" + error.stack);
-        }
-
-        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
-    }
-
-    monitor();
+    this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, '3 minute');
 };
 
 bonjour.prototype.stop = function () {
-    clearTimeout(this.timeout);
+    this.communication.removeListener('monitor:bonjour:discover', this.discover);
 };
 
-bonjour.prototype._scan = function (callback) {
-    var self = this;
 
-    var spawn = require('child_process').spawn,
-        process = spawn('avahi-browse', ['-alrpc']);
-
-    process.stdout.setEncoding('utf8');
-    process.stdout.pipe(require('split')()).on('data', function (line) {
-        if (line.charAt(0) !== '=') {
-            return;
-        }
-
-        var values = line.split(';');
-
-        var name = values[3];
-        var type = values[4];
-        var hostname = values[6];
-        var address = values[7];
-        var port = values[8];
-        var txt = values[9];
-
-        if (type.charAt(0) === '_') {
-            return;
-        }
-
-        self._addOrUpdate(type, name, address, hostname, port, txt, function (error) {
-            if (error !== null) {
-                logger.error("monitor" + error.stack);
-            }
-        });
-    });
-
-    process.stderr.on('data', function (data) {
-        //logger.error(new Error(data));
-    });
-
-    process.on('close', function () {
-        if (callback !== undefined) {
+bonjour.prototype.discover = function (params, callback) {
+    return instance._execAvahiBrowse()
+        .then(function () {
+            return instance._clean();
+        })
+        .then(function () {
             callback();
-        }
-    });
+        })
+        .catch(function (error) {
+            callback(error);
+        });
+};
+
+bonjour.prototype._execAvahiBrowse = function () {
+    return new Promise(function (resolve, reject) {
+        var spawn = require('child_process').spawn,
+            process = spawn('avahi-browse', ['-alrpc']);
+
+        process.stdout.setEncoding('utf8');
+        process.stdout.pipe(require('split')()).on('data', function (line) {
+            if (line.charAt(0) !== '=') {
+                return;
+            }
+
+            var values = line.split(';');
+
+            var bonjour = {
+                name: values[3],
+                type: values[4],
+                hostname: values[6],
+                address: values[7],
+                port: values[8],
+                txt: values[9]
+            };
+
+            if (type.charAt(0) === '_') {
+                return;
+            }
+
+            instance._addOrUpdate(bonjour)
+                .catch(function (error) {
+                    logger.error(error.stack);
+                });
+        });
+
+        process.stderr.on('data', reject);
+        process.on('close', resolve);
+    })
 };
 
 bonjour.prototype._clean = function () {
-    var self = this;
-
-    var currentDate = new Date();
-    this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)), function (error, bonjour) {
-        if (error !== null) {
-            logger.error("monitor" + error.stack);
-        } else {
+    return instance._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)),
+        function (bonjour) {
             self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
-        }
-    });
+        });
 };
 
-bonjour.prototype._addOrUpdate = function (type, name, address, hostname, port, txt, callback) {
-    var self = this;
-
-    this.communication.emit('database:monitor:retrieveOne',
-        "SELECT * FROM bonjour WHERE type = ? AND name = ?;", [type, name],
-        function (error, row) {
-            if (error !== null) {
-                if (callback !== undefined) {
-                    callback(error)
-                }
+bonjour.prototype._addOrUpdate = function (bonjour) {
+    return instance._findByTypeAndName(bonjour.type, bonjour.name)
+        .then(function (row) {
+            if (row === undefined) {
+                return instance._add(bonjour)
+                    .then(function () {
+                        instance.communication.emit('monitor:bonjour:create', bonjour);
+                    });
             } else {
-                if (row === undefined) {
-                    self._addPresence(type, name, address, hostname, port, txt, function (error) {
-                        if (error === null) {
-                            self.communication.emit('monitor:bonjour:create', {
-                                type: type,
-                                name: name,
-                                hostname: hostname,
-                                ip_address: address,
-                                port: port,
-                                txt: txt
-                            });
-                        }
-
-                        if (callback !== undefined) {
-                            callback(error)
-                        }
+                return instance._updateByTypeAndName(bonjour.type, bonjour.name, bonjour)
+                    .then(function () {
+                        instance.communication.emit('monitor:bonjour:update', bonjour);
                     });
-                } else {
-                    self._update(type, name, address, hostname, port, txt, function (error) {
-                        if (error === null) {
-                            self.communication.emit('monitor:bonjour:update', {
-                                type: type,
-                                name: name,
-                                hostname: hostname,
-                                ip_address: address,
-                                port: port,
-                                txt: txt
-                            });
-                        }
-
-                        if (callback !== undefined) {
-                            callback(error)
-                        }
-                    });
-                }
             }
         });
 };
 
-bonjour.prototype._addPresence = function (type, name, address, hostname, port, txt, callback) {
-    this.communication.emit('database:monitor:create',
-        "INSERT INTO bonjour (type, name, ip_address, hostname, port, txt) VALUES (?, ?, ?, ?, ?, ?);",
-        [
-            type,
-            name,
-            address,
-            hostname,
-            port,
-            txt
-        ],
-        function (error) {
-            if (callback !== undefined) {
-                callback(error);
-            }
-        });
+bonjour.prototype._add = function (bonjour) {
+    var _bonjour = _.clone(bonjour);
+
+    if (_bonjour.created_date !== undefined && _bonjour.created_date !== null && _bonjour.created_date instanceof Date) {
+        _bonjour.created_date = _bonjour.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (_bonjour.updated_date !== undefined && _bonjour.updated_date !== null && _bonjour.updated_date instanceof Date) {
+        _bonjour.updated_date = _bonjour.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    var keys = _.keys(_bonjour);
+    var values = _.values(_bonjour);
+
+    return instance.communication.emitAsync('database:monitor:create',
+        'INSERT INTO bonjour (' + keys + ') VALUES (' + values.map(function () {
+            return '?';
+        }) + ');',
+        values).then(function () {
+        return _bonjour;
+    });
 
 };
 
-bonjour.prototype._update = function (type, name, address, hostname, port, txt, callback) {
-    var updatedDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-    this.communication.emit('database:monitor:update',
-        "UPDATE bonjour SET updated_date = ?, ip_address = ?, hostname = ?, port = ?, txt = ? WHERE type = ? AND name = ?;", [
-            updatedDate,
-            address,
-            hostname,
-            port,
-            txt,
-            type,
-            name
-        ],
-        function (error) {
-            if (callback !== undefined) {
-                callback(error);
+bonjour.prototype._findByTypeAndName = function (type, name) {
+    return instance.communication.emitAsync('database:monitor:retrieveOne',
+        "SELECT * FROM bonjour WHERE type = ? AND name = ?;", [type, name])
+        .then(function (row) {
+            if (row !== undefined) {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
             }
+            return row;
         });
+};
+
+bonjour.prototype._updateByTypeAndName = function (type, name, bonjour) {
+    var _bonjour = _.clone(bonjour);
+
+    if (_bonjour.updated_date !== undefined && _bonjour.updated_date !== null && _bonjour.updated_date instanceof Date) {
+        _bonjour.updated_date = _bonjour.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    var keys = _.keys(_bonjour);
+    var values = _.values(_bonjour);
+
+    return instance.communication.emitAsync('database:monitor:update',
+        'UPDATE bonjour SET ' + keys.map(function (key) {
+            return key + ' = ?';
+        }) + ' WHERE type = \'' + type + '\' AND name = \'' + name + '\';',
+        values);
 };
 
 bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
-    var self = this;
-
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    this.communication.emit('database:monitor:retrieveOneByOne',
-        "SELECT * FROM bonjour WHERE updated_date < Datetime(?);", [updatedDate],
-        function (error, row) {
-            if (error !== null) {
-                if (callback !== undefined) {
-                    callback(error);
-                }
-            } else {
-                self.communication.emit('database:monitor:delete',
-                    "DELETE FROM bonjour WHERE id = ?;", [row.id],
-                    function (error) {
-                        if (callback !== undefined) {
-                            callback(error, row);
-                        }
-                    });
-            }
+    return instance.communication.emitAsync('database:monitor:retrieveAll',
+        "SELECT * FROM bonjour WHERE updated_date < Datetime(?);", [updatedDate])
+        .then(function (rows) {
+
+            var promises = [];
+
+            _.forEach(rows, function (row) {
+                promises.push(instance.emit('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
+                    .then(function () {
+                        callback();
+                    }));
+            });
+
+            return Promise.all(promises);
         });
 };
 
-module.exports = new bonjour();
+var instance = new bonjour();
+
+module.exports = instance;

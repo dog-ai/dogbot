@@ -95,7 +95,6 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
                 instance._updateByAddress(row.address, row)
                     .then(function () {
                         if (!was_present) {
-                            row.last_presence_date = now;
                             instance.communication.emit('person:mac_address:online', row);
                         }
 
