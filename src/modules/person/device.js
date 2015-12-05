@@ -90,22 +90,20 @@ device.prototype._discover = function (macAddress, callback) {
                             device.os = result.nmap.os;
                         }
 
-                        if (macAddress.vendor !== undefined && macAddress.vendor.match(/apple/i)) {
+                        var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
+                            _.find(result.bonjours, {type: '_smb._tcp'}) ||
+                            _.find(result.bonjours, {type: '_googlecast._tcp'});
 
-                            var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
-                                _.find(result.bonjours, {type: '_smb._tcp'});
+                        if (bonjour !== undefined) {
+                            if (bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
+                                device.name = bonjour.name;
+                            }
+                        } else {
+                            bonjour = _.find(result.bonjours, {type: '_apple-mobdev2._tcp'});
 
                             if (bonjour !== undefined) {
-                                if (bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
-                                    device.name = bonjour.name;
-                                }
-                            } else {
-                                bonjour = _.find(result.bonjours, {type: '_apple-mobdev2._tcp'});
-
-                                if (bonjour !== undefined) {
-                                    if (bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
-                                        device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
-                                    }
+                                if (bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
+                                    device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
                                 }
                             }
                         }
