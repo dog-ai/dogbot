@@ -52,7 +52,7 @@ bonjour.prototype._discover = function (params, callback) {
                 promises.push(instance._createOrUpdate(bonjour));
             });
 
-            return Promise.each(promises)
+            return Promise.all(promises)
                 .then(function () {
                     return instance.clean();
                 });
