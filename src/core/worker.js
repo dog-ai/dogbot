@@ -27,15 +27,15 @@ worker.prototype.start = function (database, enqueue, processJob) {
     });
 
     var process = function (job, done) {
-        logger.debug(job.data.event + ' with job id ' + job.id + ' started' +
-            (job.data.params !== undefined && job.data.params !== null ? ' with params ' + JSON.stringify(job.data.params) : ''));
+        logger.debug('Started ' + job.data.event + ' with job id ' + job.id +
+            (job.data.params !== undefined && job.data.params !== null ? ' and params ' + JSON.stringify(job.data.params) : ''));
 
         processJob(job.data.event, job.data.params).then(function () {
             done();
         }).catch(function (error) {
             done(error);
         }).finally(function () {
-            logger.debug(job.data.event + ' with job id ' + job.id + ' completed');
+            logger.debug('Completed ' + job.data.event + ' with job id ' + job.id);
         });
     };
 
@@ -66,7 +66,7 @@ worker.prototype.start = function (database, enqueue, processJob) {
                 if (error) {
 
                 } else {
-                    logger.error('Job ' + id + ' failed: ' + job.error());
+                    logger.error('Failed ' + job.data.event + ' with job id ' + job.id + ' because of ' + job.error());
                 }
             });
         }).on('job failed attempt', function (id, attempts) {
