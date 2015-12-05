@@ -182,7 +182,7 @@ bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
             var promises = [];
 
             _.forEach(rows, function (row) {
-                promises.push(instance.emit('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
+                promises.push(instance.communication.emit('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
                     .then(function () {
                         callback();
                     }));
