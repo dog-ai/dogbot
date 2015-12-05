@@ -58,12 +58,15 @@ mac_address.prototype._clean = function (params, callback) {
         .then(function (rows) {
             if (rows !== undefined) {
                 var promises = [];
+
                 _.forEach(rows, function (row) {
                     row.is_to_be_deleted = true;
                     row.is_synced = false;
                     row.updated_date = new Date();
-                    return instance._updateByAddress(row.address, row);
+
+                    promises.push(instance._updateByAddress(row.address, row));
                 });
+
                 return Promise.all(promises);
             }
         })

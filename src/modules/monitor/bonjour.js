@@ -45,8 +45,15 @@ bonjour.prototype.stop = function () {
 
 bonjour.prototype._discover = function (params, callback) {
     return instance._execAvahiBrowse()
-        .then(function () {
-            return instance._clean();
+        .then(function (bonjours) {
+            var promises = [];
+
+            _.forEach(bonjours, function (bonjour) {
+                promises.push(instance._createOrUpdate(bonjour));
+            });
+
+            return Promise.all(promises)
+                .then(instance.clean);
         })
         .then(function () {
             callback();
@@ -58,6 +65,8 @@ bonjour.prototype._discover = function (params, callback) {
 
 bonjour.prototype._execAvahiBrowse = function () {
     return new Promise(function (resolve, reject) {
+        var bonjours = [];
+
         var spawn = require('child_process').spawn,
             process = spawn('avahi-browse', ['-alrpc']);
 
@@ -78,14 +87,15 @@ bonjour.prototype._execAvahiBrowse = function () {
                 txt: values[9]
             };
 
-            instance._createOrUpdate(bonjour)
-                .catch(function (error) {
-                    logger.error(error.stack);
-                });
+            bonjours.push(bonjour);
         });
 
-        process.on('error', reject);
-        process.on('close', resolve);
+        process.on('error', function (data) {
+            reject(new Error(data))
+        });
+        process.on('close', function () {
+            resolve(services);
+        });
     })
 };
 
@@ -93,7 +103,7 @@ bonjour.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 5)),
         function (bonjour) {
-            instance.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
+            return instance.communication.emitAsync('monitor:bonjour:delete', bonjour.ip_address);
         });
 };
 
@@ -103,13 +113,13 @@ bonjour.prototype._createOrUpdate = function (bonjour) {
             if (row === undefined) {
                 return instance._create(bonjour)
                     .then(function () {
-                        instance.communication.emit('monitor:bonjour:create', bonjour);
+                        return instance.communication.emitAsync('monitor:bonjour:create', bonjour);
                     });
             } else {
                 bonjour.updated_date = new Date();
                 return instance._updateByTypeAndName(bonjour.type, bonjour.name, bonjour)
                     .then(function () {
-                        instance.communication.emit('monitor:bonjour:update', bonjour);
+                        return instance.communication.emitAsync('monitor:bonjour:update', bonjour);
                     });
             }
         });
@@ -174,13 +184,12 @@ bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     return instance.communication.emitAsync('database:monitor:retrieveAll',
         "SELECT * FROM bonjour WHERE updated_date < Datetime(?);", [updatedDate])
         .then(function (rows) {
-
             var promises = [];
 
             _.forEach(rows, function (row) {
                 promises.push(instance.communication.emitAsync('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
                     .then(function () {
-                        callback();
+                        return callback();
                     }));
             });
 

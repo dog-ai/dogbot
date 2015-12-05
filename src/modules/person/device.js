@@ -52,12 +52,9 @@ device.prototype.stop = function () {
 };
 
 device.prototype._discover = function (macAddress, callback) {
-    // retrieve existing device or start with a blank one with is_manual=false
-    // if retrieved device is is_manual=true then the party is over
-
-    instance._findByMacAddress(macAddress.address)
+    return instance._findByMacAddress(macAddress.address)
         .then(function (device) {
-            //if (device === undefined || !device.is_manual) {
+            if (device === undefined || !device.is_manual) {
 
                 return instance._findIpAdressByMacAddress(macAddress.address)
                     .then(function (row) {
@@ -93,7 +90,6 @@ device.prototype._discover = function (macAddress, callback) {
                             device.os = result.nmap.os;
                         }
 
-                        // TODO:
                         if (macAddress.vendor !== undefined && macAddress.vendor.match(/apple/i)) {
 
                             var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
@@ -114,11 +110,7 @@ device.prototype._discover = function (macAddress, callback) {
                             }
                         }
 
-                        logger.info("Discovered device: " + JSON.stringify(device) + ' from result: ' + JSON.stringify(result));
-
-                        if (device.is_manual) {
-                            return;
-                        }
+                        logger.debug("Discovered device: " + JSON.stringify(device) + ' from result: ' + JSON.stringify(result));
 
                         if (device.name !== undefined && device.type !== undefined && device.os !== undefined) {
                             device.is_present = true;
@@ -131,7 +123,7 @@ device.prototype._discover = function (macAddress, callback) {
                                 });
                         }
                     });
-            //}
+            }
         })
         .then(function () {
             callback();
