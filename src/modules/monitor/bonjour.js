@@ -89,14 +89,14 @@ bonjour.prototype._execAvahiBrowse = function () {
                 });
         });
 
-        process.stderr.on('data', reject);
+        process.on('error', reject);
         process.on('close', resolve);
     })
 };
 
 bonjour.prototype._clean = function () {
     var now = new Date();
-    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 5)),
+    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 15)),
         function (bonjour) {
             self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         });
