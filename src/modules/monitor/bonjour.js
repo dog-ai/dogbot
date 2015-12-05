@@ -54,7 +54,7 @@ bonjour.prototype._discover = function (params, callback) {
 
             return Promise.all(promises)
                 .then(function () {
-                    return instance.clean();
+                    return instance._clean();
                 });
         })
         .then(function () {
