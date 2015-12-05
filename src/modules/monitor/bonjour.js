@@ -120,7 +120,10 @@ bonjour.prototype._createOrUpdate = function (bonjour) {
                     .then(function () {
                         logger.error("AQUI 3");
 
-                        return instance.communication.emitAsync('monitor:bonjour:create', bonjour);
+                        return instance.communication.emitAsync('monitor:bonjour:create', bonjour).then(function () {
+                            logger.error("AQUI 6");
+
+                        });
                     });
             } else {
                 bonjour.updated_date = new Date();
