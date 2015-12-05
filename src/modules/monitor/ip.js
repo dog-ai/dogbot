@@ -46,8 +46,13 @@ ip.prototype.stop = function () {
 
 ip.prototype._discover = function (params, callback) {
     return instance._execFping()
-        .then(function () {
-            return instance._clean();
+        .then(function (ips) {
+            return Promise.each(ips, function (ip) {
+                    return instance._createOrUpdate(ip);
+                })
+                .then(function () {
+                    return instance._clean();
+                });
         })
         .then(function () {
             callback();
@@ -83,6 +88,7 @@ ip.prototype._onBonjourCreateOrUpdate = function (bonjour, callback) {
 
 ip.prototype._execFping = function () {
     return new Promise(function (resolve, reject) {
+        var ips = [];
 
         var networkInterfaces = os.networkInterfaces();
         _.forEach(networkInterfaces, function (addresses, networkInterface) {
@@ -115,7 +121,7 @@ ip.prototype._execFping = function () {
                                 ip_address: line
                             };
 
-                            instance._createOrUpdate(ip);
+                            ips.push(ip);
                         });
 
                         process.stderr.pipe(require('split')()).on('data', function (line) {
@@ -130,7 +136,9 @@ ip.prototype._execFping = function () {
                             reject(new Error(data))
                         });
 
-                        process.on('exit', resolve);
+                        process.on('exit', function () {
+                            resolve(ips);
+                        });
                     }
                 });
             } else {
@@ -229,16 +237,12 @@ ip.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     return instance.communication.emitAsync('database:monitor:retrieveAll',
         "SELECT * FROM ip WHERE updated_date < Datetime(?);", [updatedDate])
         .then(function (rows) {
-            var promises = [];
-
-            _.forEach(rows, function (row) {
-                promises.push(instance.communication.emitAsync('database:monitor:delete', "DELETE FROM ip WHERE id = ?;", [row.id])
+            return Promise.each(rows, function (row) {
+                return instance.communication.emitAsync('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
                     .then(function () {
                         return callback();
-                    }));
+                    });
             });
-
-            return Promise.all(promises);
         });
 };
 
