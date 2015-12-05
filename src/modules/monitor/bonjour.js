@@ -52,11 +52,8 @@ bonjour.prototype._discover = function (params, callback) {
                 promises.push(instance._createOrUpdate(bonjour));
             });
 
-            logger.error("AQUI 1");
-            return Promise.all(promises)
+            return Promise.each(promises)
                 .then(function () {
-                    logger.error("AQUI 2");
-
                     return instance.clean();
                 });
         })
@@ -106,7 +103,7 @@ bonjour.prototype._execAvahiBrowse = function () {
 
 bonjour.prototype._clean = function () {
     var now = new Date();
-    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 5)),
+    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
         function (bonjour) {
             return instance.communication.emitAsync('monitor:bonjour:delete', bonjour.ip_address);
         });
@@ -118,19 +115,12 @@ bonjour.prototype._createOrUpdate = function (bonjour) {
             if (row === undefined) {
                 return instance._create(bonjour)
                     .then(function () {
-                        logger.error("AQUI 3");
-
-                        return instance.communication.emitAsync('monitor:bonjour:create', bonjour).then(function () {
-                            logger.error("AQUI 6");
-
-                        });
+                        return instance.communication.emitAsync('monitor:bonjour:create', bonjour);
                     });
             } else {
                 bonjour.updated_date = new Date();
                 return instance._updateByTypeAndName(bonjour.type, bonjour.name, bonjour)
                     .then(function () {
-                        logger.error("AQUI 4");
-
                         return instance.communication.emitAsync('monitor:bonjour:update', bonjour);
                     });
             }
@@ -158,7 +148,6 @@ bonjour.prototype._create = function (bonjour) {
         values).then(function () {
         return _bonjour;
     });
-
 };
 
 bonjour.prototype._findByTypeAndName = function (type, name) {
@@ -175,6 +164,10 @@ bonjour.prototype._findByTypeAndName = function (type, name) {
 
 bonjour.prototype._updateByTypeAndName = function (type, name, bonjour) {
     var _bonjour = _.clone(bonjour);
+
+    if (_bonjour.created_date !== undefined && _bonjour.created_date !== null && _bonjour.created_date instanceof Date) {
+        _bonjour.created_date = _bonjour.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
 
     if (_bonjour.updated_date !== undefined && _bonjour.updated_date !== null && _bonjour.updated_date instanceof Date) {
         _bonjour.updated_date = _bonjour.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
