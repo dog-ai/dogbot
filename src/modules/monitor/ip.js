@@ -155,13 +155,13 @@ ip.prototype._createOrUpdate = function (ip) {
             if (row === undefined) {
                 return instance._create(ip)
                     .then(function () {
-                        instance.communication.emit('monitor:ip:create', ip);
+                        return instance.communication.emitAsync('monitor:ip:create', ip);
                     });
             } else {
                 ip.updated_date = new Date();
                 instance._updateByIpAddress(ip.ip_address, ip)
                     .then(function () {
-                        instance.communication.emit('monitor:ip:update', ip);
+                        return instance.communication.emitAsync('monitor:ip:update', ip);
                     });
             }
         });
