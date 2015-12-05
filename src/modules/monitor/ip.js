@@ -31,8 +31,8 @@ ip.prototype.unload = function () {
 
 ip.prototype.start = function () {
     this.communication.on('monitor:ip:discover', this.discover);
-
-    this.communication.on('monitor:bonjour:create', this.onBonjourCreate);
+    this.communication.on('monitor:bonjour:create', this.onBonjourCreateOrUpdate);
+    this.communication.on('monitor:bonjour:update', this.onBonjourCreateOrUpdate);
 
     this.communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, '1 minute');
 };
@@ -62,12 +62,21 @@ ip.prototype.discover = function (params, callback) {
     }
 };
 
-ip.prototype.onBonjourCreate = function (bonjour) {
-    instance._addOrUpdate(bonjour.ip_address, function (error) {
-        if (error) {
-            logger.error(error.stack);
-        }
-    });
+ip.prototype.onBonjourCreateOrUpdate = function (bonjour) {
+    var date = new Date(new Date().setSeconds(new Date().getSeconds() - 10));
+    var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
+    return instance.communication.emitAsync('database:monitor:retrieveOne',
+        "SELECT * FROM ip WHERE ip_address = ? AND updated_date < Datetime(?);", [ipAddress, updatedDate])
+        .then(function (row) {
+            if (row === undefined) {
+                instance._addOrUpdate(bonjour.ip_address, function (error) {
+                    if (error) {
+                        logger.error(error.stack);
+                    }
+                });
+            }
+        });
 };
 
 
