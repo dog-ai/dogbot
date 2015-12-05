@@ -73,8 +73,6 @@ device.prototype._discover = function (macAddress, callback) {
                         });
                     })
                     .then(function (result) {
-                        logger.debug(JSON.stringify("Discovery result: " + JSON.stringify(result)));
-
                         device = device || {};
 
                         if (result.mdns.hostname !== undefined && result.mdns.hostname !== null) {
@@ -116,14 +114,15 @@ device.prototype._discover = function (macAddress, callback) {
                             }
                         }
 
+                        logger.info("Discovered device: " + JSON.stringify(device) + ' from result: ' + JSON.stringify(result));
+
+                        if (device.is_manual) {
+                            return;
+                        }
+
                         if (device.name !== undefined && device.type !== undefined && device.os !== undefined) {
                             device.is_present = true;
                             device.last_presence_date = macAddress.last_presence_date;
-
-                            if (device.is_manual) {
-                                logger.info(JSON.stringify(device));
-                                return;
-                            }
 
                             return instance._add(device)
                                 .then(function (row) {
