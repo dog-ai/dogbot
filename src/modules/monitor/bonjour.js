@@ -46,13 +46,9 @@ bonjour.prototype.stop = function () {
 bonjour.prototype._discover = function (params, callback) {
     return instance._execAvahiBrowse()
         .then(function (bonjours) {
-            var promises = [];
-
-            _.forEach(bonjours, function (bonjour) {
-                promises.push(instance._createOrUpdate(bonjour));
-            });
-
-            return Promise.all(promises)
+            return Promise.each(bonjours, function (bonjour) {
+                    return instance._createOrUpdate(bonjour);
+                })
                 .then(function () {
                     return instance._clean();
                 });
