@@ -37,6 +37,7 @@ bonjour.prototype.start = function () {
     this.communication.on('monitor:bonjour:discover', this.discover);
 
     this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, '3 minute');
+    this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover');
 };
 
 bonjour.prototype.stop = function () {
@@ -74,7 +75,7 @@ bonjour.prototype._execAvahiBrowse = function () {
                 name: values[3],
                 type: values[4],
                 hostname: values[6],
-                ip_address: values[7],
+                ip_createress: values[7],
                 port: values[8],
                 txt: values[9]
             };
@@ -83,7 +84,7 @@ bonjour.prototype._execAvahiBrowse = function () {
                 return;
             }
 
-            instance._addOrUpdate(bonjour)
+            instance._createOrUpdate(bonjour)
                 .catch(function (error) {
                     logger.error(error.stack);
                 });
@@ -98,15 +99,15 @@ bonjour.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 15)),
         function (bonjour) {
-            self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
+            self.communication.emit('monitor:bonjour:delete', bonjour.ip_createress);
         });
 };
 
-bonjour.prototype._addOrUpdate = function (bonjour) {
+bonjour.prototype._createOrUpdate = function (bonjour) {
     return instance._findByTypeAndName(bonjour.type, bonjour.name)
         .then(function (row) {
             if (row === undefined) {
-                return instance._add(bonjour)
+                return instance._create(bonjour)
                     .then(function () {
                         instance.communication.emit('monitor:bonjour:create', bonjour);
                     });
@@ -119,7 +120,7 @@ bonjour.prototype._addOrUpdate = function (bonjour) {
         });
 };
 
-bonjour.prototype._add = function (bonjour) {
+bonjour.prototype._create = function (bonjour) {
     var _bonjour = _.clone(bonjour);
 
     if (_bonjour.created_date !== undefined && _bonjour.created_date !== null && _bonjour.created_date instanceof Date) {
