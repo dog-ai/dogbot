@@ -118,12 +118,16 @@ bonjour.prototype._createOrUpdate = function (bonjour) {
             if (row === undefined) {
                 return instance._create(bonjour)
                     .then(function () {
+                        logger.error("AQUI 3");
+
                         return instance.communication.emitAsync('monitor:bonjour:create', bonjour);
                     });
             } else {
                 bonjour.updated_date = new Date();
                 return instance._updateByTypeAndName(bonjour.type, bonjour.name, bonjour)
                     .then(function () {
+                        logger.error("AQUI 4");
+
                         return instance.communication.emitAsync('monitor:bonjour:update', bonjour);
                     });
             }
