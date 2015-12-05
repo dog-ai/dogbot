@@ -91,7 +91,7 @@ bonjour.prototype._execAvahiBrowse = function () {
 
 bonjour.prototype._clean = function () {
     var now = new Date();
-    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 15)),
+    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 5)),
         function (bonjour) {
             instance.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         });
