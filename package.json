@@ -29,6 +29,7 @@
     "nconf": "^0.7.1",
     "noble": "^1.0.1",
     "node-libnmap": "^0.1.12",
+    "node-ssdp": "^2.6.4",
     "node-wit": "^2.0.0",
     "node-wolfram": "0.0.1",
     "passport": "^0.2.2",

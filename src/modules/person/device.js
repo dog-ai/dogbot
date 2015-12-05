@@ -96,7 +96,7 @@ device.prototype._discover = function (macAddress, callback) {
 
                         if (device.name !== undefined && device.type !== undefined && device.os !== undefined) {
                             device.is_present = true;
-                            device.last_presence_date = new Date();
+                            device.last_presence_date = macAddress.last_presence_date;
 
                             return instance._add(device)
                                 .then(function (row) {
