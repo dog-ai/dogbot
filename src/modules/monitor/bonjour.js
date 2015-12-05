@@ -79,7 +79,7 @@ bonjour.prototype._execAvahiBrowse = function () {
                 txt: values[9]
             };
 
-            if (type.charAt(0) === '_') {
+            if (bonjour.type.charAt(0) === '_') {
                 return;
             }
 
@@ -95,7 +95,8 @@ bonjour.prototype._execAvahiBrowse = function () {
 };
 
 bonjour.prototype._clean = function () {
-    return instance._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)),
+    var now = new Date();
+    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 5)),
         function (bonjour) {
             self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         });
