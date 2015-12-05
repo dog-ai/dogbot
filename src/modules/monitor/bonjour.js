@@ -85,6 +85,10 @@ bonjour.prototype._execAvahiBrowse = function () {
                 txt: values[9]
             };
 
+            if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(bonjour.ip_address)) {
+                return;
+            }
+
             bonjours.push(bonjour);
         });
 
