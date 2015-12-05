@@ -4,6 +4,7 @@
 
 var logger = require('../../utils/logger.js'),
     _ = require('lodash'),
+    Promise = require('bluebird'),
     os = require('os');
 
 function ip() {
