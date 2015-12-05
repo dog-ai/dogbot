@@ -143,8 +143,6 @@ ip.prototype._execFping = function () {
                         });
                     }
                 });
-            } else {
-                resolve(ips);
             }
         });
     });
