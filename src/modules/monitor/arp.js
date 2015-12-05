@@ -88,8 +88,10 @@ arp.prototype.resolve = function (ip, callback) {
     })
 };
 
-arp.prototype.onIpCreateOrUpdate = function (ip) {
+arp.prototype.onIpCreateOrUpdate = function (ip, callback) {
     instance.communication.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address);
+
+    callback();
 };
 
 
