@@ -119,19 +119,17 @@ device.prototype._discover = function (macAddress, callback) {
                                     return instance._updateMacAddressByAddress(macAddress.address, macAddress);
                                 });
                         }
-                    })
-        }//
-
-
-};
-)
+                    });
+            //}
+        })
         .then(function () {
             callback();
         })
         .catch(function (error) {
             callback(error);
         });
-}
+};
+
 device.prototype._generatePushID = (function () {
     // Modeled after base64 web-safe chars, but ordered by ASCII.
     var PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
