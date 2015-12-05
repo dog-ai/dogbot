@@ -94,7 +94,7 @@ bonjour.prototype._execAvahiBrowse = function () {
             reject(new Error(data))
         });
         process.on('close', function () {
-            resolve(services);
+            resolve(bonjours);
         });
     })
 };
