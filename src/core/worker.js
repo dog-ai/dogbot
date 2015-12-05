@@ -27,15 +27,15 @@ worker.prototype.start = function (database, enqueue, processJob) {
     });
 
     var process = function (job, done) {
-        logger.debug('Started ' + job.data.event + ' with job id ' + job.id +
-            (job.data.params !== undefined && job.data.params !== null ? ' and params ' + JSON.stringify(job.data.params) : ''));
+        logger.debug('Job ' + job.id + ' started' +
+            (job.data.params !== undefined && job.data.params !== null ? ' with params ' + JSON.stringify(job.data.params) : ''));
 
         processJob(job.data.event, job.data.params).then(function () {
             done();
         }).catch(function (error) {
             done(error);
         }).finally(function () {
-            logger.debug('Completed ' + job.data.event + ' with job id ' + job.id);
+            logger.debug('Job ' + job.id + ' completed');
         });
     };
 
@@ -50,34 +50,34 @@ worker.prototype.start = function (database, enqueue, processJob) {
                     (job.data.params !== undefined && job.data.params !== null ? ' and params ' + JSON.stringify(job.data.params) : ''));
             });
         }).on('job complete', function (id, result) {
-            kue.Job.get(id, function (error, job) {
-                if (error) {
-                    return;
-                }
+        kue.Job.get(id, function (error, job) {
+            if (error) {
+                return;
+            }
 
-                job.remove(function (error) {
-                    if (error) {
-                        logger.error(error.stack);
-                    }
-                });
-            });
-        }).on('job failed', function (id) {
-            kue.Job.get(id, function (error, job) {
+            job.remove(function (error) {
                 if (error) {
-
-                } else {
-                    logger.error('Failed ' + job.data.event + ' with job id ' + job.id + ' because of ' + job.error());
+                    logger.error(error.stack);
                 }
             });
-        }).on('job failed attempt', function (id, attempts) {
-            logger.debug('Job ' + id + ' failed ' + attempts + ' times');
-        }).on('schedule success', function (job) {
-        }).on('schedule error', function (error) {
-            logger.error('schedule error: ' + error);
-        }).on('already scheduled', function (job) {
-        }).on('scheduler unknown job expiry key', function (message) {
-        }).on('error', function (error) {
         });
+    }).on('job failed', function (id) {
+        kue.Job.get(id, function (error, job) {
+            if (error) {
+
+            } else {
+                logger.error('Job ' + id + ' failed: ' + job.error());
+            }
+        });
+    }).on('job failed attempt', function (id, attempts) {
+        logger.debug('Job ' + id + ' failed ' + attempts + ' times');
+    }).on('schedule success', function (job) {
+    }).on('schedule error', function (error) {
+        logger.error('schedule error: ' + error);
+    }).on('already scheduled', function (job) {
+    }).on('scheduler unknown job expiry key', function (message) {
+    }).on('error', function (error) {
+    });
 
     enqueue(instance._enqueue);
 
