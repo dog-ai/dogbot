@@ -52,10 +52,10 @@ bonjour.prototype._discover = function (params, callback) {
                 promises.push(instance._createOrUpdate(bonjour));
             });
 
-            console.log("AQUI 1");
+            logger.error("AQUI 1");
             return Promise.all(promises)
                 .then(function () {
-                    console.log("AQUI 2");
+                    logger.error("AQUI 2");
 
                     return instance.clean();
                 });

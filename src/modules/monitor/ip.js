@@ -39,8 +39,8 @@ ip.prototype.start = function () {
 
 ip.prototype.stop = function () {
     this.communication.removeListener('monitor:ip:discover', this.discover);
-
-    this.communication.removeListener('monitor:bonjour:create', this.onBonjourCreate);
+    this.communication.removeListener('monitor:bonjour:create', this.onBonjourCreateOrUpdate);
+    this.communication.removeListener('monitor:bonjour:update', this.onBonjourCreateOrUpdate);
 };
 
 
