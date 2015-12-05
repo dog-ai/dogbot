@@ -223,7 +223,7 @@ ip.prototype._findByIpAddress = function (ipAddress) {
         });
 };
 
-ip.prototype._deleteAllBeforeDate = function (date, callback) {
+ip.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     return instance.communication.emitAsync('database:monitor:retrieveAll',
