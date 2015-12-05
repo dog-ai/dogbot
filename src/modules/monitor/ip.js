@@ -134,7 +134,7 @@ ip.prototype._execFping = function () {
                     }
                 });
             } else {
-                callback();
+                resolve();
             }
         });
     });
