@@ -70,24 +70,24 @@ device.prototype._discover = function (macAddress, callback) {
                         });
                     })
                     .then(function (result) {
-                        device = device || {};
+                        var _device = device || {};
 
                         if (result.mdns.hostname !== undefined && result.mdns.hostname !== null) {
-                            device.name = result.mdns.hostname.replace('-', ' ');
+                            _device.name = result.mdns.hostname.replace('-', ' ');
                         } else if (result.dns.hostname !== undefined) {
-                            if (device.name === undefined) {
-                                device.name = result.dns.hostname;
+                            if (_device.name === undefined) {
+                                _device.name = result.dns.hostname;
                             }
                         }
 
                         if (result.nmap.type !== undefined && result.nmap.type !== null) {
-                            if (device.type === undefined || device.type === null || result.nmap.type.length > device.type.length) {
-                                device.type = result.nmap.type instanceof Array ? result.nmap.type[result.nmap.type.length - 1] : result.nmap.type;
+                            if (_device.type === undefined || _device.type === null || result.nmap.type.length > _device.type.length) {
+                                _device.type = result.nmap.type instanceof Array ? result.nmap.type[result.nmap.type.length - 1] : result.nmap.type;
                             }
                         }
 
                         if (result.nmap.os !== undefined && result.nmap.os !== null) {
-                            device.os = result.nmap.os;
+                            _device.os = result.nmap.os;
                         }
 
                         var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
@@ -96,29 +96,37 @@ device.prototype._discover = function (macAddress, callback) {
 
                         if (bonjour !== undefined) {
                             if (bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
-                                device.name = bonjour.name;
+                                _device.name = bonjour.name;
                             }
                         } else {
                             bonjour = _.find(result.bonjours, {type: '_apple-mobdev2._tcp'});
 
                             if (bonjour !== undefined) {
                                 if (bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
-                                    device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
+                                    _device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
                                 }
                             }
                         }
 
-                        logger.debug("Discovered device: " + JSON.stringify(device) + ' from result: ' + JSON.stringify(result));
+                        logger.debug("Discovered device: " + JSON.stringify(_device) + ' from result: ' + JSON.stringify(result));
 
-                        if (device.name !== undefined && device.type !== undefined && device.os !== undefined) {
-                            device.is_present = true;
-                            device.last_presence_date = macAddress.last_presence_date;
+                        if (_device.name !== undefined && _device.type !== undefined && _device.os !== undefined) {
+                            _device.is_present = true;
+                            _device.last_presence_date = new Date(macAddress.last_presence_date.replace(' ', 'T'));
 
-                            return instance._add(device)
-                                .then(function (row) {
-                                    macAddress.device_id = row.id;
-                                    return instance._updateMacAddressByAddress(macAddress.address, macAddress);
-                                });
+                            if (device === undefined) {
+                                return instance._add(_device)
+                                    .then(function (row) {
+                                        macAddress.device_id = row.id;
+                                        return instance._updateMacAddressByAddress(macAddress.address, macAddress);
+                                    });
+                            } else {
+                                _device.updated_date = new Date();
+                                _device.is_synced = false;
+                                return instance._updateById(_device.id, _device);
+                            }
+
+
                         }
                     });
             }
@@ -352,6 +360,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                                             if (!is_present) {
                                                 device.updated_date = new Date();
                                                 device.is_present = false;
+                                                device.is_synced = false;
 
                                                 return instance._updateById(device.id, device)
                                                     .then(function () {
@@ -400,6 +409,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
                     device.updated_date = new Date();
                     device.is_present = true;
                     device.last_presence_date = mac_address.last_presence_date;
+                    device.is_synced = false;
 
                     return instance._updateById(device.id, device)
                         .then(function () {
@@ -427,6 +437,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
                                 device.updated_date = new Date();
                                 device.is_present = false;
                                 device.last_presence_date = mac_address.last_presence_date;
+                                device.is_synced = false;
 
                                 return instance._updateById(device.id, device).then(function () {
                                     instance.communication.emit('person:device:offline', device);
