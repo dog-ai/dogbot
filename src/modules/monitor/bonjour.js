@@ -59,7 +59,7 @@ bonjour.prototype._discover = function (params, callback) {
 bonjour.prototype._execAvahiBrowse = function () {
     return new Promise(function (resolve, reject) {
         var spawn = require('child_process').spawn,
-            process = spawn('avahi-browse', ['-alrpck']);
+            process = spawn('avahi-browse', ['-alrpc']);
 
         process.stdout.setEncoding('utf8');
         process.stdout.pipe(require('split')()).on('data', function (line) {
