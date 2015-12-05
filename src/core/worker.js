@@ -27,7 +27,7 @@ worker.prototype.start = function (database, enqueue, processJob) {
     });
 
     var process = function (job, done) {
-        logger.debug('Job ' + job.id + ' started' +
+        logger.debug(job.data.event + ' with job id ' + job.id + ' started' +
             (job.data.params !== undefined && job.data.params !== null ? ' with params ' + JSON.stringify(job.data.params) : ''));
 
         processJob(job.data.event, job.data.params).then(function () {
@@ -35,7 +35,7 @@ worker.prototype.start = function (database, enqueue, processJob) {
         }).catch(function (error) {
             done(error);
         }).finally(function () {
-            logger.debug('Job ' + job.id + ' completed');
+            logger.debug(job.data.event + ' with job id ' + job.id + ' completed');
         });
     };
 

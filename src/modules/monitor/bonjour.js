@@ -185,16 +185,12 @@ bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     return instance.communication.emitAsync('database:monitor:retrieveAll',
         "SELECT * FROM bonjour WHERE updated_date < Datetime(?);", [updatedDate])
         .then(function (rows) {
-            var promises = [];
-
-            _.forEach(rows, function (row) {
-                promises.push(instance.communication.emitAsync('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
+            return Promise.each(rows, function (row) {
+                return instance.communication.emitAsync('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
                     .then(function () {
                         return callback();
-                    }));
+                    });
             });
-
-            return Promise.all(promises);
         });
 };
 
