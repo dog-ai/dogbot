@@ -98,9 +98,23 @@ device.prototype._discover = function (macAddress, callback) {
                         // TODO:
                         if (macAddress.vendor !== undefined && macAddress.vendor.match(/apple/i)) {
 
-                            var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) || _.find(result.bonjours, {type: '_smb._tcp'});
-                            if (bonjour !== undefined && bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
-                                device.name = bonjour.name;
+                            var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
+                                _.find(result.bonjours, {type: '_smb._tcp'});
+
+                            if (bonjour !== undefined) {
+                                if (bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
+                                    device.name = bonjour.name;
+                                } else if (bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
+                                    device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
+                                }
+                            } else {
+                                bonjour = _.find(result.bonjours, {type: '_apple-mobdev2._tcp'});
+
+                                if (bonjour !== undefined) {
+                                    if (bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
+                                        device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
+                                    }
+                                }
                             }
                         }
 
