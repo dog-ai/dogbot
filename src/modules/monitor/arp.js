@@ -28,27 +28,23 @@ arp.prototype.unload = function () {
 };
 
 arp.prototype.start = function () {
-    this.communication.on('monitor:arp:discover', this.discover);
-    this.communication.on('monitor:arp:resolve', this.resolve);
-
-    this.communication.on('monitor:ip:create', this.onIpCreateOrUpdate);
-    this.communication.on('monitor:ip:update', this.onIpCreateOrUpdate);
-
+    this.communication.on('monitor:arp:discover', this._discover);
+    this.communication.on('monitor:arp:resolve', this._resolve);
+    this.communication.on('monitor:ip:create', this._onIpCreateOrUpdate);
+    this.communication.on('monitor:ip:update', this._onIpCreateOrUpdate);
 
     this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, '1 minute');
 };
 
 arp.prototype.stop = function () {
-    this.communication.removeListener('monitor:arp:discover', this.discover);
-    this.communication.removeListener('monitor:arp:resolve', this.resolve);
-
-    this.communication.removeListener('monitor:ip:create', this.onIpCreateOrUpdate);
-    this.communication.removeListener('monitor:ip:update', this.onIpCreateOrUpdate);
-
+    this.communication.removeListener('monitor:arp:discover', this._discover);
+    this.communication.removeListener('monitor:arp:resolve', this._resolve);
+    this.communication.removeListener('monitor:ip:create', this._onIpCreateOrUpdate);
+    this.communication.removeListener('monitor:ip:update', this._onIpCreateOrUpdate);
 };
 
 
-arp.prototype.discover = function (params, callback) {
+arp.prototype._discover = function (params, callback) {
     try {
         instance.communication.emit('monitor:arp:discover:begin');
 
@@ -68,7 +64,7 @@ arp.prototype.discover = function (params, callback) {
     }
 };
 
-arp.prototype.resolve = function (ip, callback) {
+arp.prototype._resolve = function (ip, callback) {
     instance._execArp(ip, function (error, macAddress) {
         if (error) {
             callback(error);
@@ -88,7 +84,7 @@ arp.prototype.resolve = function (ip, callback) {
     })
 };
 
-arp.prototype.onIpCreateOrUpdate = function (ip, callback) {
+arp.prototype._onIpCreateOrUpdate = function (ip, callback) {
     instance.communication.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address);
 
     callback();

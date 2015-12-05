@@ -30,21 +30,21 @@ ip.prototype.unload = function () {
 };
 
 ip.prototype.start = function () {
-    this.communication.on('monitor:ip:discover', this.discover);
-    this.communication.on('monitor:bonjour:create', this.onBonjourCreateOrUpdate);
-    this.communication.on('monitor:bonjour:update', this.onBonjourCreateOrUpdate);
+    this.communication.on('monitor:ip:discover', this._discover);
+    this.communication.on('monitor:bonjour:create', this._onBonjourCreateOrUpdate);
+    this.communication.on('monitor:bonjour:update', this._onBonjourCreateOrUpdate);
 
     this.communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, '1 minute');
 };
 
 ip.prototype.stop = function () {
-    this.communication.removeListener('monitor:ip:discover', this.discover);
-    this.communication.removeListener('monitor:bonjour:create', this.onBonjourCreateOrUpdate);
-    this.communication.removeListener('monitor:bonjour:update', this.onBonjourCreateOrUpdate);
+    this.communication.removeListener('monitor:ip:discover', this._discover);
+    this.communication.removeListener('monitor:bonjour:create', this._onBonjourCreateOrUpdate);
+    this.communication.removeListener('monitor:bonjour:update', this._onBonjourCreateOrUpdate);
 };
 
 
-ip.prototype.discover = function (params, callback) {
+ip.prototype._discover = function (params, callback) {
     return instance._execFping()
         .then(function () {
             return instance._clean();
@@ -57,7 +57,7 @@ ip.prototype.discover = function (params, callback) {
         });
 };
 
-ip.prototype.onBonjourCreateOrUpdate = function (bonjour, callback) {
+ip.prototype._onBonjourCreateOrUpdate = function (bonjour, callback) {
     var date = new Date(new Date().setSeconds(new Date().getSeconds() - 10));
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
