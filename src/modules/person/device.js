@@ -104,8 +104,6 @@ device.prototype._discover = function (macAddress, callback) {
                             if (bonjour !== undefined) {
                                 if (bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
                                     device.name = bonjour.name;
-                                } else if (bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
-                                    device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
                                 }
                             } else {
                                 bonjour = _.find(result.bonjours, {type: '_apple-mobdev2._tcp'});
@@ -123,7 +121,7 @@ device.prototype._discover = function (macAddress, callback) {
                             device.last_presence_date = macAddress.last_presence_date;
 
                             if (device.is_manual) {
-                                console.log(JSON.stringify(device));
+                                logger.info(JSON.stringify(device));
                                 return;
                             }
 
