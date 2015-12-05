@@ -74,7 +74,7 @@ bonjour.prototype._execAvahiBrowse = function () {
                 name: values[3],
                 type: values[4],
                 hostname: values[6],
-                address: values[7],
+                ip_address: values[7],
                 port: values[8],
                 txt: values[9]
             };
