@@ -86,7 +86,7 @@ device.prototype._discover = function (macAddress, callback) {
                         }
 
                         if (result.nmap.type !== undefined && result.nmap.type !== null) {
-                            if (device.type === undefined || result.nmap.type.length > device.type.length) {
+                            if (device.type === undefined || device.type === null || result.nmap.type.length > device.type.length) {
                                 device.type = result.nmap.type instanceof Array ? result.nmap.type[result.nmap.type.length - 1] : result.nmap.type;
                             }
                         }
