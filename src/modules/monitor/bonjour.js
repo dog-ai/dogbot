@@ -34,17 +34,16 @@ bonjour.prototype.unload = function () {
 };
 
 bonjour.prototype.start = function () {
-    this.communication.on('monitor:bonjour:discover', this.discover);
+    this.communication.on('monitor:bonjour:discover', this._discover);
 
     this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, '3 minute');
 };
 
 bonjour.prototype.stop = function () {
-    this.communication.removeListener('monitor:bonjour:discover', this.discover);
+    this.communication.removeListener('monitor:bonjour:discover', this._discover);
 };
 
-
-bonjour.prototype.discover = function (params, callback) {
+bonjour.prototype._discover = function (params, callback) {
     return instance._execAvahiBrowse()
         .then(function () {
             return instance._clean();
@@ -60,7 +59,7 @@ bonjour.prototype.discover = function (params, callback) {
 bonjour.prototype._execAvahiBrowse = function () {
     return new Promise(function (resolve, reject) {
         var spawn = require('child_process').spawn,
-            process = spawn('avahi-browse', ['-alrpc']);
+            process = spawn('avahi-browse', ['-alrpck']);
 
         process.stdout.setEncoding('utf8');
         process.stdout.pipe(require('split')()).on('data', function (line) {
@@ -79,10 +78,6 @@ bonjour.prototype._execAvahiBrowse = function () {
                 txt: values[9]
             };
 
-            if (bonjour.type.charAt(0) === '_') {
-                return;
-            }
-
             instance._createOrUpdate(bonjour)
                 .catch(function (error) {
                     logger.error(error.stack);
@@ -98,7 +93,7 @@ bonjour.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 15)),
         function (bonjour) {
-            self.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
+            instance.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         });
 };
 
