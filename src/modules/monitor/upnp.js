@@ -74,7 +74,7 @@ upnp.prototype._discover = function (params, callback) {
                             return instance._createOrUpdate(upnp);
                         })
                         .catch(function (error) {
-                            // keep calm and carry on
+                            logger.error(error.stack);
                         });
                 })
                 .then(function () {
