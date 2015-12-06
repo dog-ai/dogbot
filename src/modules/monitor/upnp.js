@@ -82,8 +82,7 @@ upnp.prototype._discover = function (params, callback) {
 
 upnp.prototype._readUPnPDescription = function (url) {
     return new Promise(function (resolve, reject) {
-        try {
-            require('http').get(url, function (res) {
+        require('http').get(url, function (res) {
                 var xml = '';
 
                 res.on('data', function (data) {
@@ -103,10 +102,10 @@ upnp.prototype._readUPnPDescription = function (url) {
                         resolve(json);
                     });
                 });
+            })
+            .catch(function (error) {
+                reject(error);
             });
-        } catch (error) {
-            reject(error);
-        }
     });
 };
 
