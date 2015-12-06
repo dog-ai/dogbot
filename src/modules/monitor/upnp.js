@@ -82,27 +82,31 @@ upnp.prototype._discover = function (params, callback) {
 
 upnp.prototype._readUPnPDescription = function (url) {
     return new Promise(function (resolve, reject) {
-        require('http').get(url, function (res) {
-            var xml = '';
+        try {
+            require('http').get(url, function (res) {
+                var xml = '';
 
-            res.on('data', function (data) {
-                xml += data;
-            });
+                res.on('data', function (data) {
+                    xml += data;
+                });
 
-            res.on('error', function (data) {
-                reject(new Error(data));
-            });
+                res.on('error', function (data) {
+                    reject(new Error(data));
+                });
 
-            res.on('timeout', function (data) {
-                reject(new Error(data));
-            });
+                res.on('timeout', function (data) {
+                    reject(new Error(data));
+                });
 
-            res.on('end', function () {
-                require('xml2js').parseString(xml, function (error, json) {
-                    resolve(json);
+                res.on('end', function () {
+                    require('xml2js').parseString(xml, function (error, json) {
+                        resolve(json);
+                    });
                 });
             });
-        });
+        } catch (error) {
+            reject(error);
+        }
     });
 };
 
@@ -248,7 +252,7 @@ upnp.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
             return Promise.each(rows, function (row) {
                 return instance.communication.emitAsync('database:monitor:delete', "DELETE FROM upnp WHERE id = ?;", [row.id])
                     .then(function () {
-                        return callback();
+                        return callback(row);
                     });
             });
         });
