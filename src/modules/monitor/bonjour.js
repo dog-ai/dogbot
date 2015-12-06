@@ -105,7 +105,7 @@ bonjour.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
         function (bonjour) {
-            return instance.communication.emitAsync('monitor:bonjour:delete', bonjour.ip_address);
+            instance.communication.emit('monitor:bonjour:delete', bonjour.ip_address);
         });
 };
 

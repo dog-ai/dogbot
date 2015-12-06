@@ -177,7 +177,7 @@ upnp.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
         function (upnp) {
-            return instance.communication.emitAsync('monitor:upnp:delete', upnp.ip_address);
+            instance.communication.emit('monitor:upnp:delete', upnp.ip_address);
         });
 };
 
