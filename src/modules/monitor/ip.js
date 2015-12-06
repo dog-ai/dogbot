@@ -42,8 +42,10 @@ ip.prototype.start = function () {
 
 ip.prototype.stop = function () {
     this.communication.removeListener('monitor:ip:discover', this._discover);
-    this.communication.removeListener('monitor:bonjour:create', this._onBonjourCreateOrUpdate);
-    this.communication.removeListener('monitor:bonjour:update', this._onBonjourCreateOrUpdate);
+    this.communication.removeListener('monitor:bonjour:create', this._onServiceDiscoveryCreateOrUpdate);
+    this.communication.removeListener('monitor:bonjour:update', this._onServiceDiscoveryCreateOrUpdate);
+    this.communication.removeListener('monitor:upnp:create', this._onServiceDiscoveryCreateOrUpdate);
+    this.communication.removeListener('monitor:upnp:update', this._onServiceDiscoveryCreateOrUpdate);
 };
 
 

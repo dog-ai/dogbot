@@ -109,6 +109,12 @@ device.prototype._discover = function (macAddress, callback) {
                             }
                         }
 
+                        if (result.upnps !== undefined && result.upnps.length > 0) {
+                            if (result.upnps[0].device_friendly_name !== undefined && result.upnps[0].device_friendly_name !== null) {
+                                _device.name = result.upnps[0].device_friendly_name;
+                            }
+                        }
+
                         logger.debug("Discovered device: " + JSON.stringify(_device) + ' from result: ' + JSON.stringify(result));
 
                         if (_device.name !== undefined && _device.name !== null &&
