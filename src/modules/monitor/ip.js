@@ -68,7 +68,7 @@ ip.prototype._onBonjourCreateOrUpdate = function (bonjour, callback) {
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     return instance.communication.emitAsync('database:monitor:retrieveOne',
-        "SELECT * FROM ip WHERE ip_address = ? AND updated_date < Datetime(?);", [bonjour.ip_address, updatedDate])
+        "SELECT * FROM ip WHERE ip_address = ? AND updated_date > Datetime(?);", [bonjour.ip_address, updatedDate])
         .then(function (row) {
             if (row === undefined) {
                 var ip = {

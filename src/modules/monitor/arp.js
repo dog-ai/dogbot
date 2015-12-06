@@ -64,13 +64,18 @@ arp.prototype._discover = function (params, callback) {
     }
 };
 
-arp.prototype._resolve = function (ip, callback) {
-    instance._execArp(ip, function (error, macAddress) {
+arp.prototype._resolve = function (ipAddress, callback) {
+    instance._execArp(ipAddress, function (error, macAddress) {
         if (error) {
             callback(error);
         } else {
             if (macAddress !== null) {
-                instance._addOrUpdate(ip, macAddress, function (error) {
+                var arp = {
+                    ip_address: ipAddress,
+                    mac_address: macAddress
+                };
+
+                instance._createOrUpdate(arp, function (error) {
                     if (error) {
                         callback(error);
                     } else {
@@ -85,9 +90,21 @@ arp.prototype._resolve = function (ip, callback) {
 };
 
 arp.prototype._onIpCreateOrUpdate = function (ip, callback) {
-    instance.communication.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address);
-
-    callback();
+    return instance._findByIpAddress(ip.ip_address)
+        .then(function (arp) {
+            if (arp === undefined) {
+                instance.communication.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address);
+            } else {
+                instance._createOrUpdate(arp, function (error) {
+                });
+            }
+        })
+        .then(function () {
+            callback();
+        })
+        .catch(function (error) {
+            callback(error);
+        });
 };
 
 
@@ -107,10 +124,12 @@ arp.prototype._execArpScan = function (callback) {
 
         var values = line.split('\t');
 
-        var ipAddress = values[0];
-        var macAddress = values[1];
+        var arp = {
+            ip_address: values[0],
+            mac_address: values[1]
+        };
 
-        self._addOrUpdate(ipAddress, macAddress, function (error) {
+        instance._createOrUpdate(arp, function (error) {
         });
     });
 
@@ -200,16 +219,11 @@ arp.prototype._clean = function (callback) {
 };
 
 
-
-
-
-
-
-arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
+arp.prototype._createOrUpdate = function (arp, callback) {
     var self = this;
 
     this.communication.emit('database:monitor:retrieveOne',
-        "SELECT * FROM arp WHERE ip_address = ?;", [ipAddress],
+        "SELECT * FROM arp WHERE ip_address = ?;", [arp.ip_address],
         function (error, row) {
             if (error !== null) {
                 if (callback !== undefined) {
@@ -218,9 +232,9 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
             } else {
                 if (row === undefined) {
 
-                    self._addPresence(ipAddress, macAddress, function (error) {
+                    self._create(arp.ip_address, arp.mac_address, function (error) {
                         if (!error) {
-                            self.communication.emit('monitor:arp:create', macAddress);
+                            self.communication.emit('monitor:arp:create', arp.mac_address);
                         }
 
                         if (callback !== undefined) {
@@ -229,9 +243,9 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
                     });
                 } else {
 
-                    self._update(ipAddress, macAddress, function (error) {
+                    self._update(arp.ip_address, arp.mac_address, function (error) {
                         if (!error) {
-                            self.communication.emit('monitor:arp:update', macAddress);
+                            self.communication.emit('monitor:arp:update', arp.mac_address);
                         }
 
                         if (callback !== undefined) {
@@ -243,7 +257,7 @@ arp.prototype._addOrUpdate = function (ipAddress, macAddress, callback) {
         });
 };
 
-arp.prototype._addPresence = function (ipAddress, macAddress, callback) {
+arp.prototype._create = function (ipAddress, macAddress, callback) {
     this.communication.emit('database:monitor:create',
         "INSERT INTO arp (ip_address, mac_address) VALUES (?, ?);", [
             ipAddress,
@@ -269,6 +283,18 @@ arp.prototype._update = function (ipAddress, macAddress, callback) {
             if (callback !== undefined) {
                 callback(error);
             }
+        });
+};
+
+arp.prototype._findByIpAddress = function (ipAddress) {
+    return instance.communication.emitAsync('database:monitor:retrieveOne',
+        "SELECT * FROM arp WHERE ip_address = ?;", [ipAddress])
+        .then(function (row) {
+            if (row !== undefined) {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+            }
+            return row;
         });
 };
 
