@@ -192,7 +192,7 @@ bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
             return Promise.each(rows, function (row) {
                 return instance.communication.emitAsync('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
                     .then(function () {
-                        return callback();
+                        return callback(row);
                     });
             });
         });
