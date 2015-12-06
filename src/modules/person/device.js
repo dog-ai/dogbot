@@ -110,7 +110,10 @@ device.prototype._discover = function (macAddress, callback) {
 
                         logger.debug("Discovered device: " + JSON.stringify(_device) + ' from result: ' + JSON.stringify(result));
 
-                        if (_device.name !== undefined && _device.type !== undefined && _device.os !== undefined) {
+                        if (_device.name !== undefined && _device.name !== null &&
+                            _device.type !== undefined && _device.type !== null &&
+                            _device.os !== undefined && _device.os !== null) {
+
                             _device.is_present = true;
                             _device.last_presence_date = new Date(macAddress.last_presence_date.replace(' ', 'T'));
 
