@@ -82,6 +82,27 @@ databases.prototype.startAll = function (callback) {
             });
         },
         function (callback) {
+            self.communication.emit('database:monitor:setup', 'DROP TABLE IF EXISTS upnp', [], function (error) {
+                if (error) {
+                    callback(error);
+                } else {
+                    self.communication.emit('database:monitor:setup',
+                        "CREATE TABLE upnp (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "created_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "location TEXT NOT NULL, " +
+                        "ip_address TEXT NOT NULL, " +
+                        "device_friendly_name TEXT NOT NULL, " +
+                        "device_model_name, " +
+                        "device_model_description, " +
+                        "device_manufacturer, " +
+                        "UNIQUE(ip_address)" +
+                        ");", [], callback);
+                }
+            });
+        },
+        function (callback) {
             self.communication.emit('database:monitor:setup', 'DROP TABLE IF EXISTS ip', [], function (error) {
                 if (error) {
                     callback(error);

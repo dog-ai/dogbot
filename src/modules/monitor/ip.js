@@ -32,8 +32,10 @@ ip.prototype.unload = function () {
 
 ip.prototype.start = function () {
     this.communication.on('monitor:ip:discover', this._discover);
-    this.communication.on('monitor:bonjour:create', this._onBonjourCreateOrUpdate);
-    this.communication.on('monitor:bonjour:update', this._onBonjourCreateOrUpdate);
+    this.communication.on('monitor:bonjour:create', this._onServiceDiscoveryCreateOrUpdate);
+    this.communication.on('monitor:bonjour:update', this._onServiceDiscoveryCreateOrUpdate);
+    this.communication.on('monitor:upnp:create', this._onServiceDiscoveryCreateOrUpdate);
+    this.communication.on('monitor:upnp:update', this._onServiceDiscoveryCreateOrUpdate);
 
     this.communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, '1 minute');
 };
@@ -63,16 +65,16 @@ ip.prototype._discover = function (params, callback) {
         });
 };
 
-ip.prototype._onBonjourCreateOrUpdate = function (bonjour, callback) {
+ip.prototype._onServiceDiscoveryCreateOrUpdate = function (service, callback) {
     var date = new Date(new Date().setSeconds(new Date().getSeconds() - 10));
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     return instance.communication.emitAsync('database:monitor:retrieveOne',
-        "SELECT * FROM ip WHERE ip_address = ? AND updated_date > Datetime(?);", [bonjour.ip_address, updatedDate])
+        "SELECT * FROM ip WHERE ip_address = ? AND updated_date > Datetime(?);", [service.ip_address, updatedDate])
         .then(function (row) {
             if (row === undefined) {
                 var ip = {
-                    ip_address: bonjour.ip_address
+                    ip_address: service.ip_address
                 };
 
                 return instance._createOrUpdate(ip);
@@ -85,7 +87,6 @@ ip.prototype._onBonjourCreateOrUpdate = function (bonjour, callback) {
             callback(error);
         });
 };
-
 
 ip.prototype._execFping = function () {
     return new Promise(function (resolve, reject) {
