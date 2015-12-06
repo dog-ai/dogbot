@@ -52,7 +52,6 @@ device.prototype.stop = function () {
 };
 
 device.prototype._discover = function (macAddress, callback) {
-    return callback();
     return instance._findByMacAddress(macAddress.address)
         .then(function (device) {
             if (device === undefined || !device.is_manual) {
