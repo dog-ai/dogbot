@@ -66,7 +66,8 @@ device.prototype._discover = function (macAddress, callback) {
                             mdns: instance._execDig(row.ip_address),
                             nmap: instance._execNmap(row.ip_address),
                             dns: instance._execHost(row.ip_address),
-                            bonjours: instance._findAllBonjoursByIpAddress(row.ip_address)
+                            bonjours: instance._findAllBonjoursByIpAddress(row.ip_address),
+                            upnps: instance._findAllUPnPsByIpAddress(row.ip_address)
                         });
                     })
                     .then(function (result) {
@@ -516,6 +517,21 @@ device.prototype._findMacAddressesByDeviceId = function (id) {
 device.prototype._findAllBonjoursByIpAddress = function (ipAddress) {
     return instance.communication.emitAsync('database:monitor:retrieveAll',
         "SELECT * FROM bonjour WHERE ip_address = ?;", [ipAddress])
+        .then(function (rows) {
+            if (rows !== undefined) {
+                _.forEach(rows, function (row) {
+                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                    row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                });
+            }
+
+            return rows;
+        });
+};
+
+device.prototype._findAllUPnPsByIpAddress = function (ipAddress) {
+    return instance.communication.emitAsync('database:monitor:retrieveAll',
+        "SELECT * FROM upnp WHERE ip_address = ?;", [ipAddress])
         .then(function (rows) {
             if (rows !== undefined) {
                 _.forEach(rows, function (row) {
