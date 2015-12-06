@@ -6,6 +6,8 @@ var logger = require('../../utils/logger.js'),
     _ = require('lodash'),
     Promise = require('bluebird');
 
+var MINISSDPD_UNIX_SOCKET = "/var/run/minissdpd.sock";
+
 function upnp() {
 }
 
@@ -21,6 +23,10 @@ upnp.prototype.info = function () {
 
 upnp.prototype.load = function (communication) {
     this.communication = communication;
+
+    if (!require('fs').existsSync(MINISSDPD_UNIX_SOCKET)) {
+        throw new Error('minissdpd unix socket not available');
+    }
 
     this.start();
 };
@@ -54,18 +60,22 @@ upnp.prototype._discover = function (params, callback) {
                 .value();
 
             return Promise.each(urls, function (url) {
-                    return instance._readUPnPDescription(url).then(function (description) {
-                        var upnp = {
-                            location: url.href,
-                            ip_address: url.hostname,
-                            device_friendly_name: description.root.device[0].friendlyName[0],
-                            device_manufacturer: description.root.device[0].manufacturer !== undefined ? description.root.device[0].manufacturer[0] : undefined,
-                            device_model_name: description.root.device[0].modelName !== undefined ? description.root.device[0].modelName[0] : undefined,
-                            device_model_description: description.root.device[0].modelDescription !== undefined ? description.root.device[0].modelDescription[0] : undefined
-                        };
+                    return instance._readUPnPDescription(url)
+                        .then(function (description) {
+                            var upnp = {
+                                location: url.href,
+                                ip_address: url.hostname,
+                                device_friendly_name: description.root.device[0].friendlyName[0],
+                                device_manufacturer: description.root.device[0].manufacturer !== undefined ? description.root.device[0].manufacturer[0] : undefined,
+                                device_model_name: description.root.device[0].modelName !== undefined ? description.root.device[0].modelName[0] : undefined,
+                                device_model_description: description.root.device[0].modelDescription !== undefined ? description.root.device[0].modelDescription[0] : undefined
+                            };
 
-                        return instance._createOrUpdate(upnp);
-                    });
+                            return instance._createOrUpdate(upnp);
+                        })
+                        .catch(function (error) {
+                            // keep calm and carry on
+                        });
                 })
                 .then(function () {
                     return instance._clean();
@@ -82,30 +92,33 @@ upnp.prototype._discover = function (params, callback) {
 
 upnp.prototype._readUPnPDescription = function (url) {
     return new Promise(function (resolve, reject) {
-        require('http').get(url, function (res) {
-                var xml = '';
+        var req = require('http').get(url, function (res) {
+            var xml = '';
 
-                res.on('data', function (data) {
-                    xml += data;
-                });
-
-                res.on('error', function (data) {
-                    reject(new Error(data));
-                });
-
-                res.on('timeout', function (data) {
-                    reject(new Error(data));
-                });
-
-                res.on('end', function () {
-                    require('xml2js').parseString(xml, function (error, json) {
-                        resolve(json);
-                    });
-                });
-            })
-            .catch(function (error) {
-                reject(error);
+            res.on('data', function (data) {
+                xml += data;
             });
+
+            res.on('error', function (data) {
+                reject(new Error(data));
+            });
+
+            res.on('timeout', function (data) {
+                reject(new Error(data));
+            });
+
+            res.on('end', function () {
+                require('xml2js').parseString(xml, function (error, json) {
+                    resolve(json);
+                });
+            });
+        }).on('error', function (data) {
+            reject(new Error(data));
+        });
+
+        req.setTimeout(4000, function () {
+            reject(new Error('Timeout while retrieving UPnP device description'));
+        });
     });
 };
 
@@ -113,7 +126,7 @@ upnp.prototype._execMiniSSDPd = function () {
     return new Promise(function (resolve, reject) {
         var timeout, ssdps = [];
 
-        var socket = require('net').createConnection("/var/run/minissdpd.sock");
+        var socket = require('net').createConnection(MINISSDPD_UNIX_SOCKET);
 
         socket.on("connect", function () {
             var buffer = new Buffer([0x03, 0x00, 0x00]);
