@@ -112,11 +112,11 @@ upnp.prototype._readUPnPDescription = function (url) {
                     resolve(json);
                 });
             });
-        }).on('error', function (data) {
-            reject(new Error(data));
+        }).on('error', function (error) {
+            reject(error);
         });
 
-        req.setTimeout(4000, function () {
+        req.setTimeout(6000, function () {
             reject(new Error('Timeout while retrieving UPnP device description'));
         });
     });
