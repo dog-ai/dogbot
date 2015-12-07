@@ -145,7 +145,10 @@ ip.prototype._execFping = function () {
                         });
                     }
                 });
+            } else {
+                reject(new Error());
             }
+
         });
     });
 };
