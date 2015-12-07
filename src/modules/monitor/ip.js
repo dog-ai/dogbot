@@ -140,8 +140,8 @@ ip.prototype._execFping = function () {
             reject(new Error(data));
         });
 
-        process.on('error', function (data) {
-            reject(new Error(data))
+        process.on('error', function (error) {
+            reject(error)
         });
 
         process.on('exit', function () {
