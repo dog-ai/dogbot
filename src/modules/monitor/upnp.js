@@ -74,7 +74,6 @@ upnp.prototype._discover = function (params, callback) {
                             return instance._createOrUpdate(upnp);
                         })
                         .catch(function (error) {
-                            logger.error(error.stack);
                         });
                 })
                 .then(function () {
@@ -113,11 +112,11 @@ upnp.prototype._readUPnPDescription = function (url) {
                 });
             });
         }).on('error', function (error) {
-            reject(error);
+            reject(new Error('Unable to read UPnP description file from ' + url));
         });
 
         req.setTimeout(6000, function () {
-            reject(new Error('Timeout while retrieving UPnP device description'));
+            reject(new Error('Timeout while reading UPnP device description file from ' + url));
         });
     });
 };
