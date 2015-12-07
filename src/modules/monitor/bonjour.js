@@ -92,8 +92,12 @@ bonjour.prototype._execAvahiBrowse = function () {
             bonjours.push(bonjour);
         });
 
+        process.stderr.on('data', function (data) {
+            reject(new Error(data));
+        });
+
         process.on('error', function (data) {
-            reject(new Error(data))
+            reject(new Error(data));
         });
         process.on('close', function () {
             resolve(bonjours);
@@ -192,7 +196,7 @@ bonjour.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
             return Promise.each(rows, function (row) {
                 return instance.communication.emitAsync('database:monitor:delete', "DELETE FROM bonjour WHERE id = ?;", [row.id])
                     .then(function () {
-                        return callback(row);
+                        callback(row);
                     });
             });
         });
