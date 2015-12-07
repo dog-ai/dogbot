@@ -110,7 +110,8 @@ device.prototype._discover = function (macAddress, callback) {
                         }
 
                         if (result.upnps !== undefined && result.upnps.length > 0) {
-                            if (result.upnps[0].device_friendly_name !== undefined && result.upnps[0].device_friendly_name !== null) {
+                            if (_device.name === undefined &&
+                                result.upnps[0].device_friendly_name !== undefined && result.upnps[0].device_friendly_name !== null) {
                                 _device.name = result.upnps[0].device_friendly_name;
                             }
                         }
