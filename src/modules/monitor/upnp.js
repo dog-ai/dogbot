@@ -112,7 +112,7 @@ upnp.prototype._readUPnPDescription = function (url) {
                 });
             });
         }).on('error', function (error) {
-            reject(new Error('Unable to read UPnP description file from ' + url));
+            reject(error);
         });
 
         req.setTimeout(6000, function () {
