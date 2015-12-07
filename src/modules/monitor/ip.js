@@ -95,60 +95,57 @@ ip.prototype._execFping = function () {
         var ips = [];
 
         var networkInterfaces = os.networkInterfaces();
-        _.forEach(networkInterfaces, function (addresses, networkInterface) {
-            if (networkInterface === 'en0' || networkInterface === 'wlan0') {
-                _.forEach(addresses, function (address) {
-                    if (address.family === 'IPv4' && !address.internal && address.mac !== '00:00:00:00:00:00') {
-                        var subnet = require('ip').subnet(address.address, address.netmask);
+        var addresses = networkInterfaces['wlan0'] || networkInterfaces['en0'];
 
-                        if (subnet.subnetMaskLength < 20) {
-                            return;
-                        }
+        if (addresses === undefined || addresses === null) {
+            reject(new Error());
+        }
 
-                        var process = require('child_process')
-                            .spawn('fping', [
-                                '-a',
-                                '-r 0',
-                                '-i 10',
-                                '-t 100',
-                                '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
-                            ]);
+        var address = _.find(addresses, {family: 'IPv4', internal: false});
 
-                        process.stdout.setEncoding('utf8');
+        if (address === undefined) {
+            reject(new Error());
+        }
 
-                        process.stdout.pipe(require('split')()).on('data', function (line) {
-                            if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(line)) {
-                                return;
-                            }
+        var subnet = require('ip').subnet(address.address, address.netmask);
 
-                            var ip = {
-                                ip_address: line
-                            };
+        var process = require('child_process')
+            .spawn('fping', [
+                '-a',
+                '-r 0',
+                '-i 10',
+                '-t 100',
+                '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
+            ]);
 
-                            ips.push(ip);
-                        });
+        process.stdout.setEncoding('utf8');
 
-                        process.stderr.pipe(require('split')()).on('data', function (line) {
-                            if (line === undefined || line.length === 0 || line.indexOf('ICMP Host') === 0) {
-                                return;
-                            }
-
-                            reject(new Error(data));
-                        });
-
-                        process.on('error', function (data) {
-                            reject(new Error(data))
-                        });
-
-                        process.on('exit', function () {
-                            resolve(ips);
-                        });
-                    }
-                });
-            } else {
-                reject(new Error());
+        process.stdout.pipe(require('split')()).on('data', function (line) {
+            if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(line)) {
+                return;
             }
 
+            var ip = {
+                ip_address: line
+            };
+
+            ips.push(ip);
+        });
+
+        process.stderr.pipe(require('split')()).on('data', function (line) {
+            if (line === undefined || line.length === 0 || line.indexOf('ICMP Host') === 0) {
+                return;
+            }
+
+            reject(new Error(data));
+        });
+
+        process.on('error', function (data) {
+            reject(new Error(data))
+        });
+
+        process.on('exit', function () {
+            resolve(ips);
         });
     });
 };
