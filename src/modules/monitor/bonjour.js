@@ -92,9 +92,9 @@ bonjour.prototype._execAvahiBrowse = function () {
             bonjours.push(bonjour);
         });
 
-        process.stderr.on('data', function (data) {
+        /*process.stderr.on('data', function (data) {
             reject(new Error(data));
-        });
+         });*/
 
         process.on('error', function (data) {
             reject(new Error(data));
