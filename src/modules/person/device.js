@@ -74,7 +74,7 @@ device.prototype._discover = function (macAddress, callback) {
                         var _device = device || {};
 
                         if (result.mdns.hostname !== undefined && result.mdns.hostname !== null) {
-                            _device.name = result.mdns.hostname.replace('-', ' ');
+                            _device.name = result.mdns.hostname.replace(/-/g, ' ');
                         } else if (result.dns.hostname !== undefined) {
                             if (_device.name === undefined) {
                                 _device.name = result.dns.hostname;
