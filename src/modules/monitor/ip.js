@@ -125,6 +125,10 @@ ip.prototype._execFping = function () {
                 return;
             }
 
+            if (line.indexOf(address) == 0) {
+                return;
+            }
+
             var ip = {
                 ip_address: line
             };
