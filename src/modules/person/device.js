@@ -73,13 +73,38 @@ device.prototype._discover = function (macAddress, callback) {
                     .then(function (result) {
                         var _device = device || {};
 
-                        if (result.mdns.hostname !== undefined && result.mdns.hostname !== null) {
-                            _device.name = result.mdns.hostname.replace(/-/g, ' ');
-                        } else if (result.dns.hostname !== undefined) {
-                            if (_device.name === undefined) {
-                                _device.name = result.dns.hostname;
-                            }
+                        var bonjour =
+                            _.find(result.bonjours, {type: '_apple-mobdev2._tcp'}) ||
+                            _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
+                            _.find(result.bonjours, {type: '_smb._tcp'}) ||
+                            _.find(result.bonjours, {type: '_googlecast._tcp'});
+
+                        if (result.dns.hostname !== undefined && result.dns.hostname !== null && result.dns.hostname.length > 0) {
+                            _device.name = result.dns.hostname;
                         }
+
+                        if (result.mdns.hostname !== undefined && result.mdns.hostname !== null && result.mdns.hostname > 0) {
+                            _device.name = result.mdns.hostname;
+                        }
+
+                        if (result.upnps !== undefined && result.upnps.length > 0 && result.upnps[0].device_friendly_name !== undefined && result.upnps[0].device_friendly_name !== null) {
+                            _device.name = result.upnps[0].device_friendly_name;
+                        }
+
+                        if (bonjour !== undefined && bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
+                            _device.name = bonjour.hostname;
+                        }
+
+                        if (_device.name !== undefined) {
+                            _device.name = _device.name
+                                .replace(/.local/g, '')
+                                .replace(/-/g, ' ');
+                        }
+
+
+
+
+
 
                         if (result.nmap.type !== undefined && result.nmap.type !== null) {
                             if (_device.type === undefined || _device.type === null || result.nmap.type.length > _device.type.length) {
@@ -87,41 +112,16 @@ device.prototype._discover = function (macAddress, callback) {
                             }
                         }
 
-                        if (result.nmap.os !== undefined && result.nmap.os !== null) {
+
+                        if (result.nmap.os !== undefined && result.nmap.os !== null && result.nmap.os.length > 0) {
                             _device.os = result.nmap.os;
                         }
 
-                        var bonjour = _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
-                            _.find(result.bonjours, {type: '_smb._tcp'}) ||
-                            _.find(result.bonjours, {type: '_googlecast._tcp'});
 
-                        if (bonjour !== undefined) {
-                            if (bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
-                                _device.name = bonjour.name;
-                            }
-                        } else {
-                            bonjour = _.find(result.bonjours, {type: '_apple-mobdev2._tcp'});
-
-                            if (bonjour !== undefined) {
-                                if (bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
-                                    _device.name = bonjour.hostname.replace(/.local/g, '').replace('/-/g', ' ');
-                                }
-                            }
-                        }
-
-                        if (result.upnps !== undefined && result.upnps.length > 0) {
-                            if (_device.name === undefined &&
-                                result.upnps[0].device_friendly_name !== undefined && result.upnps[0].device_friendly_name !== null) {
-                                _device.name = result.upnps[0].device_friendly_name;
-                            }
-                        }
 
                         logger.debug("Discovered device: " + JSON.stringify(_device) + ' from result: ' + JSON.stringify(result));
 
-                        if (_device.name !== undefined && _device.name !== null &&
-                            _device.type !== undefined && _device.type !== null &&
-                            _device.os !== undefined && _device.os !== null) {
-
+                        if (_device.name !== undefined && _device.name !== null) {
                             _device.is_present = true;
                             _device.last_presence_date = new Date(macAddress.last_presence_date.replace(' ', 'T'));
 
