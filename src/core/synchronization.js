@@ -507,6 +507,7 @@ synchronization.prototype._updateDevice = function (device, callback) {
     logger.debug('sending device: %s', JSON.stringify(device));
 
     var val = {};
+    val.created_date = moment(device.created_date).format();
     val.updated_date = moment(device.updated_date).format();
     val.is_present = device.is_present;
 
