@@ -264,7 +264,6 @@ device.prototype._execNmap = function (ip) {
             _process = spawn('nmap', [
                 '-n',
                 '--min-rate=2000',
-                '-sV',
                 '-O',
                 '-v',
                 '--osscan-guess',
