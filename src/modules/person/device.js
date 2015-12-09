@@ -262,11 +262,13 @@ device.prototype._execNmap = function (ip) {
 
         var spawn = require('child_process').spawn,
             _process = spawn('nmap', [
+                '-n',
+                '--min-rate=2000',
                 '-sV',
                 '-O',
                 '-v',
                 '--osscan-guess',
-                '--max-os-tries=3',
+                '--max-os-tries=1',
                 ip
             ]);
 
