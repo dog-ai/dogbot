@@ -125,7 +125,7 @@ ip.prototype._execFping = function () {
                 return;
             }
 
-            if (line.indexOf(address) == 0) {
+            if (line.indexOf(address.address) == 0) {
                 return;
             }
 
