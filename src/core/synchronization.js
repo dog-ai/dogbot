@@ -517,8 +517,15 @@ synchronization.prototype._updateDevice = function (device, callback) {
     if (!device.is_manual) {
         val.is_manual = device.is_manual;
         val.name = device.name;
-        val.type = device.type;
-        val.os = device.os;
+
+        if (device.type !== undefined) {
+            val.type = device.type;
+        }
+
+        if (device.os !== undefined) {
+            val.os = device.os;
+        }
+
         if (device.mac_addresses !== undefined) {
             val.mac_addresses = device.mac_addresses;
         }
