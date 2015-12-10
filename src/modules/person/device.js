@@ -62,6 +62,10 @@ device.prototype._discover = function (macAddress, callback) {
                             throw new Error('Unknown IP address for MAC address: ' + macAddress.address);
                         }
 
+                        if (row.ip_address.indexOf('10.172.161.1') == 0) {
+                            return;
+                        }
+
                         return Promise.props({
                             mdns: instance._execDig(row.ip_address),
                             nmap: instance._execNmap(row.ip_address),
@@ -447,7 +451,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
                 if (mac_addresses !== undefined) {
                     mac_addresses = _.filter(mac_addresses, _.matches({'is_present': 1}));
 
-                    if (mac_addresses.length == 0) {
+                    if (mac_addresses !== undefined && mac_addresses.length == 0) {
                         return instance._findById(mac_address.device_id)
                             .then(function (device) {
                                 device.updated_date = new Date();
@@ -537,7 +541,7 @@ device.prototype._findAllBonjoursByIpAddress = function (ipAddress) {
                 });
             }
 
-            return rows;
+            return rows || [];
         });
 };
 

@@ -109,11 +109,10 @@ worker.prototype._enqueue = function (event, params, schedule) {
 
     switch (type) {
         case 'worker':
-            job.ttl(59000); // 59 seconds
-            job.attempts(3).backoff({type: 'exponential'});
+            job.ttl(59 * 1000); // 59 seconds
             break;
         case 'slow':
-            job.ttl(600000); // 10 minutes
+            job.ttl(10 * 60 * 1000); // 10 minutes
             break;
     }
 
