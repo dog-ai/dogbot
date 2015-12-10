@@ -91,7 +91,11 @@ device.prototype._discover = function (macAddress, callback) {
                             _device.name = result.upnps[0].device_friendly_name;
                         }
 
-                        if (bonjour !== undefined && bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0) {
+                        if (bonjour !== undefined && bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
+                            _device.name = bonjour.hostname;
+                        }
+
+                        if (bonjour !== undefined && bonjour.name !== undefined && bonjour.name !== null && bonjour.name.length > 0 && bonjour.name.indexOf(':') == -1) {
                             _device.name = bonjour.name;
                         }
 
