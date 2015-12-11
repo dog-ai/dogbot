@@ -541,7 +541,7 @@ device.prototype._findAllBonjoursByIpAddress = function (ipAddress) {
                 });
             }
 
-            return rows || [];
+            return rows;
         });
 };
 
