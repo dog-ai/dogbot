@@ -62,10 +62,6 @@ device.prototype._discover = function (macAddress, callback) {
                             throw new Error('Unknown IP address for MAC address: ' + macAddress.address);
                         }
 
-                        if (row.ip_address.indexOf('10.172.161.1') == 0) {
-                            throw new Error('MAC address is black listed');
-                        }
-
                         return Promise.props({
                             mdns: instance._execDig(row.ip_address),
                             nmap: instance._execNmap(row.ip_address),
@@ -267,6 +263,10 @@ device.prototype._execNmap = function (ip) {
     return new Promise(function (resolve, reject) {
 
         var result = {};
+
+        if (ip.indexOf('10.172.161.1') == 0) {
+            return resolve(result);
+        }
 
         var spawn = require('child_process').spawn,
             _process = spawn('nmap', [
