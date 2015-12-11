@@ -63,7 +63,7 @@ device.prototype._discover = function (macAddress, callback) {
                         }
 
                         if (row.ip_address.indexOf('10.172.161.1') == 0) {
-                            return;
+                            throw new Error('MAC address is black listed');
                         }
 
                         return Promise.props({
