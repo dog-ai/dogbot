@@ -2,13 +2,13 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('./utils/logger.js');
+var logger = require('../utils/logger.js');
 
 var _ = require('lodash');
 var path = require('path');
 var fs = require("fs");
 
-var modulesDir = path.join(__dirname, 'modules/');
+var modulesDir = path.join(__dirname, '/');
 
 function modules() {
 }
@@ -55,7 +55,7 @@ modules.prototype._load = function (type, file, config) {
 
     _.defer(function () {
         try {
-            var module = require('./modules/' + type.toLowerCase() + '/' + file);
+            var module = require('./' + type.toLowerCase() + '/' + file);
 
             module.load(self.communication, config);
 
@@ -94,7 +94,7 @@ modules.prototype._unload = function(module) {
     try {
         module.unload();
 
-        delete require.cache[require.resolve('./modules/' + module.type.toLowerCase() + '/' + module.name + '.js')];
+        delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js')];
 
         _.remove(this.loaded, function (_module) {
             return _module.name == module.name;

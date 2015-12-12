@@ -2,13 +2,13 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('./utils/logger.js');
+var logger = require('../utils/logger.js');
 var async = require('async');
 var _ = require('lodash');
 var path = require('path');
 var fs = require("fs");
 
-var databasesDir = path.join(__dirname, 'databases/');
+var databasesDir = path.join(__dirname, '/');
 
 function databases() {
 }

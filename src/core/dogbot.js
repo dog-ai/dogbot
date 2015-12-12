@@ -11,8 +11,8 @@ var logger = require('../utils/logger.js'),
     synchronization = require('./synchronization.js'),
     worker = require('./worker.js');
 
-var databases = require('../databases.js')(communication);
-var modules = require('../modules.js')(communication);
+var databases = require('../databases')(communication);
+var modules = require('../modules')(communication);
 
 
 var dogbot = {
