@@ -141,7 +141,7 @@ ip.prototype._execFping = function () {
                 return;
             }
 
-            reject(new Error(data));
+            reject(new Error(line));
         });
 
         process.on('error', function (error) {
