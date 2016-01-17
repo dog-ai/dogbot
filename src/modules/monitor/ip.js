@@ -137,7 +137,10 @@ ip.prototype._execFping = function () {
         });
 
         process.stderr.pipe(require('split')()).on('data', function (line) {
-            if (line === undefined || line.length === 0 || line.indexOf('ICMP Host') === 0) {
+            if (line === undefined ||
+                line.length === 0 ||
+                line.indexOf('ICMP Host') === 0 ||
+                line.indexOf('duplicate') != -1) {
                 return;
             }
 

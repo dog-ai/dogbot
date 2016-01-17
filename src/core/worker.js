@@ -104,7 +104,6 @@ worker.prototype._enqueue = function (event, params, schedule) {
     var job = instance.queue.create(type, {
         event: event,
         params: params
-
     });
 
     switch (type) {
