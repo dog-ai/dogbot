@@ -94,8 +94,9 @@ bonjour.prototype._execAvahiBrowse = function () {
             bonjours.push(bonjour);
         });
 
-        process.stderr.pipe(require('split')()).on('data', function (line) {
-            reject(new Error(line));
+        process.stderr.on('data', function (data) {
+            logger.error(data);
+            reject(new Error());
         });
 
         process.on('error', function (error) {
