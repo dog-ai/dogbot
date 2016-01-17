@@ -66,10 +66,11 @@ bonjour.prototype._execAvahiBrowse = function () {
         var bonjours = [];
 
         var spawn = require('child_process').spawn,
-            process = spawn('avahi-browse', ['-alrpc']);
+            process = spawn('avahi-browse', ['-alrpt']);
 
         process.stdout.setEncoding('utf8');
         process.stdout.pipe(require('split')()).on('data', function (line) {
+
             if (line.charAt(0) !== '=') {
                 return;
             }
@@ -91,6 +92,10 @@ bonjour.prototype._execAvahiBrowse = function () {
             }
 
             bonjours.push(bonjour);
+        });
+
+        process.stderr.pipe(require('split')()).on('data', function (line) {
+            reject(new Error(line));
         });
 
         process.on('error', function (error) {
