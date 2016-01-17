@@ -94,9 +94,14 @@ bonjour.prototype._execAvahiBrowse = function () {
             bonjours.push(bonjour);
         });
 
-        process.stderr.on('data', function (data) {
-            logger.error(data.toString());
-            reject(new Error());
+        process.stderr.pipe(require('split')()).on('data', function (line) {
+            if (line === undefined ||
+                line.length === 0 ||
+                line.indexOf('Failed to resolve service') == 0) {
+                return;
+            }
+
+            reject(new Error(line));
         });
 
         process.on('error', function (error) {
