@@ -277,7 +277,10 @@ presence.prototype._generateMonthlyStats = function (params, callback) {
 };
 
 presence.prototype._computeEmployeeMonthlyStats = function (employee, date) {
-    if (date.date() == 1) { // beginning of the month
+
+    if (this.latestMonthlyStats[employee.id] !== undefined && this.latestMonthlyStats[employee.id] !== null &&
+        this.latestMonthlyStats[employee.id].total_duration_by_day !== undefined && _.keys(this.latestMonthlyStats[employee.id].total_duration_by_day).length > 0 && !moment.unix(_.keys(this.latestMonthlyStats[employee.id].total_duration_by_day)[0]).isSame(date, 'month')
+    ) { // new month
         this.latestMonthlyStats[employee.id] = null;
     }
 
