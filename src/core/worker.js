@@ -30,13 +30,16 @@ worker.prototype.start = function (database, enqueue, processJob) {
         logger.debug('Job ' + job.id + ' started' +
             (job.data.params !== undefined && job.data.params !== null ? ' with params ' + JSON.stringify(job.data.params) : ''));
 
-        processJob(job.data.event, job.data.params).then(function () {
-            done();
-        }).catch(function (error) {
-            done(error);
-        }).finally(function () {
-            logger.debug('Job ' + job.id + ' completed');
-        });
+        processJob(job.data.event, job.data.params)
+            .then(function () {
+                done();
+            })
+            .catch(function (error) {
+                done(error);
+            })
+            .finally(function () {
+                logger.debug('Job ' + job.id + ' completed');
+            });
     };
 
     this.queue.process('worker', process);
