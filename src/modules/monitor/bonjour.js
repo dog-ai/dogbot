@@ -70,8 +70,9 @@ bonjour.prototype._execAvahiBrowse = function () {
 
         timeout = setTimeout(function () {
             process.stdin.pause();
+            process.stderr.pause();
             process.kill();
-        }, 10 * 1000);
+        }, 10000); // wait 10 seconds for process to finish
 
         process.stdout.setEncoding('utf8');
         process.stdout.pipe(require('split')()).on('data', function (line) {
