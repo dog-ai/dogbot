@@ -33,7 +33,7 @@ arp.prototype.start = function () {
     this.communication.on('monitor:ip:create', this._onIpCreateOrUpdate);
     this.communication.on('monitor:ip:update', this._onIpCreateOrUpdate);
 
-    this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, '1 minute');
+    this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, '1 minute', {priority: 'low'});
 };
 
 arp.prototype.stop = function () {
