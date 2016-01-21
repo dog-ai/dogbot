@@ -65,8 +65,13 @@ bonjour.prototype._execAvahiBrowse = function () {
     return new Promise(function (resolve, reject) {
         var bonjours = [];
 
-        var spawn = require('child_process').spawn,
+        var timeout, spawn = require('child_process').spawn,
             process = spawn('avahi-browse', ['-alrpt']);
+
+        timeout = setTimeout(function () {
+            process.stdin.pause();
+            process.kill();
+        }, 10 * 1000);
 
         process.stdout.setEncoding('utf8');
         process.stdout.pipe(require('split')()).on('data', function (line) {
@@ -101,14 +106,17 @@ bonjour.prototype._execAvahiBrowse = function () {
                 return;
             }
 
+            clearTimeout(timeout);
             reject(new Error(line));
         });
 
         process.on('error', function (error) {
+            clearTimeout(timeout);
             reject(error);
         });
 
         process.on('close', function () {
+            clearTimeout(timeout);
             resolve(bonjours);
         });
     })
