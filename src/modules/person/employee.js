@@ -20,9 +20,9 @@ employee.prototype.info = function () {
 };
 
 employee.prototype.load = function (communication) {
-    this.communication = communication;
+    instance.communication = communication;
 
-    this.start();
+    instance.start();
 };
 
 employee.prototype.unload = function () {
