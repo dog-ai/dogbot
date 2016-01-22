@@ -35,7 +35,7 @@ var transports = [
 
 switch (LOG_TYPE) {
     case 'console':
-        transports.push(new winston.transports.Console({
+        transports.push(new (winston.transports.Console)({
             level: LOG_LEVEL,
             json: false,
             colorize: true,
@@ -44,7 +44,7 @@ switch (LOG_TYPE) {
         }));
         break;
     case 'file':
-        transports.push(new winston.transports.DailyRotateFile({
+        transports.push(new (winston.transports.DailyRotateFile)({
             name: 'log', // http://stackoverflow.com/a/17374968
             level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
             filename: LOG_DIR + '/dogbot.log',
@@ -57,7 +57,7 @@ switch (LOG_TYPE) {
         }));
 
         if (LOG_LEVEL === 'debug') {
-            transports.push(new winston.transports.DailyRotateFile({
+            transports.push(new (winston.transports.DailyRotateFile)({
                 name: 'tmp', // http://stackoverflow.com/a/17374968
                 level: LOG_LEVEL,
                 filename: TMP_DIR + '/dogbot.log',
@@ -71,7 +71,7 @@ switch (LOG_TYPE) {
         break;
 }
 
-var logger = new winston.Logger({
+var logger = new (winston.Logger)({
     transports: transports,
     exitOnError: false
 });
