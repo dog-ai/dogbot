@@ -101,7 +101,7 @@ worker.prototype.stop = function (callback) {
     }
 };
 
-worker.prototype._enqueue = function (event, params, schedule, options) {
+worker.prototype._enqueue = function (event, params, schedule) {
     var type = event === 'person:device:discover' ? 'slow' : 'worker';
 
     var job = instance.queue.create(type, {
@@ -121,12 +121,6 @@ worker.prototype._enqueue = function (event, params, schedule, options) {
     if (schedule !== undefined && schedule !== null) {
         instance.queue.every(schedule, job);
     } else {
-        if (options !== undefined) {
-            if (options.priority !== undefined) {
-                job.priority(options.priority);
-            }
-        }
-
         job.save(function (error) {
             if (error) {
                 logger.error(error.stack);
