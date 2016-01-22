@@ -214,7 +214,7 @@ employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
 };
 
 employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee) {
-    return instance.communication._findById(employee.id)
+    return instance._findById(employee.id)
         .then(function (employee) {
             if (employee !== undefined) {
                 return instance._deleteById(employee.id)
