@@ -72,7 +72,8 @@ bonjour.prototype._execAvahiBrowse = function () {
             process.stdin.pause();
             process.stderr.pause();
             process.kill();
-        }, 10000); // wait 10 seconds for process to finish
+            reject(new Error("Child process hanged"));
+        }, 15000); // wait 15 seconds for process to finish
 
         process.stdout.setEncoding('utf8');
         process.stdout.pipe(require('split')()).on('data', function (line) {

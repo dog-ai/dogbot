@@ -76,12 +76,14 @@ presence.prototype.stop = function () {
 
 presence.prototype._onEmployeePresence = function (employee) {
     instance._findLatestPresenceByEmployeeId(employee.id).then(function (performance) {
-        if (performance !== undefined && performance.is_present == employee.is_present) {
-            return;
-        }
+        if (performance !== undefined) {
+            if (performance.is_present == employee.is_present) {
+                return;
+            }
 
-        if (moment(employee.last_presence_date).isSame(moment(performance.created_date))) {
-            employee.last_presence_date = moment(employee.last_presence_date).add(1, 'second').toDate();
+            if (moment(employee.last_presence_date).isSame(moment(performance.created_date))) {
+                employee.last_presence_date = moment(employee.last_presence_date).add(1, 'second').toDate();
+            }
         }
 
         return instance._createPresence({
