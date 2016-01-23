@@ -98,13 +98,13 @@ ip.prototype._execFping = function () {
         var addresses = networkInterfaces['wlan0'] || networkInterfaces['en0'];
 
         if (addresses === undefined || addresses === null) {
-            reject(new Error());
+            reject(new Error("Network issues"));
         }
 
         var address = _.find(addresses, {family: 'IPv4', internal: false});
 
         if (address === undefined) {
-            reject(new Error());
+            reject(new Error("Network issues"));
         }
 
         var subnet = require('ip').subnet(address.address, address.netmask);
