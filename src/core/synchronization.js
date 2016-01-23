@@ -505,7 +505,7 @@ synchronization.prototype._updateMacAddress = function (macAddress, callback) {
 synchronization.prototype._updateDevice = function (device, callback) {
     logger.debug('sending device: %s', JSON.stringify(device));
 
-    var val = _.omit(macAddress, ['id', 'is_synced']);
+    var val = _.omit(device, ['id', 'is_synced']);
     val = _.extend(val, {company_id: instance.companyId});
     val.created_date = moment(val.created_date).format();
     val.updated_date = moment(val.updated_date).format();
