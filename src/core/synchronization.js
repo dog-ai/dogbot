@@ -454,6 +454,7 @@ synchronization.prototype._onEmployeeChanged = function (snapshot) {
 
 
 synchronization.prototype._updateMacAddress = function (macAddress, callback) {
+
     logger.debug('sending mac address: %s', JSON.stringify(macAddress));
 
     if (macAddress.is_to_be_deleted) {
@@ -474,7 +475,9 @@ synchronization.prototype._updateMacAddress = function (macAddress, callback) {
         val = _.extend(val, {company_id: instance.companyId});
         val.created_date = moment(val.created_date).format();
         val.updated_date = moment(val.updated_date).format();
-        val.last_presence_date = moment(val.last_presence_date).format();
+        if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
+            val.last_presence_date = moment(val.last_presence_date).format();
+        }
         val.device_id = macAddress.device_id;
 
         var macAddressRef;
@@ -500,36 +503,19 @@ synchronization.prototype._updateMacAddress = function (macAddress, callback) {
 };
 
 synchronization.prototype._updateDevice = function (device, callback) {
-    if (device.is_to_be_deleted) {
-        return;
-    }
-
     logger.debug('sending device: %s', JSON.stringify(device));
 
-    var val = {};
-    val.created_date = moment(device.created_date).format();
-    val.updated_date = moment(device.updated_date).format();
+    var val = _.omit(macAddress, ['id', 'is_synced']);
+    val = _.extend(val, {company_id: instance.companyId});
+    val.created_date = moment(val.created_date).format();
+    val.updated_date = moment(val.updated_date).format();
+    if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
+        val.last_presence_date = moment(val.last_presence_date).format();
+    }
     val.is_present = device.is_present;
 
-    if (device.last_presence_date !== undefined && device.last_presence_date !== null) {
-        val.last_presence_date = moment(device.last_presence_date).format();
-    }
-
-    if (!device.is_manual) {
-        val.is_manual = device.is_manual;
-        val.name = device.name;
-
-        if (device.type !== undefined) {
-            val.type = device.type;
-        }
-
-        if (device.os !== undefined) {
-            val.os = device.os;
-        }
-
-        if (device.mac_addresses !== undefined) {
-            val.mac_addresses = device.mac_addresses;
-        }
+    if (device.is_manual) {
+        val = _.omit(val, ['name', 'type', 'os']);
     }
 
     var deviceRef = firebase.child('company_devices/' + instance.companyId + '/' + device.id);
