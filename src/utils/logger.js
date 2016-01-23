@@ -50,7 +50,7 @@ switch (LOG_TYPE) {
             filename: LOG_DIR + '/dogbot.log',
             json: false,
             colorize: false,
-            maxsize: 3,
+            maxsize: 4096000,
             maxFiles: 8,
             timestamp: timeFormat,
             handleExceptions: true
