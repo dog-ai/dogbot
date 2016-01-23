@@ -96,7 +96,7 @@ do_reload() {
     $git reset --hard origin/master
     RETVAL="$?"
 
-    #[ "$RETVAL" ] && $npm update
+    [ $RETVAL == 0 ] && $npm update
 
     return "$RETVAL"
 }

@@ -12,6 +12,7 @@ var TMP_DIR = __dirname + '/../../var/tmp';
 var LOG_TYPE = process.env.DOGBOT_LOG_TYPE;
 var LOG_LEVEL = process.env.DOGBOT_LOG_LEVEL;
 
+winston.add(require('winston-daily-rotate-file'), options);
 winston.emitErrs = true;
 
 if (!fs.existsSync(LOG_DIR)) {
@@ -35,7 +36,7 @@ var transports = [
 
 switch (LOG_TYPE) {
     case 'console':
-        transports.push(new (winston.transports.Console)({
+        transports.push(new winston.transports.Console({
             level: LOG_LEVEL,
             json: false,
             colorize: true,
@@ -44,20 +45,20 @@ switch (LOG_TYPE) {
         }));
         break;
     case 'file':
-        transports.push(new (winston.transports.File)({
+        transports.push(new winston.transports.DailyRotateFile({
             name: 'log', // http://stackoverflow.com/a/17374968
             level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
             filename: LOG_DIR + '/dogbot.log',
             json: false,
             colorize: false,
-            maxsize: 4096000,
+            zippedArchive: true,
             maxFiles: 8,
             timestamp: timeFormat,
             handleExceptions: true
         }));
 
         if (LOG_LEVEL === 'debug') {
-            transports.push(new (winston.transports.File)({
+            transports.push(new winston.transports.DailyRotateFile({
                 name: 'tmp', // http://stackoverflow.com/a/17374968
                 level: LOG_LEVEL,
                 filename: TMP_DIR + '/dogbot.log',
@@ -71,7 +72,7 @@ switch (LOG_TYPE) {
         break;
 }
 
-var logger = new (winston.Logger)({
+var logger = new winston.Logger({
     transports: transports,
     exitOnError: false
 });
