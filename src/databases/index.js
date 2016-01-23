@@ -150,7 +150,8 @@ databases.prototype.startAll = function (callback) {
                         "is_present INTEGER NOT NULL DEFAULT 0, " +
                         "last_presence_date DATETIME DEFAULT NULL," +
                         "is_to_be_deleted INTEGER NOT NULL DEFAULT 0," +
-                        "is_synced INTEGER NOT NULL DEFAULT 0" +
+                        "is_synced INTEGER NOT NULL DEFAULT 0, " +
+                        "last_discovery_date DATETIME" +
                         ");", [], callback);
                 }
             });
