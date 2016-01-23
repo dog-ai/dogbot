@@ -105,7 +105,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
 
                         // lookup vendor
                         if (row.vendor === undefined || row.vendor === null || row.vendor.length > 60 ||
-                            row.vendor === row.vendor.toUpperCase ||
+                            row.vendor === row.vendor.toUpperCase() ||
                             /(,(\s)?|(\s)?inc\.|(\s)?corporate|(\s)?corp|(\s)?co\.|(\s)?ltd|\.com)/gi.test(row.vendor)
                         ) {
 
