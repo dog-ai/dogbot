@@ -13,4 +13,7 @@ communication.prototype.__proto__ = events.EventEmitter.prototype;
 
 communication.prototype.emitAsync = Promise.promisify(events.EventEmitter.prototype.emit);
 
-module.exports = new communication();
+var instance = new communication();
+instance.setMaxListeners(256);
+
+module.exports = instance;

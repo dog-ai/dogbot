@@ -135,6 +135,8 @@ device.prototype._discover = function (macAddress, callback) {
                                 return instance._add(_device)
                                     .then(function (row) {
                                         macAddress.device_id = row.id;
+                                        macAddress.updated_date = new Date();
+                                        macAddress.last_discovery_date = new Date();
                                         return instance._updateMacAddressByAddress(macAddress.address, macAddress);
                                     });
                             } else {
@@ -142,8 +144,6 @@ device.prototype._discover = function (macAddress, callback) {
                                 _device.is_synced = false;
                                 return instance._updateById(_device.id, _device);
                             }
-
-
                         }
                     });
             }
@@ -444,7 +444,29 @@ device.prototype._onMacAddressOnline = function (mac_address) {
 };
 
 device.prototype._onMacAddressOnlineAgain = function (mac_address) {
-    instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
+    if (mac_address.device_id !== undefined && mac_address.device_id !== null) {
+        instance._findById(mac_address.device_id)
+            .then(function (device) {
+                device.updated_date = new Date();
+                device.last_presence_date = mac_address.last_presence_date;
+                device.is_synced = false;
+
+                instance._updateById(device.id, device)
+                    .then(function () {
+                        instance.communication.emit('person:device:onlineAgain', device);
+                    });
+            });
+    }
+
+    if (mac_address.last_discovery_date === null ||
+        moment(mac_address.last_discovery_date).isBefore(moment().subtract(3, 'hour'))) {
+
+        mac_address.updated_date = new Date();
+        mac_address.last_discovery_date = new Date();
+        return instance._updateMacAddressByAddress(mac_address.address, mac_address).then(function () {
+            instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
+        })
+    }
 };
 
 device.prototype._onMacAddressOffline = function (mac_address) {
@@ -524,8 +546,13 @@ device.prototype._findMacAddressesByDeviceId = function (id) {
                 _.forEach(rows, function (row) {
                     row.created_date = new Date(row.created_date.replace(' ', 'T'));
                     row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+
                     if (row.last_presence_date !== undefined && row.last_presence_date !== null) {
                         row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                    }
+
+                    if (row.last_discovery_date !== undefined && row.last_discovery_date !== null) {
+                        row.last_discovery_date = new Date(row.last_discovery_date.replace(' ', 'T'));
                     }
                 });
             }
@@ -675,6 +702,10 @@ device.prototype._updateMacAddressByAddress = function (address, mac_address) {
 
     if (_macAddress.last_presence_date !== undefined && _macAddress.last_presence_date !== null && _macAddress.last_presence_date instanceof Date) {
         _macAddress.last_presence_date = _macAddress.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (_macAddress.last_discovery_date !== undefined && _macAddress.last_discovery_date !== null && _macAddress.last_discovery_date instanceof Date) {
+        _macAddress.last_discovery_date = _macAddress.last_discovery_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
     var keys = _.keys(_macAddress);

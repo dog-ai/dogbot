@@ -31,6 +31,7 @@ employee.prototype.unload = function () {
 
 employee.prototype.start = function () {
     this.communication.on('person:device:online', this._handleDeviceOnline);
+    this.communication.on('person:device:onlineAgain', this._handleDeviceOnlineAgain);
     this.communication.on('person:device:offline', this._handleDeviceOffline);
     this.communication.on('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
     this.communication.on('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
@@ -43,6 +44,7 @@ employee.prototype.start = function () {
 
 employee.prototype.stop = function () {
     this.communication.removeListener('person:device:online', this._handleDeviceOnline);
+    this.communication.removeListener('person:device:onlineAgain', this._handleDeviceOnlineAgain);
     this.communication.removeListener('person:device:offline', this._handleDeviceOffline);
     this.communication.removeListener('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
     this.communication.removeListener('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
@@ -89,6 +91,23 @@ employee.prototype._handleDeviceOnline = function (device) {
                             instance.communication.emit('person:employee:nearby', employee);
 
                         });
+                }
+            })
+            .catch(function (error) {
+                logger.error(error.stack);
+            });
+    }
+};
+
+employee.prototype._handleDeviceOnlineAgain = function (device) {
+    if (device.employee_id !== undefined && device.employee_id !== null) {
+
+        return instance._findById(device.employee_id)
+            .then(function (employee) {
+                if (employee !== undefined) {
+                    employee.last_presence_date = device.last_presence_date;
+                    employee.is_synced = false;
+                    return instance._updateById(employee.id, employee);
                 }
             })
             .catch(function (error) {

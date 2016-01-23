@@ -309,7 +309,14 @@ mac_address.prototype._findByAddress = function (mac_address, callback) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
                 row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
-                row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+
+                if (row.last_presence_date !== undefined && row.last_presence_date !== null) {
+                    row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                }
+
+                if (row.last_discovery_date !== undefined && row.last_discovery_date !== null) {
+                    row.last_discovery_date = new Date(row.last_discovery_date.replace(' ', 'T'));
+                }
             }
 
             callback(error, row);
@@ -327,6 +334,10 @@ mac_address.prototype._add = function (mac_address, callback) {
 
     if (mac_address.last_presence_date !== undefined && mac_address.last_presence_date !== null && mac_address.last_presence_date instanceof Date) {
         mac_address.last_presence_date = mac_address.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (mac_address.last_discovery_date !== undefined && mac_address.last_discovery_date !== null && mac_address.last_discovery_date instanceof Date) {
+        mac_address.last_discovery_date = mac_address.last_discovery_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
     var keys = _.keys(mac_address);
@@ -362,6 +373,10 @@ mac_address.prototype._updateByAddress = function (address, mac_address) {
 
     if (_macAddress.last_presence_date !== undefined && _macAddress.last_presence_date !== null && _macAddress.last_presence_date instanceof Date) {
         _macAddress.last_presence_date = _macAddress.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    }
+
+    if (_macAddress.last_discovery_date !== undefined && _macAddress.last_discovery_date !== null && _macAddress.last_discovery_date instanceof Date) {
+        _macAddress.last_discovery_date = _macAddress.last_discovery_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
 
     var keys = _.keys(_macAddress);

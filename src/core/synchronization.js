@@ -470,7 +470,7 @@ synchronization.prototype._updateMacAddress = function (macAddress, callback) {
 
 
     } else {
-        var val = _.omit(macAddress, ['id', 'is_synced', 'is_present', 'is_to_be_deleted']);
+        var val = _.omit(macAddress, ['id', 'is_synced', 'is_present', 'is_to_be_deleted', 'last_discovery_date']);
         val = _.extend(val, {company_id: instance.companyId});
         val.created_date = moment(val.created_date).format();
         val.updated_date = moment(val.updated_date).format();
