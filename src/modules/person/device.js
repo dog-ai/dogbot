@@ -79,13 +79,15 @@ device.prototype._discover = function (macAddress, callback) {
                             _.find(result.bonjours, {type: '_apple-mobdev2._tcp'}) ||
                             _.find(result.bonjours, {type: '_afpovertcp._tcp'}) ||
                             _.find(result.bonjours, {type: '_smb._tcp'}) ||
-                            _.find(result.bonjours, {type: '_googlecast._tcp'});
+                            _.find(result.bonjours, {type: '_googlecast._tcp'}) ||
+                            _.find(result.bonjours, {type: '_rfb._tcp'}) ||
+                            _.find(result.bonjours, {type: '_workstation._tcp'});
 
                         if (result.dns.hostname !== undefined && result.dns.hostname !== null && result.dns.hostname.length > 0) {
                             _device.name = result.dns.hostname;
                         }
 
-                        if (result.mdns.hostname !== undefined && result.mdns.hostname !== null && result.mdns.hostname > 0) {
+                        if (result.mdns.hostname !== undefined && result.mdns.hostname !== null && result.mdns.hostname.length > 0) {
                             _device.name = result.mdns.hostname;
                         }
 
@@ -459,7 +461,7 @@ device.prototype._onMacAddressOnlineAgain = function (mac_address) {
     }
 
     if (mac_address.last_discovery_date === null ||
-        moment(mac_address.last_discovery_date).isBefore(moment().subtract(3, 'hour'))) {
+        moment(mac_address.last_discovery_date).isBefore(moment().subtract(30, 'minute'))) {
 
         mac_address.updated_date = new Date();
         mac_address.last_discovery_date = new Date();

@@ -191,7 +191,8 @@ databases.prototype.startAll = function (callback) {
                         "full_name TEXT NOT NULL UNIQUE, " +
                         "is_present INTEGER NOT NULL DEFAULT 0, " +
                         "slack_id TEXT, " +
-                        "last_presence_date DATETIME" +
+                        "last_presence_date DATETIME, " +
+                        "is_synced INTEGER NOT NULL DEFAULT 0" +
                         ");", [], callback);
                 }
             });
