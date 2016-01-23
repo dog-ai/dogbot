@@ -44,13 +44,13 @@ switch (LOG_TYPE) {
         }));
         break;
     case 'file':
-        transports.push(new (winston.transports.DailyRotateFile)({
+        transports.push(new (winston.transports.File)({
             name: 'log', // http://stackoverflow.com/a/17374968
             level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
             filename: LOG_DIR + '/dogbot.log',
             json: false,
             colorize: false,
-            zippedArchive: true,
+            maxsize: 3,
             maxFiles: 8,
             timestamp: timeFormat,
             handleExceptions: true
