@@ -512,7 +512,6 @@ synchronization.prototype._updateDevice = function (device, callback) {
     if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
         val.last_presence_date = moment(val.last_presence_date).format();
     }
-    val.is_present = device.is_present;
 
     if (device.is_manual) {
         val = _.omit(val, ['name', 'type', 'os']);
@@ -539,12 +538,12 @@ synchronization.prototype._updateDevice = function (device, callback) {
 synchronization.prototype._updateEmployee = function (employee, callback) {
     logger.debug('sending employee: %s', JSON.stringify(employee));
 
-    var val = {};
-    val.updated_date = moment().format();
-    val.is_present = employee.is_present;
-
-    if (employee.last_presence_date !== undefined && employee.last_presence_date !== null) {
-        val.last_presence_date = moment(employee.last_presence_date).format();
+    var val = _.omit(employee, ['id', 'is_synced']);
+    val = _.extend(val, {company_id: instance.companyId});
+    val.created_date = moment(val.created_date).format();
+    val.updated_date = moment(val.updated_date).format();
+    if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
+        val.last_presence_date = moment(val.last_presence_date).format();
     }
 
     firebase.child('company_employees/' + instance.companyId + '/' + employee.id).update(val, function (error) {
