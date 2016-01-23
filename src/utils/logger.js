@@ -50,7 +50,6 @@ switch (LOG_TYPE) {
             filename: LOG_DIR + '/dogbot.log',
             json: false,
             colorize: false,
-            zippedArchive: true,
             maxFiles: 8,
             timestamp: timeFormat,
             handleExceptions: true
@@ -63,7 +62,6 @@ switch (LOG_TYPE) {
                 filename: TMP_DIR + '/dogbot.log',
                 json: false,
                 colorize: false,
-                zippedArchive: true,
                 maxFiles: 2,
                 timestamp: timeFormat
             }));

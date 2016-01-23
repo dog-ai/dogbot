@@ -33,6 +33,7 @@ device.prototype.unload = function () {
 
 device.prototype.start = function () {
     this.communication.on('person:mac_address:online', this._onMacAddressOnline);
+    this.communication.on('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
     this.communication.on('person:mac_address:offline', this._onMacAddressOffline);
     this.communication.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
     this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
@@ -43,6 +44,7 @@ device.prototype.start = function () {
 
 device.prototype.stop = function () {
     this.communication.removeListener('person:mac_address:online', this._onMacAddressOnline);
+    this.communication.removeListener('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
     this.communication.removeListener('person:mac_address:offline', this._onMacAddressOffline);
     this.communication.removeListener('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
     this.communication.removeListener('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
@@ -419,8 +421,6 @@ device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
 };
 
 device.prototype._onMacAddressOnline = function (mac_address) {
-    instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
-
     if (mac_address.device_id !== undefined && mac_address.device_id !== null) {
         return instance._findById(mac_address.device_id)
             .then(function (device) {
@@ -441,6 +441,10 @@ device.prototype._onMacAddressOnline = function (mac_address) {
                 logger.error(error.stack);
             });
     }
+};
+
+device.prototype._onMacAddressOnlineAgain = function (mac_address) {
+    instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
 };
 
 device.prototype._onMacAddressOffline = function (mac_address) {
