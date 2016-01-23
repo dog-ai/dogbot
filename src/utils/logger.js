@@ -57,7 +57,7 @@ switch (LOG_TYPE) {
         }));
 
         if (LOG_LEVEL === 'debug') {
-            transports.push(new (winston.transports.DailyRotateFile)({
+            transports.push(new (winston.transports.File)({
                 name: 'tmp', // http://stackoverflow.com/a/17374968
                 level: LOG_LEVEL,
                 filename: TMP_DIR + '/dogbot.log',
