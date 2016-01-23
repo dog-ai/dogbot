@@ -464,7 +464,7 @@ device.prototype._onMacAddressOnlineAgain = function (mac_address) {
     }
 
     if (mac_address.last_discovery_date === null ||
-        moment(mac_address.last_discovery_date).isBefore(moment().subtract(30, 'minute'))) {
+        moment(mac_address.last_discovery_date).isBefore(moment().subtract(1, 'hour'))) {
 
         mac_address.updated_date = new Date();
         mac_address.last_discovery_date = new Date();
