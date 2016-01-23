@@ -44,7 +44,7 @@ switch (LOG_TYPE) {
         }));
         break;
     case 'file':
-        transports.push(require('winston-daily-rotate-file')({
+        transports.push(new (require('winston-daily-rotate-file'))({
             name: 'log', // http://stackoverflow.com/a/17374968
             level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
             filename: LOG_DIR + '/dogbot.log',
@@ -57,7 +57,7 @@ switch (LOG_TYPE) {
         }));
 
         if (LOG_LEVEL === 'debug') {
-            transports.push(require('winston-daily-rotate-file')({
+            transports.push(new (require('winston-daily-rotate-file'))({
                 name: 'tmp', // http://stackoverflow.com/a/17374968
                 level: LOG_LEVEL,
                 filename: TMP_DIR + '/dogbot.log',
