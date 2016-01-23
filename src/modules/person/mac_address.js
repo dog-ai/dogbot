@@ -97,7 +97,9 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
 
                 instance._updateByAddress(row.address, row)
                     .then(function () {
-                        if (!was_present) {
+                        if (was_present) {
+                            instance.communication.emit('person:mac_address:onlineAgain', row);
+                        } else {
                             instance.communication.emit('person:mac_address:online', row);
                         }
 
@@ -120,9 +122,6 @@ mac_address.prototype._onArpCreateOrUpdate = function (address) {
                                         row.updated_date = new Date();
 
                                         instance._updateByAddress(row.address, row)
-                                            .then(function () {
-                                                instance.communication.emit('person:mac_address:onlineAgain', row);
-                                            })
                                             .catch(function (error) {
                                                 logger.error(error.stack);
                                             });
