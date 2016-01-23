@@ -93,6 +93,9 @@ device.prototype._discover = function (macAddress, callback) {
 
                         if (result.upnps !== undefined && result.upnps.length > 0 && result.upnps[0].device_friendly_name !== undefined && result.upnps[0].device_friendly_name !== null) {
                             _device.name = result.upnps[0].device_friendly_name;
+                            if (_device.name.indexOf(':') != -1) {
+                                _device.name = _device.name.split(':')[0];
+                            }
                         }
 
                         if (bonjour !== undefined && bonjour.hostname !== undefined && bonjour.hostname !== null && bonjour.hostname.length > 0) {
