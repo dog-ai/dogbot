@@ -268,7 +268,7 @@ employee.prototype._onEmployeeOutgoingSynchronization = function (callback) {
                         row.devices = {};
 
                         _.forEach(devices, function (device) {
-                            row.mac_addresses[device.id] = true;
+                            row.devices[device.id] = true;
                         });
 
                         callback(null, row, function (error) {
