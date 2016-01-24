@@ -41,6 +41,7 @@ synchronization.prototype.start = function (token, callback,
 
     this.onMacAddressPush = onMacAddressPush;
     this.onDevicePush = onDevicePush;
+    this.onEmployeePush = onEmployeePush;
     this.onPerformancePush = onPerformancePush;
 
     this.onPerformancePull = onPerformancePull;
@@ -200,6 +201,15 @@ synchronization.prototype._synchronize = function (params, callback) {
             }
         });
 
+        instance.onEmployeePush(function (error, employee, onComplete) {
+            if (error) {
+                logger.error(error.stack);
+            } else {
+                instance._updateEmployee(employee, function (error) {
+                    onComplete(error, employee);
+                })
+            }
+        });
         var performanceNames = ['presence'];
         _.forEach(performanceNames, function (performanceName) {
             instance.onPerformancePush(performanceName, function (error, employeeId, type, performance, onComplete) {

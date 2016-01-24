@@ -86,6 +86,10 @@ var dogbot = {
                     // request device changes
                     communication.emit('synchronization:outgoing:person:device', callback);
                 },
+                function (callback) {
+                    // request employee changes
+                    communication.emit('synchronization:outgoing:person:employee', callback);
+                },
                 function (performanceName, callback) {
                     // request performance changes
                     communication.emit('synchronization:outgoing:performance:' + performanceName, callback);
