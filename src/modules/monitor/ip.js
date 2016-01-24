@@ -140,7 +140,8 @@ ip.prototype._execFping = function () {
             if (line === undefined ||
                 line.length === 0 ||
                 line.indexOf('ICMP Host') === 0 ||
-                line.indexOf('duplicate') != -1) {
+                line.indexOf('duplicate') != -1 ||
+                line.indexOf('ICMP Redirect' === 0)) {
                 return;
             }
 
