@@ -84,7 +84,7 @@ employee.prototype._handleDeviceOnline = function (device) {
         return instance._findById(device.employee_id)
             .then(function (employee) {
                 if (employee !== undefined && !employee.is_present) {
-                    device.updated_date = new Date();
+                    employee.updated_date = new Date();
                     employee.is_present = true;
                     employee.last_presence_date = device.last_presence_date;
 
@@ -107,7 +107,7 @@ employee.prototype._handleDeviceOnlineAgain = function (device) {
         return instance._findById(device.employee_id)
             .then(function (employee) {
                 if (employee !== undefined) {
-                    device.updated_date = new Date();
+                    employee.updated_date = new Date();
                     employee.last_presence_date = device.last_presence_date;
                     employee.is_synced = false;
                     return instance._updateById(employee.id, employee);
