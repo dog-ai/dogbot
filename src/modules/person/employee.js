@@ -39,6 +39,7 @@ employee.prototype.start = function () {
     this.communication.on('person:slack:away', this._handleSlackAway);
     this.communication.on('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
     this.communication.on('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
+    this.communication.on('synchronization:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
     this.communication.on('person:employee:is_present', this._isPresent);
 };
 
@@ -52,6 +53,7 @@ employee.prototype.stop = function () {
     this.communication.removeListener('person:slack:away', this._handleSlackAway);
     this.communication.removeListener('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
     this.communication.removeListener('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
+    this.communication.removeListener('synchronization:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
     this.communication.removeListener('person:employee:is_present', this._isPresent);
 };
 
@@ -82,7 +84,7 @@ employee.prototype._handleDeviceOnline = function (device) {
         return instance._findById(device.employee_id)
             .then(function (employee) {
                 if (employee !== undefined && !employee.is_present) {
-
+                    device.updated_date = new Date();
                     employee.is_present = true;
                     employee.last_presence_date = device.last_presence_date;
 
@@ -105,6 +107,7 @@ employee.prototype._handleDeviceOnlineAgain = function (device) {
         return instance._findById(device.employee_id)
             .then(function (employee) {
                 if (employee !== undefined) {
+                    device.updated_date = new Date();
                     employee.last_presence_date = device.last_presence_date;
                     employee.is_synced = false;
                     return instance._updateById(employee.id, employee);
@@ -247,6 +250,45 @@ employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee
         .catch(function (error) {
             logger.error(error.stack);
         });
+};
+
+employee.prototype._onEmployeeOutgoingSynchronization = function (callback) {
+    instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM employee WHERE is_synced = 0', [], function (error, row) {
+        if (error) {
+            logger.error(error.stack);
+        } else {
+            if (row !== undefined) {
+                row.created_date = new Date(row.created_date.replace(' ', 'T'));
+                row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+                row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+                row.is_present = row.is_present == 1;
+
+                instance._findDevicesByEmployeeId(row.id)
+                    .then(function (devices) {
+                        row.devices = {};
+
+                        _.forEach(devices, function (device) {
+                            row.mac_addresses[device.id] = true;
+                        });
+
+                        callback(null, row, function (error) {
+                            if (error) {
+                                logger.error(error.stack)
+                            } else {
+                                delete row.devices;
+
+                                row.is_synced = true;
+
+                                instance._updateById(row.id, row)
+                                    .catch(function (error) {
+                                        logger.error(error.stack);
+                                    });
+                            }
+                        });
+                    });
+            }
+        }
+    });
 };
 
 employee.prototype._findDevicesByEmployeeId = function (id) {
