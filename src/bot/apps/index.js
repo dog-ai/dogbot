@@ -23,15 +23,21 @@ apps.prototype.enableApp = function (name, config) {
     var app = require(APPS_DIR + name);
     var promises = [];
 
-    _.forEach(app.modules, function (module) {
-        promises.push(self.modules.loadModule(module.type, module.name, module.optional, config));
-    });
-
     _.forEach(app.databases, function (database) {
         promises.push(self.databases.startDatabase(database.type, database.name));
     });
 
     return Promise.all(promises)
+        .then(function () {
+
+            promises = [];
+
+            _.forEach(app.modules, function (module) {
+                promises.push(self.modules.loadModule(module.type, module.name, module.optional, config));
+            });
+
+            return Promise.all(promises);
+        })
         .then(function () {
             self.enabled.push(app);
 
@@ -66,12 +72,12 @@ apps.prototype.disableApp = function (name) {
 
     var promises = [];
 
-    _.forEach(app.databases, function (database) {
-        promises.push(self.databases.stopDatabase(database.type, database.name));
-    });
-
     _.forEach(app.modules, function (module) {
         promises.push(self.modules.unloadModule(module.name));
+    });
+
+    _.forEach(app.databases, function (database) {
+        promises.push(self.databases.stopDatabase(database.type, database.name));
     });
 
     return Promise.all(promises)

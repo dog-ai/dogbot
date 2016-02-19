@@ -28,7 +28,7 @@ person.prototype.start = function (communication) {
     this.communication.on('database:' + this.name + ':update', this._run.bind(this));
     this.communication.on('database:' + this.name + ':delete', this._run.bind(this));
 
-    return this._open(this.name)
+    return this._open(this.name, true)
         .then(function () {
             return self.communication.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS mac_address', [])
                 .then(function () {
