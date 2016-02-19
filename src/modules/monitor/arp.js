@@ -41,6 +41,8 @@ arp.prototype.stop = function () {
     this.communication.removeListener('monitor:arp:resolve', this._resolve);
     this.communication.removeListener('monitor:ip:create', this._onIpCreateOrUpdate);
     this.communication.removeListener('monitor:ip:update', this._onIpCreateOrUpdate);
+
+    this.communication.emit('worker:job:dequeue', 'monitor:arp:discover');
 };
 
 

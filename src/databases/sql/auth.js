@@ -2,8 +2,9 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var sql = require('../sql.js'),
-    util = require("util");
+var sql = require('./'),
+    util = require('util')
+    ;
 
 function auth() {
     sql.call(this);
@@ -13,12 +14,12 @@ function auth() {
 
 util.inherits(auth, sql);
 
-auth.prototype.name = "auth";
+auth.prototype.name = 'auth';
 
 auth.prototype.start = function (communication) {
-    this.communication = communication;
+    var self = this;
 
-    this._open(this.name);
+    this.communication = communication;
 
     this.communication.on('database:' + this.name + ':setup', this._run.bind(this));
     this.communication.on('database:' + this.name + ':create', this._run.bind(this));
@@ -27,6 +28,26 @@ auth.prototype.start = function (communication) {
     this.communication.on('database:' + this.name + ':retrieveOneByOne', this._each.bind(this));
     this.communication.on('database:' + this.name + ':update', this._run.bind(this));
     this.communication.on('database:' + this.name + ':delete', this._run.bind(this));
+
+    return this._open(this.name)
+        .then(function () {
+            return self.communication.emitAsync('database:auth:setup', 'DROP TABLE IF EXISTS google', [])
+                .then(function () {
+                    return self.communication.emitAsync('database:auth:setup',
+                        'CREATE TABLE IF NOT EXISTS google (' +
+                        'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
+                        'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
+                        'updated_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
+                        'user_id TEXT NOT NULL, ' +
+                        'name TEXT NOT NULL, ' +
+                        'email TEXT NOT NULL, ' +
+                        'access_token TEXT NOT NULL, ' +
+                        'expires_in INTEGER NOT NULL, ' +
+                        'refresh_token TEXT NOT NULL' +
+                        ');',
+                        []);
+                })
+        });
 };
 
 auth.prototype.stop = function () {
@@ -38,9 +59,7 @@ auth.prototype.stop = function () {
     this.communication.removeListener('database:' + this.name + ':update', this._run.bind(this));
     this.communication.removeListener('database:' + this.name + ':delete', this._run.bind(this));
 
-    this._close();
+    return this._close();
 };
 
-var instance = new auth();
-
-module.exports = instance;
+module.exports = new auth();

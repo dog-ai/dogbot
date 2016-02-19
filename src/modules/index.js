@@ -2,129 +2,112 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../utils/logger.js');
+var logger = require('../utils/logger.js'),
+    _ = require('lodash'),
+    path = require('path'),
+    fs = require("fs"),
+    Promise = require('bluebird');
 
-var _ = require('lodash');
-var path = require('path');
-var fs = require("fs");
-
-var modulesDir = path.join(__dirname, '/');
+var MODULES_DIR = path.join(__dirname, '/');
 
 function modules() {
 }
 
-modules.prototype.loadAll = function (configs) {
+modules.prototype.loadModule = function (type, name, optional, config, reload) {
     var self = this;
 
-    this.types.forEach(function(type) {
-        self._loadAllByType(type, configs && configs[type.toLowerCase()] || undefined);
-    });
-};
 
-modules.prototype._loadAllByType = function (type, configs) {
-    var that = this;
-
-    var dir = path.join(modulesDir + type.toLowerCase());
-
-    fs.readdirSync(dir).forEach(function(file) {
-        that._load(type, file, configs && configs[file.replace('.js', '')] || undefined);
-    });
-};
-
-modules.prototype.loadModule = function (type, moduleName, config, reload) {
     reload = reload || false;
 
-    var loadedModule = this.findLoadedModuleByName(moduleName);
-    if (loadedModule) {
+    var module = _.find(this.loaded, {name: name});
+
+    if (module) {
         if (!reload) {
             return;
         }
 
-        this._unload(loadedModule);
+        return this._unload(module)
+            .then(function () {
+                return self._load(type, name, optional, config);
+            });
+    } else {
+        return this._load(type, name, optional, config);
     }
-
-    this._load(type, moduleName + '.js', config);
 };
 
-modules.prototype._load = function (type, file, config) {
-    var self = this;
+modules.prototype.unloadModule = function (name) {
+    var module = _.find(this.loaded, {name: name});
 
-    if (file.charAt(0) === '.' || (config && !config.is_enabled)) {
+    if (!module) {
         return;
     }
 
-    _.defer(function () {
-        try {
-            var module = require('./' + type.toLowerCase() + '/' + file);
-
-            module.load(self.communication, config);
-
-            self.loaded.push(module);
-
-            logger.info('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
-        } catch (error) {
-            logger.info('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
-            if (!(error.message.indexOf('platform is not supported') > -1 ||
-                error.message.indexOf('invalid configuration') > -1)) {
-                logger.error(error.stack);
-            }
-        }
-    });
-};
-
-modules.prototype.unloadAll = function() {
-    var self = this;
-    this.types.reverse().forEach(function(type) {
-        self._unloadAllByType(type);
-    });
-};
-
-modules.prototype._unloadAllByType = function(type) {
-    var that = this;
-    this.findAllLoadedModulesByType(type).forEach(function(module) {
-        that._unload(module);
-    });
-};
-
-modules.prototype.unloadModule = function(module) {
     this._unload(module);
 };
 
-modules.prototype._unload = function(module) {
-    try {
-        module.unload();
+modules.prototype._load = function (type, name, optional, config) {
+    var self = this;
 
-        delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js')];
+    return new Promise(function (resolve, reject) {
 
-        _.remove(this.loaded, function (_module) {
-            return _module.name == module.name;
+        var file = name + '.js';
+
+        if (file.charAt(0) === '.' || (config && !config.is_enabled)) {
+            return;
+        }
+
+        _.defer(function () {
+            try {
+                var module = require('./' + type.toLowerCase() + '/' + file);
+
+                module.load(self.communication, config);
+
+                self.loaded.push(module);
+
+                logger.debug('Loaded ' + type.toLowerCase() + ' module: ' + module.name);
+
+                resolve();
+            } catch (error) {
+                logger.debug('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
+
+                if (!(error.message.indexOf('platform is not supported') > -1 ||
+                    error.message.indexOf('invalid configuration') > -1 ||
+                    error.message.indexOf('unix socket not available') > -1)) {
+                    logger.error(error.stack);
+                }
+
+                if (optional) {
+                    resolve();
+                } else {
+                    reject(new Error('unable to load optional ' + type.toLowerCase() + ' module ' + file));
+                }
+            }
         });
-
-        logger.info('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
-    } catch (exception) {
-        logger.info('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + exception.message);
-    }
-
+    });
 };
 
-modules.prototype.findAllLoadedModulesByType = function(type) {
-    var modules = [];
-    this.loaded.forEach(function(module) {
-        if (type === module.type) {
-            modules.push(module);
-        }
-    });
-    return modules;
-};
+modules.prototype._unload = function(module) {
+    var self = this;
 
-modules.prototype.findLoadedModuleByName = function(name) {
-    var module = null;
-    this.loaded.forEach(function(_module) {
-        if (name === _module.name) {
-            module = _module;
+    return new Promise(function (resolve, reject) {
+        try {
+            module.unload();
+
+            delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js')];
+
+            _.remove(self.loaded, function (_module) {
+                return _module.name == module.name;
+            });
+
+            logger.debug('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name);
+
+            resolve();
+        } catch (error) {
+            logger.debug('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + error.message);
+
+            reject('unable to unload ' + module.type.toLowerCase() + ' module ' + module.name);
         }
     });
-    return module;
 };
 
 module.exports = function (communication) {
@@ -134,7 +117,7 @@ module.exports = function (communication) {
     instance.loaded = [];
     instance.available = [];
 
-    instance.types = (fs.readdirSync(modulesDir) || []).map(function (type) {
+    instance.types = (fs.readdirSync(MODULES_DIR) || []).map(function (type) {
         return type.toUpperCase();
     });
 

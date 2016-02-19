@@ -43,6 +43,8 @@ upnp.prototype.start = function () {
 
 upnp.prototype.stop = function () {
     this.communication.removeListener('monitor:upnp:discover', this._discover);
+
+    this.communication.emit('worker:job:dequeue', 'monitor:upnp:discover');
 };
 
 upnp.prototype._discover = function (params, callback) {

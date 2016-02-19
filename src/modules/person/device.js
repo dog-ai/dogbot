@@ -35,11 +35,26 @@ device.prototype.start = function () {
     this.communication.on('person:mac_address:online', this._onMacAddressOnline);
     this.communication.on('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
     this.communication.on('person:mac_address:offline', this._onMacAddressOffline);
-    this.communication.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
-    this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.communication.on('person:device:is_present', this._isPresent);
     this.communication.on('person:device:discover', this._discover);
+    this.communication.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:device', this._onDeviceOutgoingSynchronization);
+
+    this.communication.emitAsync('synchronization:incoming:setup', {
+        companyResource: 'devices',
+        onCompanyResourceChangedCallback: function (device) {
+            instance.communication.emit('synchronization:incoming:person:device:createOrUpdate', device);
+        },
+        onCompanyResourceRemovedCallback: function (device) {
+            instance.communication.emit('synchronization:incoming:person:device:delete', device);
+        }
+    });
+
+    this.communication.emitAsync('synchronization:outgoing:setup', {
+        companyResource: 'devices',
+        event: 'synchronization:outgoing:person:device'
+    });
 };
 
 device.prototype.stop = function () {
@@ -81,7 +96,9 @@ device.prototype._discover = function (macAddress, callback) {
                             _.find(result.bonjours, {type: '_smb._tcp'}) ||
                             _.find(result.bonjours, {type: '_googlecast._tcp'}) ||
                             _.find(result.bonjours, {type: '_rfb._tcp'}) ||
-                            _.find(result.bonjours, {type: '_workstation._tcp'});
+                            _.find(result.bonjours, {type: '_workstation._tcp'} ||
+                                _.find(result.bonjours, {type: '_dacp._tcp'})
+                            );
 
                         if (result.dns.hostname !== undefined && result.dns.hostname !== null && result.dns.hostname.length > 0) {
                             _device.name = result.dns.hostname;
@@ -271,14 +288,14 @@ device.prototype._execNmap = function (ip) {
 
         var result = {};
 
-        if (ip.indexOf('10.172.161.1') == 0) {
+        if (ip.indexOf('10.172.160.1') == 0) {
             return resolve(result);
         }
 
         var spawn = require('child_process').spawn,
             _process = spawn('nmap', [
                 '-n',
-                '--min-rate=2000',
+                '--min-rate=1000',
                 '-O',
                 '-v',
                 '--osscan-guess',

@@ -46,6 +46,8 @@ ip.prototype.stop = function () {
     this.communication.removeListener('monitor:bonjour:update', this._onServiceDiscoveryCreateOrUpdate);
     this.communication.removeListener('monitor:upnp:create', this._onServiceDiscoveryCreateOrUpdate);
     this.communication.removeListener('monitor:upnp:update', this._onServiceDiscoveryCreateOrUpdate);
+
+    this.communication.emit('worker:job:dequeue', 'monitor:ip:discover');
 };
 
 

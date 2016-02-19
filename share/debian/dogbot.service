@@ -1,0 +1,22 @@
+[Unit]
+Description=Dog Bot
+
+[Service]
+Type=idle
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=dogbot
+EnvironmentFile=/etc/default/dogbot
+Environment="AUDIODEV=hw:1,0" "AUDIODRIVER=alsa" "PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/opt/node/bin:/opt/redis/bin"
+WorkingDirectory=/opt/dogbot
+ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/db
+ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/log
+ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/tmp
+ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/run
+ExecStart=/opt/node/bin/node src/app.js
+ExecStop=/bin/kill -s SIGINT $MAINPID
+ExecReload=/bin/kill -s SIGUSR2 $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

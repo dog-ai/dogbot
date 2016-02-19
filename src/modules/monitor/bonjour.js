@@ -41,6 +41,8 @@ bonjour.prototype.start = function () {
 
 bonjour.prototype.stop = function () {
     this.communication.removeListener('monitor:bonjour:discover', this._discover);
+
+    this.communication.emit('worker:job:dequeue', 'monitor:bonjour:discover');
 };
 
 bonjour.prototype._discover = function (params, callback) {
