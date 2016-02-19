@@ -7,7 +7,6 @@ var logger = require('../../utils/logger.js'),
     moment = require('moment'),
     later = require('later'),
     Promise = require("bluebird")
-
     ;
 
 later.date.localTime();
@@ -53,10 +52,16 @@ presence.prototype.start = function () {
     this.communication.on('synchronization:incoming:performance:presence:monthly:stats', this._onIncomingEmployeeMonthlyStatsSynchronization);
     this.communication.on('synchronization:incoming:performance:presence:yearly:stats', this._onIncomingEmployeeYearlyStatsSynchronization);
     this.communication.on('synchronization:incoming:performance:presence:alltime:stats', this._onIncomingEmployeeAlltimeStatsSynchronization);
+    this.communication.on('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
 
     this.communication.emit('worker:job:enqueue', 'performance:presence:daily:stats', null, '01 00 00 * * *');
     this.communication.emit('worker:job:enqueue', 'performance:presence:monthly:stats', null, '02 00 00 * * *');
     this.communication.emit('worker:job:enqueue', 'performance:presence:alltime:stats', null, '03 00 00 * * *');
+
+    this.communication.emitAsync('synchronization:outgoing:setup', {
+        companyResource: 'employee_performances',
+        event: 'synchronization:outgoing:performance:presence'
+    });
 };
 
 presence.prototype.stop = function () {
@@ -71,8 +76,61 @@ presence.prototype.stop = function () {
     this.communication.removeListener('synchronization:incoming:performance:presence:monthly:stats', this._onIncomingEmployeeMonthlyStatsSynchronization);
     this.communication.removeListener('synchronization:incoming:performance:presence:yearly:stats', this._onIncomingEmployeeYearlyStatsSynchronization);
     this.communication.removeListener('synchronization:incoming:performance:presence:alltime:stats', this._onIncomingEmployeeAlltimeStatsSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+
+    this.communication.emit('worker:job:dequeue', 'performance:presence:daily:stats');
+    this.communication.emit('worker:job:dequeue', 'performance:presence:monthly:stats');
+    this.communication.emit('worker:job:dequeue', 'performance:presence:alltime:stats');
 };
 
+presence.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
+    if (!instance.latestMonthlyStats[employee.id]) {
+        instance.communication.emitAsync('synchronization:incoming:setup', {
+            companyResource: 'employee_performances',
+            employeeId: employee.id,
+            name: 'presence',
+            onCompanyResourceChangedCallback: function (performance) {
+                instance.communication.emit('synchronization:incoming:performance:presence', performance);
+            },
+            onCompanyResourceRemovedCallback: function (performance) {
+            }
+        });
+
+        instance.communication.emitAsync('synchronization:incoming:setup', {
+            companyResource: 'employee_performances',
+            period: 'monthly',
+            employeeId: employee.id,
+            name: 'presence',
+            onCompanyResourceChangedCallback: function (_stats) {
+                instance.communication.emit('synchronization:incoming:performance:presence:monthly:stats', _stats);
+            }
+        });
+    }
+
+    if (!instance.latestYearlyStats[employee.id]) {
+        instance.communication.emitAsync('synchronization:incoming:setup', {
+            companyResource: 'employee_performances',
+            period: 'yearly',
+            employeeId: employee.id,
+            name: 'presence',
+            onCompanyResourceChangedCallback: function (_stats) {
+                instance.communication.emit('synchronization:incoming:performance:presence:yearly:stats', _stats);
+            }
+        });
+    }
+
+    if (!instance.latestAlltimeStats[employee.id]) {
+        instance.communication.emitAsync('synchronization:incoming:setup', {
+            companyResource: 'employee_performances',
+            period: 'alltime',
+            employeeId: employee.id,
+            name: 'presence',
+            onCompanyResourceChangedCallback: function (_stats) {
+                instance.communication.emit('synchronization:incoming:performance:presence:alltime:stats', _stats);
+            }
+        });
+    }
+};
 
 presence.prototype._onEmployeePresence = function (employee) {
     instance._findLatestPresenceByEmployeeId(employee.id).then(function (performance) {
@@ -123,8 +181,9 @@ presence.prototype._onOutgoingPresenceSynchronization = function (callback) {
                 if (row !== undefined) {
                     row.created_date = new Date(row.created_date.replace(' ', 'T'));
                     row.is_present = row.is_present == 1;
+                    row.name = instance.name;
 
-                    callback(error, row.employee_id, 'presence', row, function (error) {
+                    callback(error, row, function (error) {
                         if (error) {
                             logger.error(error.stack)
                         } else {
@@ -191,6 +250,7 @@ presence.prototype._computeEmployeeDailyStats = function (employee, date) {
         }).then(function (endTime) {
             _stats.end_time = endTime;
         }).then(function () {
+            _stats.period = 'daily';
             return _stats;
         })
         .catch(function (error) {
@@ -343,6 +403,7 @@ presence.prototype._computeEmployeeMonthlyStats = function (employee, date) {
         throw new Error('unable to compute employee monthly stats');
     }
 
+    _stats.period = 'monthly';
     return _stats;
 };
 
@@ -526,6 +587,7 @@ presence.prototype._computeEmployeeAlltimeStats = function (employee, date) {
         throw new Error('unable to compute employee alltime stats');
     }
 
+    _stats.period = 'alltime';
     return _stats;
 };
 

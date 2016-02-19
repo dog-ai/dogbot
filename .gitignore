@@ -3,3 +3,4 @@ var
 *.iml
 *.ipr
 *.iws
+.foreverignore

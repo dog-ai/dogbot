@@ -2,26 +2,46 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var sqlite3 = require("sqlite3").verbose();
+var sqlite3 = require("sqlite3").verbose(),
+    Promise = require('bluebird');
 
-var DB_DIR = __dirname + "/../../var/db";
-var TMP_DIR = __dirname + "/../../var/tmp";
+var DB_DIR = __dirname + "/../../../var/db";
+var TMP_DIR = __dirname + "/../../../var/tmp";
 
 function sql() {
-    this.file = undefined;
-    this.db = undefined;
 }
 
-sql.prototype.type = 'SQL';
+sql.prototype.type = 'sql';
 
 sql.prototype._open = function (name, isTemp) {
-    this.file = (isTemp !== undefined && isTemp ? TMP_DIR : DB_DIR) + '/' + name + '.db';
+    var self = this;
 
-    this.db = new sqlite3.Database(this.file);
+    return new Promise(function (resolve, reject) {
+
+        self.file = (isTemp !== undefined && isTemp ? TMP_DIR : DB_DIR) + '/' + name + '.db';
+
+        self.db = new sqlite3.Database(self.file, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, function (error) {
+            if (error) {
+                reject();
+            } else {
+                resolve();
+            }
+        });
+    });
 };
 
 sql.prototype._close = function () {
-    this.db.close();
+    var self = this;
+
+    return new Promise(function (resolve, reject) {
+        self.db.close(function (error) {
+            if (error) {
+                reject();
+            } else {
+                resolve();
+            }
+        });
+    });
 };
 
 sql.prototype._run = function (query, parameters, callback) {

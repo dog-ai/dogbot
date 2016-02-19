@@ -2,16 +2,16 @@
 
 var SECRET = process.env.DOGBOT_SECRET;
 
-var dogbot = require('./core/dogbot.js')(SECRET);
+var bot = require('./bot')(SECRET);
 
 process.on('SIGINT', function() {
-    dogbot.stop(function () {
+    bot.stop(function () {
         process.exit(0);
     });
 });
 
 process.once('SIGUSR2', function () {
-    dogbot.reload(function () {
+    bot.reload(function () {
         process.kill(process.pid, 'SIGUSR2');
     });
 });
@@ -20,14 +20,14 @@ process.on('exit', function () {
 });
 
 process.on('uncaughtException', function (error) {
-    dogbot.error(error);
+    bot.error(error);
 });
 
 if (SECRET === undefined) {
-    dogbot.error("Please provide a dog.ai secret.", function () {
+    bot.error("Please provide a dog.ai secret.", function () {
         process.exit(1);
     });
 } else {
-    dogbot.start(function () {
+    bot.start(function () {
     });
 }

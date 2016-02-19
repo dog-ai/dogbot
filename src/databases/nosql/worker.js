@@ -2,7 +2,7 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var nosql = require('../nosql.js'),
+var nosql = require('./'),
     util = require("util");
 
 function worker() {
@@ -16,11 +16,11 @@ util.inherits(worker, nosql);
 worker.prototype.name = "worker";
 
 worker.prototype.start = function () {
-    this._open();
+    return this._open();
 };
 
 worker.prototype.stop = function () {
-    this._close();
+    return this._close();
 };
 
 module.exports = new worker();

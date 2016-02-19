@@ -41,6 +41,21 @@ employee.prototype.start = function () {
     this.communication.on('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
     this.communication.on('person:employee:is_present', this._isPresent);
+
+    this.communication.emitAsync('synchronization:incoming:setup', {
+        companyResource: 'employees',
+        onCompanyResourceChangedCallback: function (employee) {
+            instance.communication.emit('synchronization:incoming:person:employee:createOrUpdate', employee);
+        },
+        onCompanyResourceRemovedCallback: function (employee) {
+            instance.communication.emit('synchronization:incoming:person:employee:delete', employee);
+        }
+    });
+
+    this.communication.emitAsync('synchronization:outgoing:setup', {
+        companyResource: 'employees',
+        event: 'synchronization:outgoing:person:employee'
+    });
 };
 
 employee.prototype.stop = function () {

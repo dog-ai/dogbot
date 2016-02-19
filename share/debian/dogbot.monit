@@ -1,3 +1,0 @@
-check process raspbot with pidfile /var/run/dogbot.pid
-   start program = "/etc/init.d/dogbot start"
-   stop  program = "/etc/init.d/dogbot stop"
