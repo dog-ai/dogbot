@@ -59,12 +59,21 @@ heartbeat.prototype._sendHeartbeat = function () {
 };
 
 heartbeat.prototype._execSdNotify = function (notification) {
-    var sdDaemon = ffi.Library('systemd/sd-daemon.h', {
-        'sd_notify': ['int', ['int', 'string']]
-    });
+    return new Promise(function (resolve, reject) {
+        var sdDaemon = ffi.Library('systemd/sd-daemon.h', {
+            'sd_notify': ['int', ['int', 'string']]
+        });
 
-    var result = sdDaemon.sd_notify(0, notification);
-    logger.info("result " + result);
+        sdDaemon.sd_notify.async(0, notification, function (error, res) {
+            if (error) {
+                reject(new Error(error));
+            } else if (!res) {
+                reject(new Error('sd_notify returned ' + res))
+            } else {
+                resolve();
+            }
+        });
+    });
 };
 
 heartbeat.prototype._execSystemdNotify = function (notification) {
