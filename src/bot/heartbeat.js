@@ -1,5 +1,7 @@
 var logger = require('../utils/logger.js'),
-    Promise = require('bluebird');
+    Promise = require('bluebird'),
+    ffi = require('ffi');
+
 
 var SYSTEMD_KEEP_ALIVE_PING = 'WATCHDOG=1';
 
@@ -52,8 +54,17 @@ heartbeat.prototype._sendHeartbeat = function () {
     if (process.platform !== 'linux') {
         return Promise.resolve();
     } else {
-        return this._execSystemdNotify(SYSTEMD_KEEP_ALIVE_PING);
+        return this._execSdNotify(SYSTEMD_KEEP_ALIVE_PING);
     }
+};
+
+heartbeat.prototype._execSdNotify = function (notification) {
+    var sdDaemon = ffi.Library('systemd/sd-daemon.h', {
+        'sd_notify': ['int', ['int', 'string']]
+    });
+
+    var result = sdDaemon.sd_notify(0, notification);
+    logger.info("result " + result);
 };
 
 heartbeat.prototype._execSystemdNotify = function (notification) {

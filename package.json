@@ -11,6 +11,7 @@
     "bluebird": "^2.10.1",
     "cron": "^1.0.9",
     "express": "^4.13.0",
+    "ffi": "^2.0.0",
     "firebase": "^2.2.9",
     "firebase-queue": "^1.2.1",
     "firebase-token-generator": "^2.0.0",
