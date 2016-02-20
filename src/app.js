@@ -5,14 +5,17 @@ var SECRET = process.env.DOGBOT_SECRET,
 
 var bot = require('./bot')(SECRET);
 
-process.on('SIGINT', function () { // shutdown gracefully
+function shutdown() {
     bot.stop(function () {
         process.exit(0);
     });
-});
+}
+
+process.on('SIGINT', shutdown); // shutdown gracefully
+process.on('SIGTERM', shutdown);
 
 process.on('SIGABRT', function () { // force immediate shutdown, i.e. systemd watchdog
-    process.exit(0);
+    process.exit(1);
 });
 
 process.on('SIGHUP', function () { // reload
@@ -30,7 +33,7 @@ process.on('exit', function () {
 });
 
 process.on('uncaughtException', function (error) {
-    bot.logError(error);
+    bot.error(error);
 });
 
 if (SECRET === undefined) {
