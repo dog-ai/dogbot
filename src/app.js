@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-var SECRET = process.env.DOGBOT_SECRET;
+var SECRET = process.env.DOGBOT_SECRET,
+    WATCHDOG_USEC = process.env.WATCHDOG_USEC;
 
 var bot = require('./bot')(SECRET);
 
@@ -9,6 +10,12 @@ process.on('SIGINT', function() {
         process.exit(0);
     });
 });
+
+process.on('SIGHUP', function () {
+    bot.reload(function () {
+    });
+});
+
 
 process.once('SIGUSR2', function () {
     bot.reload(function () {
@@ -20,7 +27,7 @@ process.on('exit', function () {
 });
 
 process.on('uncaughtException', function (error) {
-    bot.error(error);
+    bot.logError(error);
 });
 
 if (SECRET === undefined) {
@@ -29,5 +36,8 @@ if (SECRET === undefined) {
     });
 } else {
     bot.start(function () {
+        if (WATCHDOG_USEC) {
+            bot.heartbeat(WATCHDOG_USEC);
+        }
     });
 }
