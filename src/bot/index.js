@@ -14,7 +14,8 @@ var databases = require('../databases')(communication);
 
 var apps = require('./apps')(communication, modules, databases),
     synchronization = require('./synchronization.js'),
-    worker = require('./worker.js')(databases);
+    worker = require('./worker.js')(databases),
+    heartbeat = require('./heartbeat.js')(communication);
 
 var bot = {
     start: function (callback) {
@@ -56,6 +57,14 @@ var bot = {
 
     error: function (error, callback) {
         logger.error(error.stack === undefined ? error : error.stack, callback);
+    },
+
+    heartbeat: function (interval, callback) {
+        heartbeat.initialize(interval)
+            .then(function (interval) {
+                logger.info('Sending a hearbeat every ' + interval + ' seconds');
+            })
+            .finally(callback);
     },
 
     _configureWorker: function () {
@@ -100,7 +109,7 @@ var bot = {
             _.map(_apps, function (appConfig, appName) {
                 return appConfig.is_enabled ? apps.enableApp(appName, appConfig) : apps.disableApp(appName);
             }));
-    }
+    },
 };
 
 module.exports = function (secret) {

@@ -48,6 +48,8 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
 
                     instance.queue.process('slow', 4, process);
 
+                    instance.queue.process('fast', process);
+
                     instance.queue
                         .on('job enqueue', function (id, type) {
                             kue.Job.get(id, function (error, job) {
@@ -111,7 +113,17 @@ worker.prototype.terminate = function () {
 };
 
 worker.prototype._enqueue = function (event, params, schedule) {
-    var type = event === 'person:device:discover' ? 'slow' : 'worker';
+    var type;
+    switch (event) {
+        case 'person:device:discover':
+            type = 'slow';
+            break;
+        case 'watchdog:heartbeat':
+            type = 'fast';
+            break;
+        default:
+            type = 'worker';
+    }
 
     var job = instance.queue.create(type, {
         event: event,
@@ -119,12 +131,11 @@ worker.prototype._enqueue = function (event, params, schedule) {
     });
 
     switch (type) {
-        case 'worker':
-            job.ttl(60000); // 1 minute
-            break;
         case 'slow':
             job.ttl(240000); // 4 minutes
             break;
+        default:
+            job.ttl(60000); // 1 minute
     }
 
     if (schedule !== undefined && schedule !== null) {

@@ -236,6 +236,7 @@ synchronization.prototype._incomingSetup = function (params, callback) {
             instance.companyRef.child('/' + params.companyResource).on('child_added',
                 function (snapshot) {
                     var resourceId = snapshot.key();
+
                     firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value',
                         function (snapshot) {
                             var resource = snapshot.val();
@@ -260,13 +261,8 @@ synchronization.prototype._incomingSetup = function (params, callback) {
                                     is_synced: true
                                 }, resource));
                             }
-                        },
-                        function (error) {
-                            logger.error("mac address " + error);
                         });
 
-                }, function (error) {
-                    logger.error(error);
                 });
             instance.companyRef.child('/' + params.companyResource).on('child_removed',
                 function (snapshot) {
@@ -276,9 +272,6 @@ synchronization.prototype._incomingSetup = function (params, callback) {
 
                     firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).off('value');
                     params.onCompanyResourceRemovedCallback({id: resourceId});
-                },
-                function (error) {
-                    logger.error(error);
                 });
         }
     }
