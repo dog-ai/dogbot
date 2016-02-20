@@ -76,11 +76,16 @@ apps.prototype.disableApp = function (name) {
         promises.push(self.modules.unloadModule(module.name));
     });
 
-    _.forEach(app.databases, function (database) {
-        promises.push(self.databases.stopDatabase(database.type, database.name));
-    });
-
     return Promise.all(promises)
+        .then(function () {
+            promises = [];
+
+            _.forEach(app.databases, function (database) {
+                promises.push(self.databases.stopDatabase(database.type, database.name));
+            });
+
+            return Promise.all(promises);
+        })
         .then(function () {
             _.remove(self.enabled, {name: name});
 
@@ -102,6 +107,10 @@ apps.prototype.disableAllApps = function () {
     return Promise.all(promises);
 };
 
+apps.prototype.healthCheck = function () {
+    return Promise.resolve();
+};
+
 module.exports = function (communication, modules, databases) {
     var instance = new apps();
 
@@ -118,4 +127,3 @@ module.exports = function (communication, modules, databases) {
 
     return instance;
 };
-

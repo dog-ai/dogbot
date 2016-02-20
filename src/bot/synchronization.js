@@ -382,6 +382,10 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
     }
 };
 
+synchronization.prototype.healthCheck = function () {
+    return Promise.resolve();
+};
+
 var instance = new synchronization();
 
 module.exports = instance;

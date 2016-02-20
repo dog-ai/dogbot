@@ -131,6 +131,9 @@ worker.prototype._enqueue = function (event, params, schedule) {
     });
 
     switch (type) {
+        case 'fast':
+            job.ttl(10000); // 10 seconds
+            break;
         case 'slow':
             job.ttl(240000); // 4 minutes
             break;
@@ -158,6 +161,24 @@ worker.prototype._dequeue = function (event) {
             }
         });
     }
+};
+
+worker.prototype.healthCheck = function () {
+    return new Promise(function (resolve, reject) {
+        instance.queue.inactiveCount(function (error, total) {
+            if (error) {
+                reject(error);
+            } else {
+                if (total > 100) {
+                    reject(new Error('worker is stuck'));
+                } else {
+                    resolve();
+                }
+            }
+
+        });
+
+    });
 };
 
 var instance = new worker();

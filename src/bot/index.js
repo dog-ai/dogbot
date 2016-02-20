@@ -60,7 +60,13 @@ var bot = {
     },
 
     heartbeat: function (interval, heartbeatFn, callback) {
-        heartbeat.initialize(interval, heartbeatFn)
+        heartbeat.initialize(interval, heartbeatFn, function () {
+                return Promise.all([
+                    apps.healthCheck(),
+                    synchronization.healthCheck(),
+                    worker.healthCheck()
+                ])
+            })
             .then(function (interval) {
                 logger.info('Sending a hearbeat every ' + interval + ' seconds');
             })
