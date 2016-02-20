@@ -1,21 +1,22 @@
 var logger = require('../utils/logger.js'),
-    Promise = require('bluebird'),
-    ffi = require('ffi');
+    Promise = require('bluebird');
 
 function heartbeat() {
 
 }
 
-heartbeat.prototype.initialize = function (interval) {
+heartbeat.prototype.initialize = function (interval, heartbeatFn) {
+    this._heartbeatFn = Promise.promisify(heartbeatFn);
+
     return new Promise(function (resolve, reject) {
         if (!interval > 0) {
             reject(new Error('invalid interval'));
         }
 
-        interval = interval / 2;
+        instance._interval = interval / 2;
 
         instance.communication.on('bot:heartbeat', instance._healthCheck);
-        instance.communication.emit('worker:job:enqueue', 'bot:heartbeat', null, interval + ' seconds');
+        instance.communication.emit('worker:job:enqueue', 'bot:heartbeat', null, instance._interval + ' seconds');
 
         instance._initialized = true;
 
@@ -31,43 +32,20 @@ heartbeat.prototype.terminate = function () {
 
         instance.communication.emit('worker:job:dequeue', 'bot:heartbeat');
 
+        delete instance._interval;
+        delete instance._heartbeatFn;
+        delete instance._initialized;
+
         resolve();
     });
 };
 
 heartbeat.prototype._healthCheck = function (params, callback) {
-
-    instance._sendHeartbeat()
+    instance._heartbeatFn()
         .catch(function (error) {
             logger.error(error.stack)
         })
         .finally(callback);
-};
-
-heartbeat.prototype._sendHeartbeat = function () {
-    if (process.platform !== 'linux') {
-        return Promise.resolve();
-    } else {
-        return this._execSdNotify('WATCHDOG=1');
-    }
-};
-
-heartbeat.prototype._execSdNotify = function (notification) {
-    return new Promise(function (resolve, reject) {
-        var sdDaemon = ffi.Library('libsystemd', {
-            'sd_notify': ['int', ['int', 'string']]
-        });
-
-        sdDaemon.sd_notify.async(0, notification, function (error, res) {
-            if (error) {
-                reject(new Error(error));
-            } else if (!res) {
-                reject(new Error('sd_notify returned ' + res))
-            } else {
-                resolve();
-            }
-        });
-    });
 };
 
 var instance = new heartbeat();

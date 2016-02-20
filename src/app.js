@@ -45,8 +45,20 @@ if (SECRET === undefined) {
     });
 } else {
     bot.start(function () {
+        if (process.platform !== 'linux') {
+            require('utils/systemd').sdNotify(0, 'READY=1');
+        }
+
         if (WATCHDOG_USEC) {
-            bot.heartbeat(WATCHDOG_USEC);
+            bot.heartbeat(WATCHDOG_USEC, function (callback) {
+                if (process.platform !== 'linux') {
+                    require('utils/systemd').sdNotify(0, 'WATCHDOG=1', callback);
+                } else {
+                    if (callback) {
+                        callback();
+                    }
+                }
+            });
         }
     });
 }
