@@ -60,7 +60,7 @@ heartbeat.prototype._sendHeartbeat = function () {
 
 heartbeat.prototype._execSdNotify = function (notification) {
     return new Promise(function (resolve, reject) {
-        var sdDaemon = ffi.Library('systemd/sd-daemon.h', {
+        var sdDaemon = ffi.Library('libsystemd', {
             'sd_notify': ['int', ['int', 'string']]
         });
 
