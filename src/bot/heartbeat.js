@@ -38,9 +38,6 @@ heartbeat.prototype.terminate = function () {
 heartbeat.prototype._healthCheck = function (params, callback) {
 
     instance._sendHeartbeat()
-        .then(function () {
-            logger.debug('heartbeat');
-        })
         .catch(function (error) {
             logger.error(error.stack)
         })
@@ -51,7 +48,8 @@ heartbeat.prototype._sendHeartbeat = function () {
     if (process.platform !== 'linux') {
         return Promise.resolve();
     } else {
-        return this._execSdNotify('WATCHDOG=1');
+        //return this._execSdNotify('WATCHDOG=1');
+        return Promise.resolve();
     }
 };
 
