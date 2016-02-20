@@ -48,8 +48,7 @@ heartbeat.prototype._sendHeartbeat = function () {
     if (process.platform !== 'linux') {
         return Promise.resolve();
     } else {
-        //return this._execSdNotify('WATCHDOG=1');
-        return Promise.resolve();
+        return this._execSdNotify('WATCHDOG=1');
     }
 };
 

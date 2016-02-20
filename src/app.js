@@ -5,16 +5,18 @@ var SECRET = process.env.DOGBOT_SECRET,
 
 var bot = require('./bot')(SECRET);
 
+// shutdown gracefully
 function shutdown() {
     bot.stop(function () {
         process.exit(0);
     });
 }
 
-process.on('SIGINT', shutdown); // shutdown gracefully
+process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-process.on('SIGABRT', function () { // force immediate shutdown, i.e. systemd watchdog
+// force immediate shutdown, i.e. systemd watchdog?
+process.on('SIGABRT', function () {
     process.exit(1);
 });
 
@@ -23,7 +25,8 @@ process.on('SIGHUP', function () { // reload
     });
 });
 
-process.once('SIGUSR2', function () { // reload and then shutdown, i.e. forever daemon
+// reload and then shutdown, i.e. forever daemon
+process.once('SIGUSR2', function () {
     bot.reload(function () {
         process.kill(process.pid, 'SIGUSR2');
     });
