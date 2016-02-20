@@ -59,8 +59,8 @@ var bot = {
         logger.error(error.stack === undefined ? error : error.stack, callback);
     },
 
-    heartbeat: function (interval, callback) {
-        heartbeat.initialize(interval)
+    heartbeat: function (interval, heartbeatFn, callback) {
+        heartbeat.initialize(interval, heartbeatFn)
             .then(function (interval) {
                 logger.info('Sending a hearbeat every ' + interval + ' seconds');
             })
