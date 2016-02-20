@@ -154,7 +154,7 @@ worker.prototype._dequeue = function (event) {
     if (instance.queue) {
         instance.queue.remove({unique: event, data: {unique: event}}, function (error, response) {
             if (error) {
-                logger.error(errro.stack);
+                logger.error(error.stack);
             }
         });
     }
