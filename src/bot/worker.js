@@ -118,7 +118,7 @@ worker.prototype._enqueue = function (event, params, schedule) {
         case 'person:device:discover':
             type = 'slow';
             break;
-        case 'watchdog:heartbeat':
+        case 'bot:heartbeat':
             type = 'fast';
             break;
         default:
