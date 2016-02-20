@@ -7,14 +7,15 @@ StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=dogbot
 EnvironmentFile=/etc/default/dogbot
-Environment="WATCHDOG_USEC=300" "AUDIODEV=hw:1,0" "AUDIODRIVER=alsa" "PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/opt/node/bin:/opt/redis/bin"
+Environment="WATCHDOG_USEC=60" "AUDIODEV=hw:1,0" "AUDIODRIVER=alsa" "PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/opt/node/bin:/opt/redis/bin"
 WorkingDirectory=/opt/dogbot
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/db
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/log
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/tmp
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/run
 ExecStart=/opt/node/bin/node src/app.js
-WatchdogSec=300
+WatchdogSec=60
+NotifyAccess=all
 ExecStop=/bin/kill -s 2 $MAINPID
 KillMode=none
 SendSIGKILL=no

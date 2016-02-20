@@ -42,6 +42,9 @@ heartbeat.prototype._healthCheck = function (params, callback) {
         .then(function () {
             logger.debug('heartbeat');
         })
+        .catch(function (error) {
+            logger.error(error.stack)
+        })
         .finally(callback);
 };
 
@@ -64,6 +67,7 @@ heartbeat.prototype._execSystemdNotify = function (notification) {
         }, 1000);
 
         process.on('error', function (error) {
+            console.log(error.stack);
             clearTimeout(timeout);
             reject(error);
         });
