@@ -56,7 +56,14 @@ if (SECRET === undefined) {
         if (WATCHDOG_USEC) {
             bot.heartbeat(WATCHDOG_USEC, function (callback) {
                 if (process.platform === 'linux') {
-                    require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', callback);
+                    require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', function (error, res) {
+                        if (error) {
+                            callback(error);
+                        } else {
+                            console.log(res);
+                            callback();
+                        }
+                    });
                 } else {
                     if (callback) {
                         callback();
