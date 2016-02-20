@@ -2,9 +2,6 @@ var logger = require('../utils/logger.js'),
     Promise = require('bluebird'),
     ffi = require('ffi');
 
-
-var SYSTEMD_KEEP_ALIVE_PING = 'WATCHDOG=1';
-
 function heartbeat() {
 
 }
@@ -54,7 +51,7 @@ heartbeat.prototype._sendHeartbeat = function () {
     if (process.platform !== 'linux') {
         return Promise.resolve();
     } else {
-        return this._execSdNotify(SYSTEMD_KEEP_ALIVE_PING);
+        return this._execSdNotify('WATCHDOG=1');
     }
 };
 
@@ -74,29 +71,6 @@ heartbeat.prototype._execSdNotify = function (notification) {
             }
         });
     });
-};
-
-heartbeat.prototype._execSystemdNotify = function (notification) {
-    return new Promise(function (resolve, reject) {
-        var timeout, spawn = require('child_process').spawn,
-            process = spawn('systemd-notify', [notification]);
-
-        timeout = setTimeout(function () {
-            process.kill();
-            reject(new Error("Child process hanged"));
-        }, 1000);
-
-        process.on('error', function (error) {
-            console.log(error.stack);
-            clearTimeout(timeout);
-            reject(error);
-        });
-
-        process.on('close', function () {
-            clearTimeout(timeout);
-            resolve();
-        });
-    })
 };
 
 var instance = new heartbeat();
