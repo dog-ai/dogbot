@@ -21,7 +21,7 @@ heartbeat.prototype.initialize = function (interval, heartbeatFn, healthCheckFn)
 
         instance._initialized = true;
 
-        resolve(interval);
+        resolve(instance._interval);
     });
 };
 
@@ -47,7 +47,9 @@ heartbeat.prototype._sendHeartbeat = function (params, callback) {
         .then(function () {
             return instance._heartbeatFn();
         })
-        .then(callback)
+        .then(function () {
+            callback();
+        })
         .catch(function (error) {
             callback(error);
         })
