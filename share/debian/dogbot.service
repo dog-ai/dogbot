@@ -2,7 +2,7 @@
 Description=Dog Bot
 
 [Service]
-Type=idle
+Type=notify
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=dogbot
@@ -15,8 +15,7 @@ ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/tmp
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/run
 ExecStart=/opt/node/bin/node src/app.js
 WatchdogSec=40
-TimeoutStartSec=30
-TimeoutStopSec=60
+TimeoutSec=60
 ExecReload=/bin/kill -s 12 $MAINPID
 Restart=on-failure
 

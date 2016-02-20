@@ -5,8 +5,9 @@ function heartbeat() {
 
 }
 
-heartbeat.prototype.initialize = function (interval, heartbeatFn) {
+heartbeat.prototype.initialize = function (interval, heartbeatFn, healthCheckFn) {
     this._heartbeatFn = Promise.promisify(heartbeatFn);
+    this._healthCheckFn = healthCheckFn;
 
     return new Promise(function (resolve, reject) {
         if (!interval > 0) {
@@ -15,7 +16,7 @@ heartbeat.prototype.initialize = function (interval, heartbeatFn) {
 
         instance._interval = interval / 2;
 
-        instance.communication.on('bot:heartbeat', instance._healthCheck);
+        instance.communication.on('bot:heartbeat', instance._sendHeartbeat);
         instance.communication.emit('worker:job:enqueue', 'bot:heartbeat', null, instance._interval + ' seconds');
 
         instance._initialized = true;
@@ -31,6 +32,7 @@ heartbeat.prototype.terminate = function () {
         }
 
         instance.communication.emit('worker:job:dequeue', 'bot:heartbeat');
+        instance.communication.removeEventListener('bot:heartbeat', instance._sendHeartbeat);
 
         delete instance._interval;
         delete instance._heartbeatFn;
@@ -40,12 +42,15 @@ heartbeat.prototype.terminate = function () {
     });
 };
 
-heartbeat.prototype._healthCheck = function (params, callback) {
-    instance._heartbeatFn()
-        .catch(function (error) {
-            logger.error(error.stack)
+heartbeat.prototype._sendHeartbeat = function (params, callback) {
+    instance._healthCheckFn()
+        .then(function () {
+            return instance._heartbeatFn();
         })
-        .finally(callback);
+        .then(callback)
+        .catch(function (error) {
+            callback(error);
+        })
 };
 
 var instance = new heartbeat();
