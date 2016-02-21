@@ -41,7 +41,7 @@ device.prototype.start = function () {
     this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:device', this._onDeviceOutgoingSynchronization);
 
-    this.communication.emitAsync('synchronization:incoming:setup', {
+    this.communication.emit('synchronization:incoming:setup', {
         companyResource: 'devices',
         onCompanyResourceChangedCallback: function (device) {
             instance.communication.emit('synchronization:incoming:person:device:createOrUpdate', device);
@@ -51,7 +51,7 @@ device.prototype.start = function () {
         }
     });
 
-    this.communication.emitAsync('synchronization:outgoing:setup', {
+    this.communication.emit('synchronization:outgoing:setup', {
         companyResource: 'devices',
         event: 'synchronization:outgoing:person:device'
     });
