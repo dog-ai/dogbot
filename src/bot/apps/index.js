@@ -90,6 +90,7 @@ apps.prototype.disableApp = function (name) {
             _.remove(self.enabled, {name: name});
 
             logger.info('Disabled app: ' + name);
+
         }).catch(function (error) {
             logger.info('Unable to disable app ' + name + ' because ' + error.message);
         });
@@ -114,6 +115,7 @@ apps.prototype.healthCheck = function () {
 module.exports = function (communication, modules, databases) {
     var instance = new apps();
 
+    instance.communication = communication;
     instance.modules = modules;
     instance.databases = databases;
     instance.enabled = [];

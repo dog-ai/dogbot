@@ -9,6 +9,11 @@ function performance() {
     sql.call(this);
 
     this.communication = undefined;
+
+    this._runFn = this._run.bind(this);
+    this._getFn = this._get.bind(this);
+    this._allFn = this._all.bind(this);
+    this._eachFn = this._each.bind(this);
 }
 util.inherits(performance, sql);
 
@@ -18,13 +23,13 @@ performance.prototype.start = function (communication) {
     var self = this;
     this.communication = communication;
 
-    this.communication.on('database:' + this.name + ':setup', this._run.bind(this));
-    this.communication.on('database:' + this.name + ':create', this._run.bind(this));
-    this.communication.on('database:' + this.name + ':retrieveOne', this._get.bind(this));
-    this.communication.on('database:' + this.name + ':retrieveAll', this._all.bind(this));
-    this.communication.on('database:' + this.name + ':retrieveOneByOne', this._each.bind(this));
-    this.communication.on('database:' + this.name + ':update', this._run.bind(this));
-    this.communication.on('database:' + this.name + ':delete', this._run.bind(this));
+    this.communication.on('database:' + this.name + ':setup', this._runFn);
+    this.communication.on('database:' + this.name + ':create', this._runFn);
+    this.communication.on('database:' + this.name + ':retrieveOne', this._getFn);
+    this.communication.on('database:' + this.name + ':retrieveAll', this._allFn);
+    this.communication.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+    this.communication.on('database:' + this.name + ':update', this._runFn);
+    this.communication.on('database:' + this.name + ':delete', this._runFn);
 
     return this._open(this.name)
         .then(function () {
@@ -43,13 +48,13 @@ performance.prototype.start = function (communication) {
 };
 
 performance.prototype.stop = function () {
-    this.communication.removeListener('database:' + this.name + ':setup', this._run.bind(this));
-    this.communication.removeListener('database:' + this.name + ':create', this._run.bind(this));
-    this.communication.removeListener('database:' + this.name + ':retrieveOne', this._get.bind(this));
-    this.communication.removeListener('database:' + this.name + ':retrieveAll', this._all.bind(this));
-    this.communication.removeListener('database:' + this.name + ':retrieveOneByOne', this._each.bind(this));
-    this.communication.removeListener('database:' + this.name + ':update', this._run.bind(this));
-    this.communication.removeListener('database:' + this.name + ':delete', this._run.bind(this));
+    this.communication.removeListener('database:' + this.name + ':setup', this._runFn);
+    this.communication.removeListener('database:' + this.name + ':create', this._runFn);
+    this.communication.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
+    this.communication.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
+    this.communication.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+    this.communication.removeListener('database:' + this.name + ':update', this._runFn);
+    this.communication.removeListener('database:' + this.name + ':delete', this._runFn);
 
     return this._close();
 };

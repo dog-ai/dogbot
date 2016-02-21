@@ -70,6 +70,8 @@ employee.prototype.stop = function () {
     this.communication.removeListener('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
     this.communication.removeListener('synchronization:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
     this.communication.removeListener('person:employee:is_present', this._isPresent);
+
+    this.communication.removeAllListeners('monitor:arp:discover:finish');
 };
 
 employee.prototype._handleSlackAway = function (slack) {

@@ -60,6 +60,7 @@ mac_address.prototype.start = function () {
 };
 
 mac_address.prototype.stop = function () {
+    this.communication.removeListener('person:macAddress:clean', this._clean);
     this.communication.removeListener('monitor:arp:create', this._onArpCreateOrUpdate);
     this.communication.removeListener('monitor:arp:update', this._onArpCreateOrUpdate);
     this.communication.removeListener('monitor:arp:delete', this._onArpDelete);
