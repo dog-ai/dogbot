@@ -3,6 +3,7 @@
  */
 
 var logger = require('../utils/logger.js'),
+    _ = require('lodash'),
     kue = require('kue-scheduler'),
     Promise = require('bluebird');
 
@@ -79,6 +80,7 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
                     }).on('job failed attempt', function (id, attempts) {
                         logger.debug('Job ' + id + ' failed ' + attempts + ' times');
                     }).on('schedule success', function (job) {
+                        instance._schedules[job.data.event] = _.pick(job.data, ['expiryKey', 'dataKey']);
                     }).on('schedule error', function (error) {
                         logger.error('schedule error: ' + error);
                     }).on('already scheduled', function (job) {
@@ -154,10 +156,12 @@ worker.prototype._enqueue = function (event, params, schedule) {
 
 worker.prototype._dequeue = function (event) {
 
-    if (instance.queue) {
-        instance.queue.remove({unique: event, data: {unique: event}}, function (error, response) {
+    if (instance.queue && instance._schedules[event]) {
+        instance.queue.remove(instance._schedules[event], function (error) {
             if (error) {
                 logger.error(error.stack);
+            } else {
+                delete instance._schedules[event];
             }
         });
     }
@@ -185,6 +189,7 @@ var instance = new worker();
 
 module.exports = function (databases) {
     instance.databases = databases;
+    instance._schedules = {};
 
     return instance;
 };

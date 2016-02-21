@@ -66,6 +66,10 @@ device.prototype.stop = function () {
     this.communication.removeListener('person:device:is_present', this._isPresent);
     this.communication.removeListener('person:device:discover', this._discover);
     this.communication.removeListener('synchronization:outgoing:person:device', this._onDeviceOutgoingSynchronization);
+
+    this.communication.removeAllListeners('monitor:arp:discover:finish');
+
+    this.communication.emit('worker:job:dequeue', 'person:device:discover');
 };
 
 device.prototype._discover = function (macAddress, callback) {
