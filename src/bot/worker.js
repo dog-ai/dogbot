@@ -168,21 +168,7 @@ worker.prototype._dequeue = function (event) {
 };
 
 worker.prototype.healthCheck = function () {
-    return new Promise(function (resolve, reject) {
-        instance.queue.inactiveCount(function (error, total) {
-            if (error) {
-                reject(error);
-            } else {
-                if (total > 100) {
-                    reject(new Error('worker is stuck'));
-                } else {
-                    resolve();
-                }
-            }
-
-        });
-
-    });
+    return new Promise.resolve();
 };
 
 var instance = new worker();
