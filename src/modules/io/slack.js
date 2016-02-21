@@ -2,24 +2,15 @@
  * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+var logger = require('../../utils/logger.js'),
+    _ = require('lodash'),
+    Promise = require('bluebird');
 
-var _ = require('lodash');
-var events = require('events');
-var Slack = require('slack-client');
+var RtmClient = require('slack-client').RtmClient,
+    MemoryDataStore = require('slack-client').MemoryDataStore;
 
 function slack() {
-    var client = {};
-    var authToken;
-    var autoReconnect = true;
-    var autoMark = true;
-    var defaultChannel = undefined;
-    var timeout = undefined;
-
-    events.EventEmitter.call(this);
 }
-
-slack.prototype.__proto__ = events.EventEmitter.prototype;
 
 slack.prototype.type = "IO";
 
@@ -30,65 +21,42 @@ slack.prototype.info = function() {
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
 };
 
-slack.prototype.load = function (moduleManager, config) {
-    this.moduleManager = moduleManager;
+slack.prototype.load = function (communication, config) {
+    this.communication = communication;
 
-    this.authToken = (config && config.auth && config.auth.token || undefined);
-    if (this.authToken === undefined || this.authToken === null || this.authToken.trim() === '') {
-        throw new Error('invalid configuration: no authentication token available');
+    this.apiToken = (config && config.api_token || undefined);
+    if (!this.apiToken || this.apiToken.trim() === '') {
+        throw new Error('invalid configuration: no API token available');
     }
 
     this.defaultChannel = (config && config.default_channel || undefined);
 
-    this.client = new Slack(this.authToken, this.autoReconnect, this.autoMark);
+    this._dataStore = new MemoryDataStore({'logger': logger});
 
-    this.start();
+    this._client = new RtmClient(this.apiToken, {autoReconnect: true, dataStore: this._dataStore});
+
+    return this.start();
 };
 
 slack.prototype.unload = function () {
-    this.stop();
+    return this.stop();
 };
 
 slack.prototype.start = function () {
-    var self = this;
+    return new Promise(function (resolve, reject) {
+        instance._client.once('open', resolve);
+        instance._client.once('unable_to_rtm_start', reject);
 
-    this.client.on('open', function () {
+        instance._client.start();
     });
-
-    this.client.on('close', function () {
-        self.client.reconnect();
-    });
-
-    this.client.on('message', function(message) {
-        self._handleMessage(message);
-    });
-
-    this.client.on('presenceChange', function (user, presence) {
-        self._listenUserPresence(user, presence);
-    });
-
-    this.client.on('error', function(error) {
-        logger.error(error.stack)
-    });
-
-    var time = 60 * 1000;
-
-    function monitor() {
-        try {
-            self._discoverUsers();
-
-        } catch (error) {
-            logger.error(error.stack);
-        }
-
-        self.timeout = setTimeout(monitor, time * (1 + Math.random()));
-    }
-
-    this.client.login();
 };
 
 slack.prototype.stop = function () {
-    clearTimeout(this.timeout);
+    return new Promise(function (resolve) {
+        instance._client.once('disconnect', resolve);
+
+        instance._client.disconnect();
+    })
 };
 
 slack.prototype.send = function(recipient, message) {
@@ -112,27 +80,7 @@ slack.prototype.send = function(recipient, message) {
     }
 };
 
-slack.prototype._handleMessage = function (message) {
-    var type = message.type,
-        channel = this.client.getChannelGroupOrDMByID(message.channel),
-        user = this.client.getUserByID(message.user),
-        time = message.ts,
-        text = message.text;
-
-    if (text !== undefined && text.charAt(0) === '!') {
-        this.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function (module) {
-            try {
-                module.process(text, function (response) {
-                    channel.send(response);
-                }, user);
-            } catch (exception) {
-                channel.send("Oops! Something went wrong...please call the maintenance team!");
-                logger.info(exception.stack);
-            }
-        });
-    }
-};
-
+/*
 slack.prototype._discoverUsers = function () {
     var self = this;
 
@@ -140,22 +88,22 @@ slack.prototype._discoverUsers = function () {
     var users = this._getUsersInChannel(channel);
     users.forEach(function (user) {
         if (user.presence === 'active') {
-            self.moduleManager.emit('io:slack:userIsAlreadyActive', user);
+ self.communication.emit('io:slack:userIsAlreadyActive', user);
         } else {
-            self.moduleManager.emit('io:slack:userIsAlreadyAway', user);
+ self.communication.emit('io:slack:userIsAlreadyAway', user);
         }
     });
 };
 
 slack.prototype._listenUserPresence = function (user, presence) {
-    var channel = this.client.getChannelByName(this.defaultChannel.substring(1));
+ var channel = this._client.getChannelByName(this.defaultChannel.substring(1));
     if (this._isUserInChannel(user, channel)) {
         switch (presence) {
             case 'active':
-                this.moduleManager.emit('io:slack:userIsNowActive', user);
+ this.communication.emit('io:slack:userIsNowActive', user);
                 break;
             case 'away':
-                this.moduleManager.emit('io:slack:userIsNowAway', user);
+ this.communication.emit('io:slack:userIsNowAway', user);
                 break;
         }
     }
@@ -184,6 +132,8 @@ slack.prototype._getUsersInChannel = function (channel) {
         .filter(function (u) {
             return !!u && !u.is_bot;
         });
-};
+ };*/
 
-module.exports = new slack();
+var instance = new slack();
+
+module.exports = instance;
