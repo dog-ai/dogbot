@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js'),
@@ -42,7 +42,7 @@ employee.prototype.start = function () {
     this.communication.on('synchronization:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
     this.communication.on('person:employee:is_present', this._isPresent);
 
-    this.communication.emitAsync('synchronization:incoming:setup', {
+    this.communication.emitAsync('synchronization:incoming:register:setup', {
         companyResource: 'employees',
         onCompanyResourceChangedCallback: function (employee) {
             instance.communication.emit('synchronization:incoming:person:employee:createOrUpdate', employee);
@@ -52,9 +52,15 @@ employee.prototype.start = function () {
         }
     });
 
-    this.communication.emitAsync('synchronization:outgoing:setup', {
+    this.communication.emitAsync('synchronization:outgoing:periodic:register', {
         companyResource: 'employees',
         event: 'synchronization:outgoing:person:employee'
+    });
+
+    this.communication.emitAsync('synchronization:outgoing:quickshot:register', {
+        companyResource: 'employees',
+        registerEvents: ['person:employee:nearby', 'person:employee:faraway'],
+        outgoingEvent: 'synchronization:outgoing:person:employee'
     });
 };
 
@@ -104,6 +110,7 @@ employee.prototype._handleDeviceOnline = function (device) {
                     employee.updated_date = new Date();
                     employee.is_present = true;
                     employee.last_presence_date = device.last_presence_date;
+                    employee.is_synced = false;
 
                     return instance._updateById(employee.id, employee)
                         .then(function () {
@@ -152,6 +159,7 @@ employee.prototype._handleDeviceOffline = function (device) {
 
                                 employee.is_present = false;
                                 employee.last_presence_date = device.last_presence_date;
+                                employee.is_synced = false;
 
                                 return instance._updateById(employee.id, employee)
                                     .then(function () {
