@@ -48,36 +48,40 @@ slack.prototype.start = function () {
         instance._client.once('unable_to_rtm_start', reject);
 
         instance._client.start();
-    });
+    })
+        .then(function () {
+            instance._client.on('message', instance._onMessage);
+            instance._client.on('presence_change', instance._onPresenceChange);
+        });
 };
 
 slack.prototype.stop = function () {
     return new Promise(function (resolve) {
+        instance._client.removeListener('message', instance._onMessage);
+        instance._client.removeListener('presence_change', instance._onPresenceChange);
+
         instance._client.once('disconnect', resolve);
 
         instance._client.disconnect();
     })
 };
 
-slack.prototype.send = function(recipient, message) {
+slack.prototype._onMessage = function (message) {
+    logger.debug(message);
 
-    if (recipient === null) {
-        return this.send(this.defaultChannel, message);
-    } else if (recipient.charAt(0) === '#') {
-        var channel = this.client.getChannelByName(recipient.substring(1));
-        channel.send(message);
-    } else if (recipient.charAt(0) === 'D') {
-        var id = this.client.getChannelGroupOrDMByID(recipient);
-        id.send(message);
-    } else if (recipient.charAt(0) === 'U') {
-        var self = this;
+    var type = message.type,
+        channel = instance._dataStore.getChannelById(message.channel) || instance._dataStore.getDMById(message.channel),
+        user = instance._dataStore.getUserById(message.user),
+        time = message.ts,
+        text = message.text;
 
-        this.client.openDM(recipient, function (dm) {
-            if (dm !== undefined && dm !== null && dm.channel.id !== null) {
-                self.send(dm.channel.id, message);
-            }
-        });
+    if (text && text.charAt(0) === '!') {
+        instance._client.sendMessage('Not now! I\'m busy learning new tricks.', channel.id);
     }
+};
+
+slack.prototype._onPresenceChange = function (message) {
+    logger.debug(message);
 };
 
 /*
