@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js'),
@@ -43,7 +43,7 @@ mac_address.prototype.start = function () {
 
     this.communication.emit('worker:job:enqueue', 'person:macAddress:clean', null, '6 hours');
 
-    this.communication.emitAsync('synchronization:incoming:setup', {
+    this.communication.emitAsync('synchronization:incoming:register:setup', {
         companyResource: 'mac_addresses',
         onCompanyResourceChangedCallback: function (macAddress) {
             instance.communication.emit('synchronization:incoming:person:macAddress:createOrUpdate', macAddress);
@@ -53,7 +53,7 @@ mac_address.prototype.start = function () {
         }
     });
 
-    this.communication.emitAsync('synchronization:outgoing:setup', {
+    this.communication.emitAsync('synchronization:outgoing:periodic:register', {
         companyResource: 'mac_addresses',
         event: 'synchronization:outgoing:person:mac_address'
     });

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js'),
@@ -58,7 +58,7 @@ presence.prototype.start = function () {
     this.communication.emit('worker:job:enqueue', 'performance:presence:monthly:stats', null, '02 00 00 * * *');
     this.communication.emit('worker:job:enqueue', 'performance:presence:alltime:stats', null, '03 00 00 * * *');
 
-    this.communication.emitAsync('synchronization:outgoing:setup', {
+    this.communication.emitAsync('synchronization:outgoing:periodic:register', {
         companyResource: 'employee_performances',
         event: 'synchronization:outgoing:performance:presence'
     });
@@ -85,7 +85,7 @@ presence.prototype.stop = function () {
 
 presence.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
     if (!instance.latestMonthlyStats[employee.id]) {
-        instance.communication.emitAsync('synchronization:incoming:setup', {
+        instance.communication.emitAsync('synchronization:incoming:register:setup', {
             companyResource: 'employee_performances',
             employeeId: employee.id,
             name: 'presence',
@@ -96,7 +96,7 @@ presence.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
             }
         });
 
-        instance.communication.emitAsync('synchronization:incoming:setup', {
+        instance.communication.emitAsync('synchronization:incoming:register:setup', {
             companyResource: 'employee_performances',
             period: 'monthly',
             employeeId: employee.id,
@@ -108,7 +108,7 @@ presence.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
     }
 
     if (!instance.latestYearlyStats[employee.id]) {
-        instance.communication.emitAsync('synchronization:incoming:setup', {
+        instance.communication.emitAsync('synchronization:incoming:register:setup', {
             companyResource: 'employee_performances',
             period: 'yearly',
             employeeId: employee.id,
@@ -120,7 +120,7 @@ presence.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
     }
 
     if (!instance.latestAlltimeStats[employee.id]) {
-        instance.communication.emitAsync('synchronization:incoming:setup', {
+        instance.communication.emitAsync('synchronization:incoming:register:setup', {
             companyResource: 'employee_performances',
             period: 'alltime',
             employeeId: employee.id,

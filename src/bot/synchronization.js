@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../utils/logger.js'),
@@ -12,7 +12,14 @@ var logger = require('../utils/logger.js'),
 function synchronization() {
 }
 
-synchronization.prototype.initialize = function (token, synchronizeSetupCallback, onCompanyAppChangedCallback, incomingSetupCallback, outgoingSetupCallback, onOutgoingSynchronizeCallback) {
+synchronization.prototype.initialize = function (token,
+                                                 startOutgoingPeriodicSynchronizationFn,
+                                                 onCompanyAppChangedCallback,
+                                                 registerIncomingSynchronizationFn,
+                                                 registerOutgoingPeriodicSynchronizationFn,
+                                                 registerOutgoingQuickshotSynchronizationFn,
+                                                 onOutgoingSynchronizeCallback) {
+
     return new Promise(function (resolve, reject) {
 
         return instance._authenticate(token)
@@ -20,10 +27,11 @@ synchronization.prototype.initialize = function (token, synchronizeSetupCallback
 
                 instance.outgoingSynchronizeEvents = [];
 
-                synchronizeSetupCallback(instance._synchronize);
+                startOutgoingPeriodicSynchronizationFn(instance._periodicOutgoingSynchronization);
                 instance.onCompanyAppChangedCallback = onCompanyAppChangedCallback;
-                incomingSetupCallback(synchronization.prototype._incomingSetup);
-                outgoingSetupCallback(synchronization.prototype._outgoingSetup);
+                registerIncomingSynchronizationFn(synchronization.prototype._registerIncomingSynchronization);
+                registerOutgoingPeriodicSynchronizationFn(synchronization.prototype._registerPeriodicOutgoingSynchronization);
+                registerOutgoingQuickshotSynchronizationFn(synchronization.prototype._quickshotOutgoingSynchronization);
                 instance.onOutgoingSynchronizeCallback = onOutgoingSynchronizeCallback;
 
                 if (dog.company_id) {
@@ -108,7 +116,7 @@ synchronization.prototype._unauthenthicate = function () {
     });
 };
 
-synchronization.prototype._synchronize = function (params, callback) {
+synchronization.prototype._periodicOutgoingSynchronization = function (params, callback) {
 
     if (instance.companyRef) {
         _.forEach(instance.outgoingSynchronizeEvents, function (outgoing) {
@@ -130,7 +138,27 @@ synchronization.prototype._synchronize = function (params, callback) {
     callback();
 };
 
-synchronization.prototype._incomingSetup = function (params, callback) {
+synchronization.prototype._quickshotOutgoingSynchronization = function (registerParams, outgoingParams, callback) {
+
+    instance.onOutgoingSynchronizeCallback(registerParams.outgoingEvent, function (error, companyResourceObj, callback) {
+        if (error) {
+            logger.error(error.stack);
+        } else {
+            instance._sendCompanyResource(registerParams.companyResource, companyResourceObj, function (error) {
+                callback(error, companyResourceObj);
+            });
+        }
+    });
+
+    var now = moment().format();
+    instance.dogRef.update({last_seen_date: now, updated_date: now});
+
+    if (callback) {
+        callback();
+    }
+};
+
+synchronization.prototype._registerIncomingSynchronization = function (params, callback) {
     if (instance.companyRef) {
         if (params.companyResource == 'employee_performances') {
 
@@ -279,7 +307,7 @@ synchronization.prototype._incomingSetup = function (params, callback) {
     callback();
 };
 
-synchronization.prototype._outgoingSetup = function (params, callback) {
+synchronization.prototype._registerPeriodicOutgoingSynchronization = function (params, callback) {
     instance.outgoingSynchronizeEvents.push({event: params.event, companyResource: params.companyResource});
 
     callback();
@@ -356,7 +384,12 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
 
                 logger.debug('sending ' + companyResource + ': %s', JSON.stringify(companyResourceObj));
 
-                val = _.omit(val, ['is_present', 'is_to_be_deleted', 'last_discovery_date']);
+                val = _.omit(val, ['is_to_be_deleted', 'last_discovery_date']);
+
+                if (companyResource == 'mac_addresses') {
+                    val = _.omit(val, ['is_present']);
+                }
+
                 val = _.extend(val, {company_id: instance.companyId});
 
                 companyResourceRef = firebase.child('company_' + companyResource + '/' +

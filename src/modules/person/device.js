@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js'),
@@ -41,7 +41,7 @@ device.prototype.start = function () {
     this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:device', this._onDeviceOutgoingSynchronization);
 
-    this.communication.emitAsync('synchronization:incoming:setup', {
+    this.communication.emitAsync('synchronization:incoming:register:setup', {
         companyResource: 'devices',
         onCompanyResourceChangedCallback: function (device) {
             instance.communication.emit('synchronization:incoming:person:device:createOrUpdate', device);
@@ -51,9 +51,15 @@ device.prototype.start = function () {
         }
     });
 
-    this.communication.emitAsync('synchronization:outgoing:setup', {
+    this.communication.emitAsync('synchronization:outgoing:periodic:register', {
         companyResource: 'devices',
         event: 'synchronization:outgoing:person:device'
+    });
+
+    this.communication.emitAsync('synchronization:outgoing:quickshot:register', {
+        companyResource: 'devices',
+        registerEvents: ['person:device:online', 'person:device:offline'],
+        outgoingEvent: 'synchronization:outgoing:person:device'
     });
 };
 

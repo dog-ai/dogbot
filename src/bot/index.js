@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var _ = require('lodash'),
@@ -90,15 +90,32 @@ var bot = {
         return synchronization.initialize(
             bot.secret,
             function (callback) {
-                communication.on('synchronization:outgoing', callback);
-                communication.emit('worker:job:enqueue', 'synchronization:outgoing', null, '10 minutes');
+                // start an outgoing synchronization job every 10 minutes
+                communication.on('synchronization:outgoing:periodic', callback);
+                communication.emit('worker:job:enqueue', 'synchronization:outgoing:periodic', null, '10 minutes');
             },
             bot._configureApps,
             function (callback) {
-                communication.on('synchronization:incoming:setup', callback);
+                // register incoming synchronization callbacks
+                communication.on('synchronization:incoming:register:setup', callback);
             },
             function (callback) {
-                communication.on('synchronization:outgoing:setup', callback);
+                // register outgoing periodic synchronization callbacks
+                communication.on('synchronization:outgoing:periodic:register', callback);
+            },
+            function (callback) {
+                // register outgoing quickshot synchronization callbacks
+                communication.on('synchronization:outgoing:quickshot:register', function (registerParams, registerCallback) {
+                    if (registerParams && registerParams.registerEvents) {
+                        _.forEach(registerParams.registerEvents, function (registerEvent) {
+                            communication.on(registerEvent, function (outgoingParams, outgoingCallback) {
+                                callback(registerParams, outgoingParams, outgoingCallback);
+                            });
+                        });
+                    }
+
+                    registerCallback();
+                });
             },
             function (event, callback) {
                 communication.emit(event, callback);
