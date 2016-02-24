@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js'),
@@ -67,16 +67,37 @@ slack.prototype.stop = function () {
 };
 
 slack.prototype._onMessage = function (message) {
-    logger.debug(message);
-
     var type = message.type,
         channel = instance._dataStore.getChannelById(message.channel) || instance._dataStore.getDMById(message.channel),
         user = instance._dataStore.getUserById(message.user),
         time = message.ts,
         text = message.text;
 
-    if (text && text.charAt(0) === '!') {
-        instance._client.sendMessage('Not now! I\'m busy learning new tricks.', channel.id);
+
+    if (text) {
+
+        var userIds = text.match('<@(.*)>');
+        _.forEach(userIds, function (userId) {
+            if (userId.indexOf('<@') !== 0) {
+                var user = instance._dataStore.getUserById(userId);
+                if (user) {
+                    text = text.replace('<@' + userId + '>', user.real_name || user.name);
+                }
+            }
+        });
+
+        if (text.charAt(0) === '!') {
+            instance._client.send({
+                channel: channel.id,
+                type: 'typing'
+            });
+
+            setTimeout(function () {
+                instance._client.sendMessage('Not now! I\'m busy learning new tricks.', channel.id);
+            }, 1000 * (1 + Math.random()));
+        } else {
+            instance.communication.emit('io:slack:text:incoming', text);
+        }
     }
 };
 

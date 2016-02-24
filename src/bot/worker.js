@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../utils/logger.js'),
@@ -71,11 +71,6 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
                         });
                     }).on('job failed', function (id) {
                         kue.Job.get(id, function (error, job) {
-                            if (error) {
-
-                            } else {
-                                logger.error('Job ' + id + ' failed: ' + job.error());
-                            }
                         });
                     }).on('job failed attempt', function (id, attempts) {
                         logger.debug('Job ' + id + ' failed ' + attempts + ' times');
@@ -86,6 +81,7 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
                     }).on('already scheduled', function (job) {
                     }).on('scheduler unknown job expiry key', function (message) {
                     }).on('error', function (error) {
+                        logger.error(error.stack);
                     });
 
                     enqueue(instance._enqueue);
@@ -102,16 +98,17 @@ worker.prototype.terminate = function () {
             instance.queue.shutdown(5000, function (error) {
                 if (error) {
                     reject(error);
+                } else {
+                    resolve();
                 }
-
-                instance.databases.stopDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
-                    .then(resolve)
-                    .catch(reject);
             });
         } else {
             resolve();
         }
-    });
+    })
+        .then(function () {
+            return instance.databases.stopDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME);
+        });
 };
 
 worker.prototype._enqueue = function (event, params, schedule) {
