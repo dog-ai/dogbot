@@ -27,24 +27,32 @@ wit.prototype.load = function (communication, config) {
         throw new Error('invalid configuration: no api token available');
     }
 
-    this.communication.on('io:slack:text:incoming', this._processText);
+    this.communication.on('nlp:intent:text', this._extractTextIntent);
 };
 
 wit.prototype.unload = function () {
-    this.communication.removeListener('io:slack:text:incoming', this._processText);
+    this.communication.removeListener('nlp:intent:text', this._extractTextIntent);
 };
 
-wit.prototype._processText = function (text, callback) {
+wit.prototype._extractTextIntent = function (text, callback) {
     client.captureTextIntent(instance._apiToken, text, function (error, response) {
         if (error) {
             if (callback) {
                 callback(error);
             }
         } else {
-            logger.debug(JSON.stringify(response));
+            response.outcomes = _.sortBy(response.outcomes, ['confidence']);
 
-            if (callback) {
-                callback();
+            var outcome = response.outcomes && response.outcomes.length > 0 && response.outcomes[0];
+
+            if (outcome.intent !== 'UNKNOWN' && outcome.confidence > 0.666) {
+                if (outcome.metadata) {
+                    callback(null, {event: outcome.metadata, entities: outcome.entities});
+                } else {
+                    callback(new Error('no intent metadata available'));
+                }
+            } else {
+                callback(new Error('unable to extract intent from text'));
             }
         }
 
