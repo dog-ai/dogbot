@@ -83,7 +83,7 @@ modules.prototype._load = function (type, name, optional, config) {
                 if (optional) {
                     resolve();
                 } else {
-                    reject(new Error('unable to load' + (optional ? ' optional ' : '' + ' ') + type.toLowerCase() + ' module ' + file));
+                    reject(new Error('unable to load' + (optional ? ' optional ' : '' + ' ') + type.toLowerCase() + ' module ' + name));
                 }
             }
         });
