@@ -1,56 +1,47 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-function action() {
-    var moduleManager = {};
+function slap() {
+    var communication = {};
 }
 
-action.prototype.type = "PROCESS";
+slap.prototype.type = "ACTION";
 
-action.prototype.name = "action";
+slap.prototype.name = "slap";
 
-action.prototype.info = function () {
+slap.prototype.info = function () {
     return "*" + this.name + "* - " +
         "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
         this.type.toLowerCase() + " module_";
 };
 
-action.prototype.help = function () {
-    var help = '';
-
-    help += '*!slap* <slack id> - _Tell me to slap someone_\n';
-    help += '*!hi5* <slack id> - _Tell me to hi5 someone_\n';
-
-    return help;
-};
-
-action.prototype.load = function (moduleManager) {
-    this.moduleManager = moduleManager;
+slap.prototype.load = function (communication) {
+    this.communication = communication;
 
     this.start();
 };
 
-action.prototype.unload = function () {
+slap.prototype.unload = function () {
     this.stop();
 };
 
-action.prototype.start = function () {
-
+slap.prototype.start = function () {
+    this.communication.on('action:slap', this._slap);
 };
 
-action.prototype.stop = function () {
-
+slap.prototype.stop = function () {
+    this.communication.removeListener('action:slap', this._slap);
 };
 
-action.prototype.process = function (message, callback, user) {
-    if (message.substring(0, "!slap".length) === "!slap") {
+slap.prototype._slap = function (entities, callback) {
+    /*if (message.substring(0, "!slap".length) === "!slap") {
         var fields = message.replace(/(“|”)/g, '"').match(/(?:[^\s"]+|"[^"]*")+/g);
 
         if (fields !== null && fields.length == 2 && fields[1].charAt(0) === '<') {
             var slackId = fields[1].substring(2, fields[1].length - 1);
 
-            this.moduleManager.findAllLoadedModulesByType('IO').forEach(function (module) {
+     this.communication.findAllLoadedModulesByType('IO').forEach(function (module) {
                 if (module.name === 'slack') {
                     module.send(slackId, 'https://mikemcclaughry.files.wordpress.com/2012/09/slapping-hand.jpg?' + Math.random());
                 }
@@ -62,7 +53,7 @@ action.prototype.process = function (message, callback, user) {
         if (fields !== null && fields.length == 2 && fields[1].charAt(0) === '<') {
             var slackId = fields[1].substring(2, fields[1].length - 1);
 
-            this.moduleManager.findAllLoadedModulesByType('IO').forEach(function (module) {
+     this.communication.findAllLoadedModulesByType('IO').forEach(function (module) {
                 if (module.name === 'slack') {
 
                     var image = undefined;
@@ -76,7 +67,12 @@ action.prototype.process = function (message, callback, user) {
                 }
             });
         }
-    }
+     }*/
+
+    callback(null, {
+        text: 'https://mikemcclaughry.files.wordpress.com/2012/09/slapping-hand.jpg?' + Math.random(),
+        entities: entities
+    });
 };
 
-module.exports = new action();
+module.exports = new slap();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../utils/logger.js'),
@@ -50,15 +50,19 @@ modules.prototype._load = function (type, name, optional, config) {
 
     return new Promise(function (resolve, reject) {
 
-        var file = name + '.js';
-
-        if (file.charAt(0) === '.' || (config && !config.is_enabled)) {
+        if (config && !config.is_enabled) {
             return;
         }
 
+        // TODO: need to rewrite with promises instead
         _.defer(function () {
             try {
-                var module = require('./' + type.toLowerCase() + '/' + file);
+                var module;
+                try {
+                    module = require('./' + type.toLowerCase() + '/' + name + '.js');
+                } catch (error) {
+                    module = require('./' + type.toLowerCase() + '/' + name);
+                }
 
                 module.load(self.communication, config);
 
@@ -68,7 +72,7 @@ modules.prototype._load = function (type, name, optional, config) {
 
                 resolve();
             } catch (error) {
-                logger.debug('Unable to load ' + type.toLowerCase() + ' module ' + file + ' because ' + error.message);
+                logger.debug('Unable to load ' + type.toLowerCase() + ' module ' + name + ' because ' + error.message);
 
                 if (!(error.message.indexOf('platform is not supported') > -1 ||
                     error.message.indexOf('invalid configuration') > -1 ||
