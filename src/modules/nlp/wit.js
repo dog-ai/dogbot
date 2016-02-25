@@ -41,6 +41,8 @@ wit.prototype._extractTextIntent = function (text, callback) {
                 callback(error);
             }
         } else {
+            logger.debug(response);
+            
             response.outcomes = _.sortBy(response.outcomes, ['confidence']);
 
             var outcome = response.outcomes && response.outcomes.length > 0 && response.outcomes[0];
