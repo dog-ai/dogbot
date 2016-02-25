@@ -24,8 +24,8 @@ slack.prototype.info = function() {
 slack.prototype.load = function (communication, config) {
     this.communication = communication;
 
-    this.apiToken = (config && config.api_token || undefined);
-    if (!this.apiToken || this.apiToken.trim() === '') {
+    this._apiToken = (config && config.api_token || undefined);
+    if (!this._apiToken || this._apiToken.trim() === '') {
         throw new Error('invalid configuration: no API token available');
     }
 
@@ -33,7 +33,7 @@ slack.prototype.load = function (communication, config) {
 
     this._dataStore = new MemoryDataStore({'logger': logger});
 
-    this._client = new RtmClient(this.apiToken, {autoReconnect: true, dataStore: this._dataStore});
+    this._client = new RtmClient(this._apiToken, {autoReconnect: true, dataStore: this._dataStore});
 
     return this.start();
 };
@@ -73,9 +73,11 @@ slack.prototype._onMessage = function (message) {
         time = message.ts,
         text = message.text;
 
-
     if (text) {
 
+        var me = instance._dataStore.getUserById(instance._client.activeUserId);
+
+        // replace slack user ids with proper meaningful names
         var userIds = text.match('<@(.*)>');
         _.forEach(userIds, function (userId) {
             if (userId.indexOf('<@') !== 0) {
@@ -86,7 +88,8 @@ slack.prototype._onMessage = function (message) {
             }
         });
 
-        if (text.charAt(0) === '!') {
+        // am i the message recipient or mentioned in it?
+        if (channel.is_im || text.charAt(0) === '!' || text.indexOf(me.username) || text.indexOf(me.real_name)) {
             instance._client.send({
                 channel: channel.id,
                 type: 'typing'
@@ -95,7 +98,7 @@ slack.prototype._onMessage = function (message) {
             setTimeout(function () {
                 instance._client.sendMessage('Not now! I\'m busy learning new tricks.', channel.id);
             }, 1000 * (1 + Math.random()));
-        } else {
+
             instance.communication.emit('io:slack:text:incoming', text);
         }
     }
