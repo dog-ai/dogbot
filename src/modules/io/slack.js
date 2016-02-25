@@ -70,6 +70,48 @@ slack.prototype.stop = function () {
     })
 };
 
+function replaceSlackIdsWithNames(text) {
+    var _text = text;
+    var ids = _text.match(/<@\w+>/g);
+
+    _.forEach(ids, function (id) {
+        var user = instance._dataStore.getUserById(id.substring(2, id.length - 1));
+        if (user) {
+            _text = text.replace(id, user.real_name || user.name);
+        }
+    });
+
+    return _text
+}
+
+function removeBotName(text, botName) {
+    var _text = text;
+
+    if (botName.test(_text)) {
+        if (_text.replace(botName, '').indexOf(': ') === 0) {
+            _text = _text.replace(botName, '');
+            _text = _text.substring(2)
+        } else {
+            _text = _text.replace(botName, 'you');
+        }
+    }
+
+    return _text;
+}
+
+function findSlackUserFromEntities(entities) {
+    var user;
+
+    if (entities) {
+        if (entities.contact && entities.contact.length > 0) {
+            user = _.find(instance._dataStore.users, {real_name: entities.contact[0].value}) ||
+                _.find(instance._dataStore.users, {name: entities.contact[0].value})
+        }
+    }
+
+    return user;
+}
+
 slack.prototype._onIncomingMessage = function (message) {
     var type = message.type,
         channel = instance._dataStore.getChannelById(message.channel) || instance._dataStore.getDMById(message.channel),
@@ -78,36 +120,19 @@ slack.prototype._onIncomingMessage = function (message) {
         text = message.text;
 
     if (type === 'message' && text) {
+        // replace slack ids with proper user names
+        text = replaceSlackIdsWithNames(text);
 
-        var me = instance._dataStore.getUserById(instance._client.activeUserId);
-
-        // replace slack user ids with proper meaningful names
-        var userIds = text.match(/<@\w+>/g);
-        _.forEach(userIds, function (userId) {
-            var user = instance._dataStore.getUserById(userId.substring(2, userId.length - 1));
-            if (user) {
-                text = text.replace(userId, user.real_name || user.name);
-            }
-        });
+        var bot = instance._dataStore.getUserById(instance._client.activeUserId);
+        var botName = new RegExp('(' + bot.name + '|' + bot.real_name + ')', "i");
 
         // am i the message recipient or mentioned in it?
-        var name = new RegExp('(' + me.name + '|' + me.real_name + ')', "i");
-        if (channel.is_im || text.charAt(0) === '!' || name.test(text)) {
+        if (channel.is_im || text.charAt(0) === '!' || botName.test(text)) {
 
             // normalize message by removing the bot name
-            if (name.test(text)) {
-                if (text.replace(name, '').indexOf(': ') === 0) {
-                    text = text.replace(name, '');
-                    text = text.substring(2, text.length - 1)
-                } else {
-                    text = text.replace(name, 'you');
-                }
-            }
+            text = removeBotName(text, botName);
 
-            instance._client.send({
-                channel: channel.id,
-                type: 'typing'
-            });
+            instance._client.send({channel: channel.id, type: 'typing'});
 
             instance.communication.emitAsync('nlp:intent:text', text)
                 .timeout(3000)
@@ -116,15 +141,7 @@ slack.prototype._onIncomingMessage = function (message) {
                         .timeout(1000)
                         .then(function (response) {
                             var text = response.text,
-                                entities = response.entities;
-
-                            var user;
-                            if (entities) {
-                                if (entities.contact && entities.contact.length > 0) {
-                                    user = _.find(instance._dataStore.users, {real_name: entities.contact[0].value}) ||
-                                        _.find(instance._dataStore.users, {name: entities.contact[0].value})
-                                }
-                            }
+                                user = findSlackUserFromEntities(response.entities);
 
                             var channelId = user && instance._dataStore.getDMByName(user.name).id || channel.id;
 
@@ -133,7 +150,6 @@ slack.prototype._onIncomingMessage = function (message) {
                         })
                 })
                 .catch(function (error) {
-                    logger.error(error);
                     instance._client.sendMessage('Not now! I\'m busy learning new tricks.', channel.id);
                 });
         }
@@ -178,31 +194,6 @@ slack.prototype._listenUserPresence = function (user, presence) {
                 break;
         }
     }
-};
-
-slack.prototype._isUserInChannel = function (user, channel) {
-    if (!user || !channel) {
-        return false;
-    }
-
-    return !_.findIndex((channel.members || []), function (id) {
-        return user.id == id;
-    });
-};
-
-slack.prototype._getUsersInChannel = function (channel) {
-    if (!channel) {
-        return [];
-    }
-
-    var self = this;
-    return (channel.members || [])
-        .map(function (id) {
-            return self.client.users[id];
-        })
-        .filter(function (u) {
-            return !!u && !u.is_bot;
-        });
  };*/
 
 var instance = new slack();
