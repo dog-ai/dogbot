@@ -15,7 +15,8 @@ var databases = require('../databases')(communication);
 var apps = require('./apps')(communication, modules, databases),
     synchronization = require('./synchronization.js'),
     worker = require('./worker.js')(databases),
-    heartbeat = require('./heartbeat.js')(communication);
+    heartbeat = require('./heartbeat.js')(communication),
+    autoupdate = require('./autoupdate.js')(communication);
 
 var bot = {
     start: function (callback) {
@@ -39,22 +40,6 @@ var bot = {
             .finally(callback);
     },
 
-    reload: function (callback) {
-        var self = this;
-
-        revision.hasRevisionChanged(function (error, changed, revision) {
-            if (error) {
-                logger.error(error.stack);
-            } else {
-                if (changed) {
-                    logger.info('Detected new code revision: ' + revision);
-                }
-            }
-
-            self.stop(callback);
-        });
-    },
-
     error: function (error, callback) {
         logger.error(error.stack === undefined ? error : error.stack, callback);
     },
@@ -71,6 +56,12 @@ var bot = {
                 logger.info('Sending a hearbeat every ' + interval + ' seconds');
             })
             .finally(callback);
+    },
+
+    autoupdate: function (branch, updateFn) {
+        autoupdate.initialize(branch, updateFn)
+            .then(function () {
+            });
     },
 
     _configureWorker: function () {
