@@ -1,7 +1,12 @@
+/*
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ */
+
 #!/usr/bin/env node
 
 var SECRET = process.env.DOGBOT_SECRET,
-    WATCHDOG_USEC = process.env.WATCHDOG_USEC;
+    WATCHDOG_USEC = process.env.WATCHDOG_USEC,
+    REPO_BRANCH = process.env.DOGBOT_BRANCH;
 
 var bot = require('./bot')(SECRET);
 
@@ -21,13 +26,12 @@ process.on('SIGABRT', function () {
 });
 
 process.on('SIGHUP', function () { // reload
-    bot.reload(function () {
-    });
+    shutdown();
 });
 
-// reload and then shutdown, i.e. forever daemon
+// stop and then shutdown, i.e. forever daemon
 process.once('SIGUSR2', function () {
-    bot.reload(function () {
+    bot.stop(function () {
         process.kill(process.pid, 'SIGUSR2');
     });
 });
@@ -64,5 +68,9 @@ if (SECRET === undefined) {
                 }
             });
         }
+
+        bot.autoupdate(REPO_BRANCH, function (oldVer, newVer) {
+            shutdown();
+        });
     });
 }
