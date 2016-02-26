@@ -2,8 +2,6 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-#!/usr/bin/env node
-
 var SECRET = process.env.DOGBOT_SECRET,
     WATCHDOG_USEC = process.env.WATCHDOG_USEC,
     REPO_BRANCH = process.env.DOGBOT_BRANCH;
