@@ -22,7 +22,7 @@ wit.prototype.info = function () {
 wit.prototype.load = function (communication, config) {
     this.communication = communication;
 
-    this._apiToken = (config && config.api_token || undefined);
+    this._apiToken = config && config.api_token;
     if (!this._apiToken || this._apiToken.trim() === '') {
         throw new Error('invalid configuration: no api token available');
     }
@@ -47,7 +47,7 @@ wit.prototype._extractTextIntent = function (text, callback) {
 
             var outcome = response.outcomes && response.outcomes.length > 0 && response.outcomes[0];
 
-            if (outcome.intent !== 'UNKNOWN' && outcome.confidence > 0.666) {
+            if (outcome.intent !== 'UNKNOWN' && outcome.confidence > 0.8) {
                 if (outcome.metadata) {
                     callback(null, {event: outcome.metadata, entities: outcome.entities});
                 } else {
