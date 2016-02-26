@@ -77,7 +77,7 @@ function replaceSlackIdsWithNames(text) {
     _.forEach(ids, function (id) {
         var user = instance._dataStore.getUserById(id.substring(2, id.length - 1));
         if (user) {
-            _text = text.replace(id, user.real_name || user.name);
+            _text = _text.replace(id, user.real_name || user.name);
         }
     });
 
