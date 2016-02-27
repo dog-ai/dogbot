@@ -8,8 +8,7 @@ var logger = require('../utils/logger.js'),
     Promise = require('bluebird');
 
 var WORKER_DATABASE_TYPE = 'nosql',
-    WORKER_DATABASE_NAME = 'worker',
-    REDIS_UNIX_SOCKET = __dirname + '/../../var/run/redis.sock';
+    WORKER_DATABASE_NAME = 'worker';
 
 function worker() {
 }
@@ -21,13 +20,9 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
             reject(new Error("Unable to initialize worker because no database available"));
         } else {
             instance.databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
-                .then(function () {
-                    instance.queue = kue.createQueue({
-                        redis: {
-                            socket: REDIS_UNIX_SOCKET
-                        },
-                        prefix: WORKER_DATABASE_NAME
-                    });
+                .then(function (result) {
+
+                    instance.queue = kue.createQueue(result);
 
                     var process = function (job, done) {
                         logger.debug('Job ' + job.id + ' started' +
