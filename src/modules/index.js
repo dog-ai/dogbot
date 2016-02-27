@@ -97,7 +97,11 @@ modules.prototype._unload = function(module) {
         try {
             module.unload();
 
-            delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js')];
+            try {
+                delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js')];
+            } catch (error) {
+                delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name)];
+            }
 
             _.remove(self.loaded, function (_module) {
                 return _module.name == module.name;

@@ -6,8 +6,7 @@ var _ = require('lodash'),
     Promise = require('bluebird');
 
 var logger = require('../utils/logger.js'),
-    communication = require('../utils/communication.js'),
-    revision = require('../utils/revision.js');
+    communication = require('../utils/communication.js');
 
 var modules = require('../modules')(communication);
 var databases = require('../databases')(communication);
@@ -59,9 +58,7 @@ var bot = {
     },
 
     autoupdate: function (branch, updateFn) {
-        autoupdate.initialize(branch, updateFn)
-            .then(function () {
-            });
+        autoupdate.initialize(branch, updateFn);
     },
 
     _configureWorker: function () {
@@ -108,8 +105,8 @@ var bot = {
                     registerCallback();
                 });
             },
-            function (event, callback) {
-                communication.emit(event, callback);
+            function (event, params, callback) {
+                communication.emit(event, params, callback);
             }
         ).spread(function (dogId, apps) {
             logger.info('Authenticated as ' + dogId);
