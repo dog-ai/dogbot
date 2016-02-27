@@ -37,15 +37,19 @@ employee.prototype.start = function () {
     this.communication.on('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
     this.communication.on('person:slack:active', this._handleSlackActive);
     this.communication.on('person:slack:away', this._handleSlackAway);
-    this.communication.on('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:employee:create', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:employee:update', this._onCreateOrUpdateEmployeeIncomingSynchronization);
     this.communication.on('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
     this.communication.on('person:employee:is_present', this._isPresent);
 
     this.communication.emitAsync('synchronization:incoming:register:setup', {
         companyResource: 'employees',
+        onCompanyResourceAddedCallback: function (employee) {
+            instance.communication.emit('synchronization:incoming:person:employee:create', employee);
+        },
         onCompanyResourceChangedCallback: function (employee) {
-            instance.communication.emit('synchronization:incoming:person:employee:createOrUpdate', employee);
+            instance.communication.emit('synchronization:incoming:person:employee:update', employee);
         },
         onCompanyResourceRemovedCallback: function (employee) {
             instance.communication.emit('synchronization:incoming:person:employee:delete', employee);
@@ -72,7 +76,8 @@ employee.prototype.stop = function () {
     this.communication.removeListener('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
     this.communication.removeListener('person:slack:active', this._handleSlackActive);
     this.communication.removeListener('person:slack:away', this._handleSlackAway);
-    this.communication.removeListener('synchronization:incoming:person:employee:createOrUpdate', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:employee:create', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:employee:update', this._onCreateOrUpdateEmployeeIncomingSynchronization);
     this.communication.removeListener('synchronization:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
     this.communication.removeListener('synchronization:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
     this.communication.removeListener('person:employee:is_present', this._isPresent);
@@ -277,8 +282,8 @@ employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee
         });
 };
 
-employee.prototype._onEmployeeOutgoingSynchronization = function (callback) {
-    instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM employee WHERE is_synced = 0', [], function (error, row) {
+employee.prototype._onEmployeeOutgoingSynchronization = function (params, callback) {
+    instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM employee WHERE is_synced = 0' + (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
         if (error) {
             logger.error(error.stack);
         } else {

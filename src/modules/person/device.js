@@ -37,14 +37,18 @@ device.prototype.start = function () {
     this.communication.on('person:mac_address:offline', this._onMacAddressOffline);
     this.communication.on('person:device:is_present', this._isPresent);
     this.communication.on('person:device:discover', this._discover);
-    this.communication.on('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:device:create', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.communication.on('synchronization:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
     this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.communication.on('synchronization:outgoing:person:device', this._onDeviceOutgoingSynchronization);
 
     this.communication.emitAsync('synchronization:incoming:register:setup', {
         companyResource: 'devices',
+        onCompanyResourceAddedCallback: function (device) {
+            instance.communication.emit('synchronization:incoming:person:device:create', device);
+        },
         onCompanyResourceChangedCallback: function (device) {
-            instance.communication.emit('synchronization:incoming:person:device:createOrUpdate', device);
+            instance.communication.emit('synchronization:incoming:person:device:update', device);
         },
         onCompanyResourceRemovedCallback: function (device) {
             instance.communication.emit('synchronization:incoming:person:device:delete', device);
@@ -67,7 +71,8 @@ device.prototype.stop = function () {
     this.communication.removeListener('person:mac_address:online', this._onMacAddressOnline);
     this.communication.removeListener('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
     this.communication.removeListener('person:mac_address:offline', this._onMacAddressOffline);
-    this.communication.removeListener('synchronization:incoming:person:device:createOrUpdate', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:device:create', this._onCreateOrUpdateDeviceIncomingSynchronization);
+    this.communication.removeListener('synchronization:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
     this.communication.removeListener('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
     this.communication.removeListener('person:device:is_present', this._isPresent);
     this.communication.removeListener('person:device:discover', this._discover);
@@ -141,10 +146,6 @@ device.prototype._discover = function (macAddress, callback) {
                         }
 
 
-
-
-
-
                         if (result.nmap.type !== undefined && result.nmap.type !== null) {
                             if (_device.type === undefined || _device.type === null || result.nmap.type.length > _device.type.length) {
                                 _device.type = result.nmap.type instanceof Array ? result.nmap.type[result.nmap.type.length - 1] : result.nmap.type;
@@ -156,10 +157,6 @@ device.prototype._discover = function (macAddress, callback) {
                             _device.os = result.nmap.os;
                         }
 
-
-
-                        logger.debug("Discovered device: " + JSON.stringify(_device) + ' from result: ' + JSON.stringify(result));
-
                         if (_device.name !== undefined && _device.name !== null) {
                             _device.is_present = true;
                             _device.last_presence_date = new Date(macAddress.last_presence_date.replace(' ', 'T'));
@@ -170,19 +167,25 @@ device.prototype._discover = function (macAddress, callback) {
                                         macAddress.device_id = row.id;
                                         macAddress.updated_date = new Date();
                                         macAddress.last_discovery_date = new Date();
-                                        return instance._updateMacAddressByAddress(macAddress.address, macAddress);
+                                        return instance._updateMacAddressByAddress(macAddress.address, macAddress)
+                                            .then(function () {
+                                                return _device;
+                                            });
                                     });
                             } else {
                                 _device.updated_date = new Date();
                                 _device.is_synced = false;
-                                return instance._updateById(_device.id, _device);
+                                return instance._updateById(_device.id, _device)
+                                    .then(function () {
+                                        return _device;
+                                    });
                             }
                         }
                     });
             }
         })
-        .then(function () {
-            callback();
+        .then(function (result) {
+            callback(null, result);
         })
         .catch(function (error) {
             callback(error);
@@ -531,8 +534,8 @@ device.prototype._onMacAddressOffline = function (mac_address) {
     }
 };
 
-device.prototype._onDeviceOutgoingSynchronization = function (callback) {
-    instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM device WHERE is_synced = 0', [], function (error, row) {
+device.prototype._onDeviceOutgoingSynchronization = function (params, callback) {
+    instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM device WHERE is_synced = 0' + (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
         if (error) {
             logger.error(error.stack);
         } else {

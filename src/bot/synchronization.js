@@ -120,7 +120,7 @@ synchronization.prototype._periodicOutgoingSynchronization = function (params, c
 
     if (instance.companyRef) {
         _.forEach(instance.outgoingSynchronizeEvents, function (outgoing) {
-            instance.onOutgoingSynchronizeCallback(outgoing.event, function (error, companyResourceObj, callback) {
+            instance.onOutgoingSynchronizeCallback(outgoing.event, null, function (error, companyResourceObj, callback) {
                 if (error) {
                     logger.error(error.stack);
                 } else {
@@ -140,7 +140,7 @@ synchronization.prototype._periodicOutgoingSynchronization = function (params, c
 
 synchronization.prototype._quickshotOutgoingSynchronization = function (registerParams, outgoingParams, callback) {
 
-    instance.onOutgoingSynchronizeCallback(registerParams.outgoingEvent, function (error, companyResourceObj, callback) {
+    instance.onOutgoingSynchronizeCallback(registerParams.outgoingEvent, outgoingParams, function (error, companyResourceObj, callback) {
         if (error) {
             logger.error(error.stack);
         } else {
@@ -265,33 +265,48 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                 function (snapshot) {
                     var resourceId = snapshot.key();
 
-                    firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value',
-                        function (snapshot) {
+                    function convert(resource) {
+                        if (resource !== null) {
+                            if (resource.created_date !== undefined && resource.created_date !== null) {
+                                resource.created_date = new Date(resource.created_date);
+                            }
+
+                            if (resource.updated_date !== undefined && resource.updated_date !== null) {
+                                resource.updated_date = new Date(resource.updated_date);
+                            }
+
+                            if (resource.last_presence_date !== undefined && resource.last_presence_date !== null) {
+                                resource.last_presence_date = new Date(resource.last_presence_date);
+                            }
+                        }
+                    }
+
+                    firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).once('value', function (snapshot) {
+                        var resource = snapshot.val();
+
+                        convert(resource);
+
+                        params.onCompanyResourceAddedCallback(_.extend({
+                            id: resourceId,
+                            is_synced: true
+                        }, resource));
+
+                        firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value', function (snapshot) {
                             var resource = snapshot.val();
 
                             logger.debug('received ' + params.companyResource + ': %s', JSON.stringify(resource));
 
-                            if (resource !== null) {
-                                if (resource.created_date !== undefined && resource.created_date !== null) {
-                                    resource.created_date = new Date(resource.created_date);
-                                }
+                            convert(resource);
 
-                                if (resource.updated_date !== undefined && resource.updated_date !== null) {
-                                    resource.updated_date = new Date(resource.updated_date);
-                                }
-
-                                if (resource.last_presence_date !== undefined && resource.last_presence_date !== null) {
-                                    resource.last_presence_date = new Date(resource.last_presence_date);
-                                }
-
-                                params.onCompanyResourceChangedCallback(_.extend({
-                                    id: resourceId,
-                                    is_synced: true
-                                }, resource));
-                            }
+                            params.onCompanyResourceChangedCallback(_.extend({
+                                id: resourceId,
+                                is_synced: true
+                            }, resource));
                         });
+                    });
 
                 });
+
             instance.companyRef.child('/' + params.companyResource).on('child_removed',
                 function (snapshot) {
                     var resourceId = snapshot.key();

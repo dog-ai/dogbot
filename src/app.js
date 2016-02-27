@@ -67,8 +67,10 @@ if (SECRET === undefined) {
             });
         }
 
-        bot.autoupdate(REPO_BRANCH, function (oldVer, newVer) {
-            shutdown();
-        });
+        if (REPO_BRANCH) {
+            bot.autoupdate(REPO_BRANCH, function (oldVer, newVer) {
+                shutdown();
+            });
+        }
     });
 }

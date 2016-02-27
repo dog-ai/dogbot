@@ -34,14 +34,11 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
                             (job.data.params !== undefined && job.data.params !== null ? ' with params ' + JSON.stringify(job.data.params) : ''));
 
                         processJob(job.data.event, job.data.params)
-                            .then(function () {
-                                done();
+                            .then(function (result) {
+                                done(null, result);
                             })
                             .catch(function (error) {
                                 done(error);
-                            })
-                            .finally(function () {
-                                logger.debug('Job ' + job.id + ' completed');
                             });
                     };
 
@@ -54,10 +51,13 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
                     instance.queue
                         .on('job enqueue', function (id, type) {
                             kue.Job.get(id, function (error, job) {
-                                logger.debug('Queued ' + job.data.event + ' with job id ' + id +
+                                logger.debug('Job ' + id + ' queued with ' + job.data.event +
                                     (job.data.params !== undefined && job.data.params !== null ? ' and params ' + JSON.stringify(job.data.params) : ''));
                             });
                         }).on('job complete', function (id, result) {
+
+                        logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''));
+
                         kue.Job.get(id, function (error, job) {
                             if (error) {
                                 return;
@@ -69,9 +69,8 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
                                 }
                             });
                         });
-                    }).on('job failed', function (id) {
-                        kue.Job.get(id, function (error, job) {
-                        });
+                    }).on('job failed', function (id, error) {
+                        logger.debug('Job ' + id + ' failed because of ' + error);
                     }).on('job failed attempt', function (id, attempts) {
                         logger.debug('Job ' + id + ' failed ' + attempts + ' times');
                     }).on('schedule success', function (job) {

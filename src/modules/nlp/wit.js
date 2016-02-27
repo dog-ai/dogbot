@@ -5,6 +5,9 @@
 var logger = require('../../utils/logger.js'),
     _ = require('lodash');
 
+var LowConfidence = require('./errors/low-confidence'),
+    UnknownIntent = require('./errors/unknown-intent');
+
 var client = require('node-wit');
 
 function wit() {
@@ -37,24 +40,19 @@ wit.prototype.unload = function () {
 wit.prototype._extractTextIntent = function (text, callback) {
     client.captureTextIntent(instance._apiToken, text, function (error, response) {
         if (error) {
-            if (callback) {
-                callback(error);
-            }
+            callback(error);
         } else {
-            logger.debug(response);
-            
-            response.outcomes = _.sortBy(response.outcomes, ['confidence']);
+            var outcome = _.head(_.sortBy(response.outcomes, ['confidence']));
 
-            var outcome = response.outcomes && response.outcomes.length > 0 && response.outcomes[0];
-
-            if (outcome.intent !== 'UNKNOWN' && outcome.confidence > 0.8) {
-                if (outcome.metadata) {
-                    callback(null, {event: outcome.metadata, entities: outcome.entities});
-                } else {
-                    callback(new Error('no intent metadata available'));
-                }
+            if (outcome.intent === 'UNKNOWN') {
+                callback(new UnknownIntent());
+            } else if (outcome.confidence < 0.8) {
+                callback(new LowConfidence(outcome.confidence));
             } else {
-                callback(new Error('unable to extract intent from text'));
+                callback(null, {
+                    event: outcome.metadata,
+                    entities: outcome.entities
+                });
             }
         }
 
