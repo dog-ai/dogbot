@@ -580,7 +580,5 @@ module.exports = function (parent, instance) {
         this.latestAlltimeStats[employee.id] = stats;
         return instance.communication.emitAsync('synchronization:outgoing:performance:alltime:stats', employee, 'presence', stats);
     };
-
-
 };
 

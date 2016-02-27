@@ -1,13 +1,15 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js');
 var spawn = require('child_process').spawn;
 var execSync = require('child_process').execSync;
 var fs = require('fs');
+var Promise = require('bluebird');
 
 var REDIS_UNIX_SOCKET = __dirname + '/../../../var/run/redis.sock';
+
 
 function nosql() {
     this.redis = undefined;
@@ -16,7 +18,12 @@ function nosql() {
 nosql.prototype.type = 'nosql';
 
 nosql.prototype._open = function () {
-    var self = this;
+    return new Promise.resolve({
+        redis: {
+            socket: __dirname + '/../../../var/run/redis.sock'
+        }
+    });
+    /*var self = this;
 
     return new Promise(function (resolve, reject) {
 
@@ -46,11 +53,12 @@ nosql.prototype._open = function () {
         } else {
             resolve();
         }
-    });
+     });*/
 };
 
 nosql.prototype._close = function () {
-    var self = this;
+    return new Promise.resolve();
+    /*var self = this;
 
     return new Promise(function (resolve, reject) {
         if (self.redis !== undefined && self.redis !== null) {
@@ -60,7 +68,7 @@ nosql.prototype._close = function () {
         }
 
         resolve();
-    });
+     });*/
 };
 
 module.exports = nosql;

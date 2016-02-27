@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../utils/logger.js'),
@@ -44,12 +44,12 @@ databases.prototype._start = function (type, name) {
             var database = require(DATABASES_DIR + type.toLowerCase() + '/' + file);
 
             return database.start(self.communication)
-                .then(function () {
+                .then(function (result) {
                     self.started.push(database);
 
                     logger.debug('Started ' + type.toLowerCase() + ' database: ' + database.name);
 
-                    resolve();
+                    resolve(result);
                 })
                 .catch(function (error) {
                     reject(error);
