@@ -2,73 +2,135 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
-var spawn = require('child_process').spawn;
-var execSync = require('child_process').execSync;
-var fs = require('fs');
-var Promise = require('bluebird');
+var _ = require('lodash'),
+    Promise = require('bluebird');
+
+var redis = require("redis");
 
 var REDIS_UNIX_SOCKET = __dirname + '/../../../var/run/redis.sock';
 
-
 function nosql() {
-    this.redis = undefined;
 }
 
 nosql.prototype.type = 'nosql';
 
-nosql.prototype._open = function () {
-    return new Promise.resolve({
-        redis: {
-            socket: __dirname + '/../../../var/run/redis.sock'
-        }
-    });
-    /*var self = this;
+nosql.prototype._open = function (prefix) {
+    var self = this;
 
     return new Promise(function (resolve, reject) {
 
-        if (self.redis === undefined || self.redis === null) {
+        if (!self.client) {
+            self.client = redis.createClient(REDIS_UNIX_SOCKET, {prefix: prefix + ':'});
 
-            try {
-                var pid = parseInt(execSync('pgrep redis-server')) || undefined;
-                if (pid !== undefined) {
-                    execSync('kill -9 ' + pid);
-                    fs.unlinkSync(REDIS_UNIX_SOCKET);
-                }
-            } catch (error) {
-            }
+            self.client.once("ready", function () {
+                self.client.keys(prefix + ':*', function (error, keys) {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        _.forEach(keys, function (key) {
+                            self.client.del(key.substring((prefix + ':').length));
+                        });
 
-            self.redis = spawn('redis-server', ['share/redis/redis.conf']);
+                        resolve({
+                            redis: {
+                                socket: __dirname + '/../../../var/run/redis.sock'
+                            }
+                        });
+                    }
+                });
+            });
 
-            execSync('sleep 1');
+            self.client.once("error", function (error) {
+                reject(error);
+            });
+        }
+    });
+};
 
-            if (!fs.existsSync(REDIS_UNIX_SOCKET)) {
-                reject(new Error('redis unix socket not available'));
-            } else {
-                logger.debug('Started redis child process with pid: ' + self.redis.pid);
+nosql.prototype._close = function () {
+    var self = this;
 
+    return new Promise(function (resolve, reject) {
+        if (!self.client) {
+            self.client.end(true);
+
+            delete self.client;
+
+            self.client.once("end", function () {
                 resolve();
-            }
+            });
+
+            self.client.once("error", function (error) {
+                reject(error);
+            });
 
         } else {
             resolve();
         }
-     });*/
+    });
 };
 
-nosql.prototype._close = function () {
-    return new Promise.resolve();
-    /*var self = this;
+nosql.prototype._set = function (prefix, key, val, callback) {
+    if (val instanceof Array || val instanceof Object) {
+        val = JSON.stringify(val);
+    }
 
-    return new Promise(function (resolve, reject) {
-        if (self.redis !== undefined && self.redis !== null) {
-            logger.debug('Stopping redis child process with pid: ' + self.redis.pid);
+    this.client.set(prefix + ':' + key, val, callback);
+};
 
-            self.redis.kill('SIGTERM');
+nosql.prototype._get = function (prefix, key, callback) {
+    this.client.get(prefix + ':' + key, function (error, reply) {
+        if (error) {
+            callback(error);
+        } else {
+            if (reply && (reply.charAt(0) === '{' || reply.charAt(0) === '[')) {
+                reply = JSON.parse(reply);
+            }
+
+            callback(null, reply);
         }
+    });
+};
 
-        resolve();
-     });*/
+nosql.prototype._hmset = function (prefix, key, val, callback) {
+    var _val = _.clone(val);
+
+    _val['start_time_by_day'] = _val['start_time_by_day'] && JSON.stringify(_val['start_time_by_day']);
+    _val['end_time_by_day'] = _val['end_time_by_day'] && JSON.stringify(_val['end_time_by_day']);
+    _val['total_duration_by_day'] = _val['total_duration_by_day'] && JSON.stringify(_val['total_duration_by_day']);
+
+    this.client.hmset(prefix + ':' + key, _val, callback);
+};
+
+nosql.prototype._hgetall = function (prefix, key, callback) {
+    this.client.hgetall(prefix + ':' + key, function (error, reply) {
+        if (error) {
+            callback(error);
+        } else {
+
+            if (reply) {
+                reply['maximum_start_time'] = reply['maximum_start_time'] && parseInt(reply['maximum_start_time']);
+                reply['minimum_start_time'] = reply['minimum_start_time'] && parseInt(reply['minimum_start_time']);
+                reply['average_start_time'] = reply['average_start_time'] && parseInt(reply['average_start_time']);
+                reply['start_time_by_day'] = reply['start_time_by_day'] && JSON.parse(reply['start_time_by_day']);
+
+                reply['maximum_end_time'] = reply['maximum_end_time'] && parseInt(reply['maximum_end_time']);
+                reply['minimum_end_time'] = reply['minimum_end_time'] && parseInt(reply['minimum_end_time']);
+                reply['average_end_time'] = reply['average_end_time'] && parseFloat(reply['average_end_time']);
+                reply['end_time_by_day'] = reply['end_time_by_day'] && JSON.parse(reply['end_time_by_day']);
+
+                reply['maximum_total_duration'] = reply['maximum_total_duration'] && parseInt(reply['maximum_total_duration']);
+                reply['minimum_total_duration'] = reply['minimum_total_duration'] && parseInt(reply['minimum_total_duration']);
+                reply['average_total_duration'] = reply['average_total_duration'] && parseFloat(reply['average_total_duration']);
+                reply['total_duration_by_day'] = reply['total_duration_by_day'] && JSON.parse(reply['total_duration_by_day']);
+
+                reply['present_days'] = reply['present_days'] && parseInt(reply['present_days']);
+                reply['total_days'] = reply['total_days'] && parseInt(reply['total_days']);
+            }
+
+            callback(null, reply);
+        }
+    });
 };
 
 module.exports = nosql;

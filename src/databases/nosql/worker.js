@@ -18,7 +18,7 @@ worker.prototype.name = "worker";
 worker.prototype.start = function () {
     var self = this;
 
-    return this._open()
+    return this._open(this.name)
         .then(function (result) {
             result.prefix = self.name;
             return result;

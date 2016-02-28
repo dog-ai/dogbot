@@ -2,60 +2,40 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var _ = require('lodash');
+var logger = require('../../../utils/logger'),
+    _ = require('lodash'),
+    moment = require('moment'),
+    Promise = require("bluebird");
+
 
 module.exports = function (parent, instance) {
 
     parent.prototype._onCreateEmployeeIncomingSynchronization = function (employee) {
-        if (!instance.latestMonthlyStats[employee.id]) {
-            instance.communication.emitAsync('synchronization:incoming:register:setup', {
-                companyResource: 'employee_performances',
-                employeeId: employee.id,
-                name: 'presence',
-                onCompanyResourceChangedCallback: function (performance) {
-                    instance.communication.emit('synchronization:incoming:performance:presence', performance);
-                },
-                onCompanyResourceRemovedCallback: function (performance) {
-                }
-            });
+        instance.communication.emitAsync('synchronization:incoming:register:setup', {
+            companyResource: 'employee_performances',
+            employeeId: employee.id,
+            name: 'presence',
+            onCompanyResourceChangedCallback: function (performance) {
+                instance.communication.emit('synchronization:incoming:performance:presence', performance);
+            },
+            onCompanyResourceRemovedCallback: function (performance) {
+            }
+        });
 
+        _.forEach(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
             instance.communication.emitAsync('synchronization:incoming:register:setup', {
                 companyResource: 'employee_performances',
-                period: 'monthly',
+                period: period,
                 employeeId: employee.id,
                 name: 'presence',
-                onCompanyResourceChangedCallback: function (_stats) {
-                    instance.communication.emit('synchronization:incoming:performance:presence:monthly:stats', employee, _stats);
+                onCompanyResourceChangedCallback: function (stats) {
+                    instance.communication.emit('synchronization:incoming:performance:presence:stats', employee, stats, period);
                 }
             });
-        }
-
-        if (!instance.latestYearlyStats[employee.id]) {
-            instance.communication.emitAsync('synchronization:incoming:register:setup', {
-                companyResource: 'employee_performances',
-                period: 'yearly',
-                employeeId: employee.id,
-                name: 'presence',
-                onCompanyResourceChangedCallback: function (_stats) {
-                    instance.communication.emit('synchronization:incoming:performance:presence:yearly:stats', employee, _stats);
-                }
-            });
-        }
-
-        if (!instance.latestAlltimeStats[employee.id]) {
-            instance.communication.emitAsync('synchronization:incoming:register:setup', {
-                companyResource: 'employee_performances',
-                period: 'alltime',
-                employeeId: employee.id,
-                name: 'presence',
-                onCompanyResourceChangedCallback: function (_stats) {
-                    instance.communication.emit('synchronization:incoming:performance:presence:alltime:stats', employee, _stats);
-                }
-            });
-        }
+        });
     };
 
-    parent.prototype._onIncomingPresenceSynchronization = function (syncingPresence) {
+    parent.prototype._onIncomingPresenceSampleSynchronization = function (syncingPresence) {
         instance.communication.emit('database:performance:retrieveAll', 'PRAGMA table_info(presence)', [], function (error, rows) {
 
             syncingPresence = _.pick(syncingPresence, _.pluck(rows, 'name'));
@@ -72,7 +52,7 @@ module.exports = function (parent, instance) {
         });
     };
 
-    parent.prototype._onOutgoingPresenceSynchronization = function (params, callback) {
+    parent.prototype._onOutgoingPresenceSampleSynchronization = function (params, callback) {
         instance.communication.emit('database:performance:retrieveOneByOne',
             'SELECT * FROM presence WHERE is_synced = 0', [], function (error, row) {
                 if (error) {
@@ -84,7 +64,7 @@ module.exports = function (parent, instance) {
                         row.is_present = row.is_present == 1;
                         row.name = instance.name;
 
-                        callback(error, row, function (error) {
+                        callback(null, row, function (error) {
                             if (error) {
                                 logger.error(error.stack)
                             } else {
@@ -101,4 +81,35 @@ module.exports = function (parent, instance) {
             });
     };
 
+    parent.prototype._onIncomingPresenceStatsSynchronization = function (employee, stats, period) {
+        var _stats = _.extend(stats, {is_synced: true});
+        instance._createOrUpdateStatsByEmployeeId(employee.id, _stats, period);
+    };
+
+    parent.prototype._onOutgoingPresenceStatsSynchronization = function (params, callback) {
+        instance._findAllEmployees()
+            .map(function (employee) {
+
+                return Promise.map(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
+                    return instance._findStatsByEmployeeId(employee.id, period)
+                        .then(function (stats) {
+
+                            if (!stats.is_synced) {
+
+                                stats.employee_id = employee.id;
+                                stats.name = instance.name;
+
+                                callback(null, stats, function (error) {
+                                    if (error) {
+                                        logger.error(error.stack);
+                                    } else {
+                                        stats.is_synced = true;
+                                        instance._createOrUpdateStatsByEmployeeId(employee.id, stats, period);
+                                    }
+                                });
+                            }
+                        });
+                });
+            });
+    }
 };

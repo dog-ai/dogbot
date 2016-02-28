@@ -1,6 +1,5 @@
 [Unit]
 Description=dogbot
-Wants=redis.service
 
 [Service]
 Type=notify

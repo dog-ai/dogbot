@@ -1,5 +1,6 @@
 [Unit]
-Description=Redis Datastore Server
+Description=Redis Server
+StopWhenUnneeded=true
 
 [Service]
 Type=forking
