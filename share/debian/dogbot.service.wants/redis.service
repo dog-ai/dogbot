@@ -3,7 +3,6 @@ Description=Redis Server
 StopWhenUnneeded=true
 
 [Service]
-Type=forking
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=redis-server
