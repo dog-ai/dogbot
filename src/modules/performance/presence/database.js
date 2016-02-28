@@ -33,38 +33,6 @@ module.exports = function (parent, instance) {
             });
     };
 
-    parent.prototype._findLastDatePresenceByEmployeeId = function (id, startDate, endDate) {
-        startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-        endDate = endDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-        return instance.communication.emitAsync('database:performance:retrieveOne',
-            "SELECT * from presence WHERE employee_id = ? AND Datetime(?) < created_date AND created_date < Datetime(?) ORDER BY created_date DESC LIMIT 1;",
-            [id, startDate, endDate])
-            .then(function (row) {
-                if (row !== undefined) {
-                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
-                }
-
-                return row;
-            });
-    };
-
-    parent.prototype._findFirstDatePresenceByEmployeeId = function (id, startDate, endDate) {
-        startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-        endDate = endDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-        return instance.communication.emitAsync('database:performance:retrieveOne',
-            "SELECT * from presence WHERE employee_id = ? AND Datetime(?) < created_date AND created_date < Datetime(?) ORDER BY created_date ASC LIMIT 1;",
-            [id, startDate, endDate])
-            .then(function (row) {
-                if (row !== undefined) {
-                    row.created_date = new Date(row.created_date.replace(' ', 'T'));
-                }
-
-                return row;
-            });
-    };
-
     parent.prototype._findAllByEmployeeIdAndBetweenDates = function (id, startDate, endDate) {
         startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
         endDate = endDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');

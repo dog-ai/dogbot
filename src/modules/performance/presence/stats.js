@@ -43,71 +43,63 @@ module.exports = function (parent, instance) {
 
 
     parent.prototype._updateEmployeeDailyStats = function (employee, date) {
-        return instance._computeEmployeeDailyStats(employee, date)
+        var startDate = date.clone().startOf('day').toDate();
+        var endDate = date.clone().endOf('day').toDate();
+
+        return instance._findAllByEmployeeIdAndBetweenDates(employee.id, startDate, endDate)
+            .then(function (performance) {
+                return instance._computeEmployeeDailyStats(employee, date, performance)
+            })
             .then(function (stats) {
-                return instance._createOrUpdateStatsByEmployeeId(employee.id, _.extend(stats, {is_synced: true}), stats.period)
+                stats = _.extend(stats, {is_synced: false, created_date: date.format(), updated_date: date.format()});
+                return instance._createOrUpdateStatsByEmployeeId(employee.id, stats, stats.period)
             })
     };
 
-    parent.prototype._computeEmployeeDailyStats = function (employee, date) {
+    parent.prototype._computeEmployeeDailyStats = function (employee, date, performance) {
         return Promise.props({
-            total_duration: instance._computeEmployeeDailyTotalDuration(employee, date),
-            start_time: instance._computeEmployeeDailyStartTime(employee, date),
-            end_time: instance._computeEmployeeDailyEndTime(employee, date)
+            total_duration: instance._computeEmployeeDailyTotalDuration(date, performance),
+            start_time: instance._computeEmployeeDailyStartTime(date, performance),
+            end_time: instance._computeEmployeeDailyEndTime(date, performance)
         }).then(function (stats) {
             return _.extend(stats, {period: 'daily'});
         });
     };
 
-    parent.prototype._computeEmployeeDailyTotalDuration = function (employee, date) {
-        var startDate = date.clone().startOf('day').toDate();
-        var endDate = date.clone().endOf('day').toDate();
-        return instance._findAllByEmployeeIdAndBetweenDates(employee.id, startDate, endDate)
-            .then(function (rows) {
-                var totalDuration = moment.duration();
+    parent.prototype._computeEmployeeDailyTotalDuration = function (date, performance) {
+        var totalDuration = moment.duration();
 
-                if (rows != undefined) {
-                    for (var i = 0; i < rows.length; i++) {
-                        if (rows[i].is_present) {
-                            if (i + 1 < rows.length) {
-                                var next = rows[i + 1];
-                                var diff = moment(next.created_date).diff(moment(rows[i].created_date));
-                                totalDuration = totalDuration.add(diff);
-                            }
-                        } else {
-
-                        }
+        if (performance) {
+            for (var i = 0; i < performance.length; i++) {
+                if (performance[i].is_present) {
+                    if (i + 1 < performance.length) {
+                        var next = performance[i + 1];
+                        var diff = moment(next.created_date).diff(moment(performance[i].created_date));
+                        totalDuration = totalDuration.add(diff);
                     }
-                }
+                } else {
 
-                return totalDuration.asSeconds();
-            });
+                }
+            }
+        }
+
+        return totalDuration.asSeconds();
     };
 
-    parent.prototype._computeEmployeeDailyStartTime = function (employee, date) {
-        var startDate = date.clone().startOf('day').toDate();
-        var endDate = date.clone().endOf('day').toDate();
-        return instance._findFirstDatePresenceByEmployeeId(employee.id, startDate, endDate)
-            .then(function (presence) {
-                if (presence !== undefined) {
-                    return moment(presence.created_date).diff(date.clone().startOf('day'), 'seconds');
-                } else {
-                    return 0;
-                }
-            });
+    parent.prototype._computeEmployeeDailyStartTime = function (date, performance) {
+        if (performance && performance[0]) {
+            return moment(performance[0].created_date).diff(date.clone().startOf('day'), 'seconds');
+        } else {
+            return 0;
+        }
     };
 
-    parent.prototype._computeEmployeeDailyEndTime = function (employee, date) {
-        var startDate = date.clone().startOf('day').toDate();
-        var endDate = date.clone().endOf('day').toDate();
-        return instance._findLastDatePresenceByEmployeeId(employee.id, startDate, endDate)
-            .then(function (presence) {
-                if (presence !== undefined) {
-                    return moment(presence.created_date).diff(date.clone().startOf('day'), 'seconds');
-                } else {
-                    return 0;
-                }
-            });
+    parent.prototype._computeEmployeeDailyEndTime = function (date, performance) {
+        if (performance && performance[performance.length - 1]) {
+            return moment(performance[performance.length - 1].created_date).diff(date.clone().startOf('day'), 'seconds');
+        } else {
+            return 0;
+        }
     };
 
 
@@ -126,12 +118,19 @@ module.exports = function (parent, instance) {
     parent.prototype._computeEmployeePeriodStats = Promise.method(function (employee, dailyStats, stats, date, period) {
         var now = moment().format();
 
-        if (period === 'monthly') {
-            // are we starting a new month
-            if (stats && stats.total_duration_by_day && _.keys(stats.total_duration_by_day).length > 0
-                && !moment.unix(_.keys(stats.total_duration_by_day)[0]).isSame(date, 'month')) {
-                monthlyStats = undefined;
-            }
+        switch (period) {
+            case 'monthly':
+                // are we starting a new month
+                if (stats && stats.started_date && !moment(stats.started_date).isSame(date, 'month')) {
+                    stats = undefined;
+                }
+                break;
+            case 'yearly':
+                // are we starting a new month
+                if (stats && stats.started_date && !moment(stats.started_date).isSame(date, 'year')) {
+                    stats = undefined;
+                }
+                break;
         }
 
         // no stats

@@ -7,6 +7,8 @@ var logger = require('../../../utils/logger'),
     moment = require('moment'),
     Promise = require("bluebird");
 
+var presence = module.exports;
+
 
 module.exports = function (parent, instance) {
 
@@ -88,22 +90,23 @@ module.exports = function (parent, instance) {
 
     parent.prototype._onOutgoingPresenceStatsSynchronization = function (params, callback) {
         instance._findAllEmployees()
-            .map(function (employee) {
+            .mapSeries(function (employee) {
 
-                return Promise.map(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
+                return Promise.mapSeries(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
                     return instance._findStatsByEmployeeId(employee.id, period)
                         .then(function (stats) {
 
-                            if (stats && !stats.is_synced) {
+                            if (stats && stats.is_synced) {
 
-                                stats.employee_id = employee.id;
-                                stats.name = instance.name;
+                                var _stats = _.extend(stats, {employee_id: employee.id, name: instance.name});
 
-                                callback(null, stats, function (error) {
+                                callback(null, _stats, function (error) {
                                     if (error) {
                                         logger.error(error.stack);
                                     } else {
+
                                         stats.is_synced = true;
+
                                         instance._createOrUpdateStatsByEmployeeId(employee.id, stats, period);
                                     }
                                 });
