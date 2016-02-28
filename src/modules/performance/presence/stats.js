@@ -116,7 +116,6 @@ module.exports = function (parent, instance) {
             function (dailyStats, oldStats) {
                 return instance._computeEmployeePeriodStats(employee, dailyStats, oldStats, date, period)
                     .then(function (newStats) {
-                        console.log(JSON.stringify(newStats, null, 4));
                         if (!_.isEqual(oldStats, newStats)) {
                             return instance._createOrUpdateStatsByEmployeeId(employee.id, _.extend(newStats, {is_synced: false}), period);
                         }
