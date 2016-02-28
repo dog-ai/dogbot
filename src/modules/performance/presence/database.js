@@ -86,4 +86,12 @@ module.exports = function (parent, instance) {
     parent.prototype._findAllEmployees = function () {
         return instance.communication.emitAsync('database:person:retrieveAll', 'SELECT * FROM employee;', []);
     };
+
+    parent.prototype._createOrUpdateStatsByEmployeeId = function (id, stats, period) {
+        return instance.communication.emitAsync('database:nosql:performance:set', 'presence:stats:' + period, id, stats);
+    };
+
+    parent.prototype._findStatsByEmployeeId = function (id, period) {
+        return instance.communication.emitAsync('database:nosql:performance:get', 'presence:stats:' + period, id);
+    };
 };

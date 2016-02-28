@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 function presence() {
@@ -10,7 +10,8 @@ presence.prototype.name = 'presence';
 presence.prototype.databases = [
     {type: 'sql', name: 'monitor'},
     {type: 'sql', name: 'person'},
-    {type: 'sql', name: 'performance'}
+    {type: 'sql', name: 'performance'},
+    {type: 'nosql', name: 'performance'}
 ];
 
 presence.prototype.modules = [

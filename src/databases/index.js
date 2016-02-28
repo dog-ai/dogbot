@@ -3,9 +3,10 @@
  */
 
 var logger = require('../utils/logger.js'),
-    async = require('async'),
     _ = require('lodash'),
-    path = require('path'),
+    Promise = require('bluebird');
+
+var path = require('path'),
     fs = require("fs");
 
 var DATABASES_DIR = path.join(__dirname, '/');

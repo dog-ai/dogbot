@@ -393,7 +393,12 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
                     companyResourceObj.name + '/' +
                     (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
                     (isStats ? '_stats' : ''));
-                companyResourceRef.push(val, callback);
+
+                if (isStats) {
+                    companyResourceRef.set(val, callback);
+                } else {
+                    companyResourceRef.push(val, callback);
+                }
 
             } else {
 
