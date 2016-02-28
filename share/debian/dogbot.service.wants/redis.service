@@ -3,9 +3,6 @@ Description=Redis Server
 StopWhenUnneeded=true
 
 [Service]
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=redis-server
 PIDFile=/opt/dogbot/var/run/redis.pid
 WorkingDirectory=/opt/dogbot
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/run

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ */
+
 #!/usr/bin/env node
 
 process.on('exit', function () {
@@ -17,159 +21,255 @@ var firebase = new Firebase(FIREBASE_ENDPOINT);
 
 var _ = require('lodash'),
     moment = require('moment'),
-    presence = require('../../../src/modules/performance/presence.js'),
-    synchronization = require('../../../src/bot/synchronization.js');
+    Promise = require('bluebird');
 
+var mkdirSync = require("fs").mkdirSync,
+    readFile = Promise.promisify(require("fs").readFile),
+    writeFile = Promise.promisify(require('fs').writeFile);
 
-var _computeAlltimeStats = function (companyId, employeeId, performanceName, alltimePerformance) {
-    _.forEach(_.sortBy(_.keys(alltimePerformance)), function (year) {
+var performancePresenceFn = function () {
+};
+var performancePresence = new performancePresenceFn();
+require('../../../src/modules/performance/presence/stats')(performancePresenceFn, performancePresence);
+
+var synchronization = require('../../../src/bot/synchronization');
+
+var _computeAlltimeStats = function (companyId, employeeId, performanceName, performance) {
+
+    var alltimeStats = undefined;
+
+    return Promise.mapSeries(_.sortBy(_.keys(performance)), function (year) {
         if (year.indexOf('_') == '0') {
             return;
         }
 
-        var yearPerformance = alltimePerformance[year];
+        var yearPerformance = performance[year];
 
-        _computeYearlyStats(companyId, employeeId, performanceName, yearPerformance, year);
-
-        console.log(presence.latestYearlyStats[employeeId]);
-
-    });
+        return _computeYearlyStats(companyId, employeeId, performanceName, yearPerformance, year, alltimeStats).bind(this);
+    })
 };
 
-var _computeYearlyStats = function (companyId, employeeId, performanceName, yearPerformance, year) {
-    _.forEach(_.sortBy(_.keys(yearPerformance)), function (month) {
+var _computeYearlyStats = function (companyId, employeeId, performanceName, yearPerformance, year, alltimeStats) {
+
+    var yearStats = undefined;
+
+    return Promise.mapSeries(_.sortBy(_.keys(yearPerformance)), function (month) {
         if (month.indexOf('_') == '0') {
             return;
         }
 
         var monthPerformance = yearPerformance[month];
 
-        _computeMonthlyStats(companyId, employeeId, performanceName, monthPerformance, year, month);
-
-        console.log(presence.latestMonthlyStats[employeeId]);
-
-        firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/_stats')
-            .set(presence.latestMonthlyStats[employeeId], function (error) {
-                if (error) {
-                    logger.error(error.stack);
-                }
-
-            });
-
-    });
+        return _computeMonthlyStats(companyId, employeeId, performanceName, monthPerformance, year, month, alltimeStats).bind(this);
+    })
 };
 
-var _computeMonthlyStats = function (companyId, employeeId, performanceName, monthPerformance, year, month) {
-    _.forEach(_.sortBy(_.keys(monthPerformance)), function (day) {
-        if (day.indexOf('_') == '0') {
-            return;
-        }
+var _computeMonthlyStats = function (companyId, employeeId, performanceName, monthPerformance, year, month, alltimeStats) {
 
-        var date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD');
+    var monthStats = undefined;
 
-        if (moment().isSame(date, 'day')) {
-            return;
-        }
+    return Promise.mapSeries(_.sortBy(_.keys(monthPerformance)), function (day) {
 
-        console.log('Computing stats for date: ' + year + '/' + month + '/' + day);
+            if (day.indexOf('_') == '0') {
+                return;
+            }
 
-        var dayPerformance = monthPerformance[day];
+            var date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD');
 
-        _computeDailyStats(companyId, employeeId, performanceName, dayPerformance, year, month, day);
+            if (moment().isSame(date, 'day')) {
+                return;
+            }
 
-        presence.latestDailyStats[employeeId] = null;
-        presence.latestDailyStats[employeeId] = dayPerformance['_stats'];
+            console.log('Updating employee ' + employeeId + ' ' + performanceName + ' stats with date: ' + year + '/' + month + '/' + day);
 
-        firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName + '/' + year + '/' + month + '/' + day + '/_stats')
-            .set(presence.latestDailyStats[employeeId], function (error) {
-                if (error) {
-                    logger.error(error.stack);
-                }
+            var dayPerformance = monthPerformance[day];
 
+            return _computeDailyStats(companyId, employeeId, performanceName, dayPerformance, year, month, day)
+                .then(function (dayStats) {
+                    return Promise.props({
+                        monthStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, monthStats, date, 'monthly'),
+                        yearStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, this.yearStats, date, 'yearly'),
+                        alltimeStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, this.alltimeStats, date, 'alltime')
+                    });
+                })
+                .then(function (result) {
+                    monthStats = result.monthStats;
+                    this.yearStats = result.yearStats;
+                    this.alltimeStats = result.alltimeStats;
+                })
+
+        })
+        .then(function () {
+            monthStats = _.omit(monthStats, 'period');
+
+            return new Promise(function (resolve, reject) {
+                firebase.child(
+                        'company_employee_performances/' +
+                        companyId + '/' +
+                        employeeId + '/' +
+                        performanceName + '/' +
+                        year + '/' +
+                        month + '/_stats')
+                    .set(monthStats, function (error) {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
             });
 
+        })
+        .then(function () {
+            this.yearStats = _.omit(this.yearStats, 'period');
 
-        try {
-            var monthlyStats = presence._computeEmployeeMonthlyStats({id: employeeId}, date);
-            presence.latestMonthlyStats[employeeId] = monthlyStats;
-        } catch (error) {
-        }
+            return new Promise(function (resolve, reject) {
+                firebase.child(
+                        'company_employee_performances/' +
+                        companyId + '/' +
+                        employeeId + '/' +
+                        performanceName + '/' +
+                        year + '/_stats')
+                    .set(this.yearStats, function (error) {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
+            });
 
-        try {
-            var alltimeStats = presence._computeEmployeeAlltimeStats({id: employeeId}, date);
-            presence.latestAlltimeStats[employeeId] = alltimeStats;
-        } catch (error) {
-        }
-    });
+        })
+        .then(function () {
+            this.alltimeStats = _.omit(this.alltimeStats, 'period');
+
+            return new Promise(function (resolve, reject) {
+                firebase.child(
+                        'company_employee_performances/' +
+                        companyId + '/' +
+                        employeeId + '/' +
+                        performanceName + '/_stats')
+                    .set(this.alltimeStats, function (error) {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
+            });
+
+        });
 };
 
 var _computeDailyStats = function (companyId, employeeId, performanceName, dayPerformance, year, month, day) {
 
     var date = moment(year + '/' + month + '/' + day, 'YYYY/MM/DD');
 
-    dayPerformance._stats = {};
+    return performancePresence._computeEmployeeDailyStats({id: employeeId}, date, _.map(dayPerformance))
+        .delay(100)
+        .then(function (dayStats) {
+            dayStats = _.omit(dayStats, 'period');
 
-    var keys = _.filter(_.sortBy(_.keys(dayPerformance)), function (key) {
-        return key != '_stats';
-    });
+            return new Promise(function (resolve, reject) {
+                firebase.child(
+                        'company_employee_performances/' +
+                        companyId + '/' +
+                        employeeId + '/' +
+                        performanceName + '/' +
+                        year + '/' +
+                        month + '/' +
+                        day + '/_stats')
+                    .set(dayStats, function (error) {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
+            })
+                .then(function () {
+                    return dayStats;
+                });
 
-    var totalDuration = moment.duration();
-
-    if (keys != undefined) {
-        for (var i = 0; i < keys.length; i++) {
-
-            if (dayPerformance[keys[i]].is_present) {
-                if (i + 1 < keys.length) {
-                    var next = dayPerformance[keys[i + 1]];
-                    var diff = moment(next.created_date).diff(moment(dayPerformance[keys[i]].created_date));
-                    totalDuration = totalDuration.add(diff);
-                }
-            } else {
-
-            }
-        }
-
-        if (keys.length > 0) {
-            dayPerformance._stats.start_time = moment(dayPerformance[keys[0]].created_date).diff(date.startOf('day'), 'seconds');
-            dayPerformance._stats.end_time = moment(dayPerformance[keys[keys.length - 1]].created_date).diff(date.startOf('day'), 'seconds');
-        } else {
-            dayPerformance._stats.start_time = 0;
-            dayPerformance._stats.end_time = 0;
-        }
-    }
-
-    dayPerformance._stats.total_duration = totalDuration.asSeconds();
+        });
 };
 
-firebase.authWithCustomToken(FIREBASE_CUSTOM_USER_ADMIN_TOKEN, function (error) {
-    if (error) {
-        throw error;
-    } else {
-        var companyId = process.argv[2];
-        var employeeId = process.argv[3];
-        var performanceName = process.argv[4];
+var _retrieveCompanyEmployees = function (companyId) {
+    return new Promise(function (resolve, reject) {
+        firebase.child('companies/' + companyId + '/employees').once("value", function (snapshot) {
+            resolve(_.map(snapshot.val(), function (v, k) {
+                return k;
+            }));
+        }, reject);
+    });
+};
 
-        if (employeeId !== undefined && employeeId !== null && performanceName !== undefined && performanceName !== null) {
+var _retrieveCompanyEmployeePerformance = function (companyId, employeeId, performanceName) {
+    return new Promise(function (resolve, reject) {
+        firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName).once("value", function (snapshot) {
+            resolve(snapshot.val());
+        }, reject);
+    });
+};
 
-            firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName).once("value", function (snapshot) {
-                var alltimePerformance = snapshot.val();
+var _readCacheOrRetrieveCompanyEmployeePerformance = function (companyId, employeeId, performanceName) {
+    var file = '.cache/company_employee_performances-' + companyId + '-' + employeeId + '-' + performanceName + '.js';
 
-                if (alltimePerformance !== null) {
+    return readFile(file, "utf8")
+        .then(function (cache) {
+            return JSON.parse(cache);
+        }).catch(function () {
+            return _retrieveCompanyEmployeePerformance(companyId, employeeId, performanceName)
+                .then(function (performance) {
+                    try {
+                        mkdirSync('.cache');
+                    } catch (ignored) {
+                    }
 
-                    _computeAlltimeStats(companyId, employeeId, performanceName, alltimePerformance);
+                    return writeFile(file, JSON.stringify(performance), {})
+                        .then(function () {
+                            return performance;
+                        })
+                });
+        });
+};
 
-                    console.log(presence.latestAlltimeStats[employeeId]);
+var _authWithCustomTokenAsync = function (token) {
+    return new Promise(function (resolve, reject) {
+        firebase.authWithCustomToken(token, function (error) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+    });
+};
 
-                    firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName + '/_stats')
-                        .set(presence.latestAlltimeStats[employeeId], function (error) {
-                            if (error) {
-                                logger.error(error.stack);
-                            }
+_authWithCustomTokenAsync(FIREBASE_CUSTOM_USER_ADMIN_TOKEN)
+    .then(function () {
+        this.companyId = process.argv[2];
 
-                            process.exit(0);
-                        });
-                }
-            });
+        if (!this.companyId) {
+            throw new Error('company id is required');
         }
-    }
-});
+
+        return this.companyId;
+    })
+    .then(_retrieveCompanyEmployees)
+    .mapSeries(function (employeeId) {
+        return Promise.mapSeries(['presence'], function (performanceName) {
+            return _readCacheOrRetrieveCompanyEmployeePerformance(this.companyId, employeeId, performanceName)
+                .then(function (performance) {
+                    return _computeAlltimeStats(this.companyId, employeeId, performanceName, performance);
+                });
+        });
+    })
+
+    .then(function () {
+        process.exit(0);
+    })
+    .catch(function (error) {
+        console.error(error.message);
+        process.exit(1);
+    });
