@@ -94,7 +94,7 @@ module.exports = function (parent, instance) {
                     return instance._findStatsByEmployeeId(employee.id, period)
                         .then(function (stats) {
 
-                            if (!stats.is_synced) {
+                            if (stats && !stats.is_synced) {
 
                                 stats.employee_id = employee.id;
                                 stats.name = instance.name;
