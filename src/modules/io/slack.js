@@ -114,7 +114,9 @@ function findSlackUserFromEntities(entities) {
 
 slack.prototype._onIncomingMessage = function (message) {
     var type = message.type,
-        channel = instance._dataStore.getChannelById(message.channel) || instance._dataStore.getDMById(message.channel),
+        channel = instance._dataStore.getChannelById(message.channel) ||
+            instance._dataStore.getDMById(message.channel) ||
+            instance._dataStore.getGroupById(message.channel),
         user = instance._dataStore.getUserById(message.user),
         time = message.ts,
         text = message.text;
