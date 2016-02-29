@@ -72,7 +72,6 @@ modules.prototype._load = function (type, name, optional, config) {
 
                 resolve();
             } catch (error) {
-                logger.debug('Unable to load ' + type.toLowerCase() + ' module ' + name + ' because ' + error.message);
 
                 if (!(error.message.indexOf('platform is not supported') > -1 ||
                     error.message.indexOf('invalid configuration') > -1 ||
@@ -81,9 +80,11 @@ modules.prototype._load = function (type, name, optional, config) {
                 }
 
                 if (optional) {
+                    logger.debug('Unable to load optional ' + type.toLowerCase() + ' module ' + name + ' because ' + error.message);
+
                     resolve();
                 } else {
-                    reject(new Error('unable to load' + (optional ? ' optional ' : '' + ' ') + type.toLowerCase() + ' module ' + name));
+                    reject(new Error('unable to load' + type.toLowerCase() + ' module ' + name));
                 }
             }
         });
