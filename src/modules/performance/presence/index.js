@@ -6,7 +6,47 @@ var logger = require('../../../utils/logger.js'),
     _ = require('lodash'),
     moment = require('moment');
 
+function _loadSubmodules(submodules) {
+    _.forEach(submodules, function (submoduleName) {
+        var submodule = require(submoduleName);
+        for (var fnName in submodule.prototype) {
+            if (!_.includes(['constructor', 'start', 'stop'], fnName)) {
+                presence.prototype[fnName] = submodule.prototype[fnName];
+            }
+        }
+    });
+}
+
+function _unloadSubmodules(submodules) {
+    _.forEach(submodules, function (submoduleName) {
+        delete require.cache[require.resolve(submoduleName)];
+    });
+}
+
+function _startSubmodules(submodules) {
+    var self = this;
+
+    _.forEach(submodules, function (submoduleName) {
+        var submodule = require(submoduleName);
+        if (submodule.prototype && submodule.prototype['start']) {
+            submodule.prototype.start.bind(self)();
+        }
+    });
+}
+
+function _stopSubmodules() {
+    var self = this;
+
+    _.forEach(submodules, function (submoduleName) {
+        var submodule = require(submoduleName);
+        if (submodule.prototype && submodule.prototype['stop']) {
+            submodule.prototype.stop.bind(self)();
+        }
+    });
+}
+
 function presence() {
+    _loadSubmodules(this.submodules);
 }
 
 presence.prototype.type = "PERFORMANCE";
@@ -28,69 +68,33 @@ presence.prototype.info = function () {
 presence.prototype.load = function (communication) {
     this.communication = communication;
 
-    _.forEach(this.submodules, function (submodule) {
-        require(submodule)(presence, instance);
-    });
-
     this.start();
 };
 
 presence.prototype.unload = function () {
     this.stop();
 
-    _.forEach(this.submodules, function (submodule) {
-        delete require.cache[require.resolve(submodule)];
-    });
+    _unloadSubmodules(this.submodules);
 };
 
 presence.prototype.start = function () {
-    this.communication.on('person:employee:nearby', this._onEmployeePresenceSample);
-    this.communication.on('person:employee:faraway', this._onEmployeePresenceSample);
-    this.communication.on('synchronization:incoming:person:employee:create', this._onCreateEmployeeIncomingSynchronization);
+    this.communication.on('person:employee:nearby', this._onEmployeePresenceSample.bind(this));
+    this.communication.on('person:employee:faraway', this._onEmployeePresenceSample.bind(this));
 
-    this.communication.on('synchronization:incoming:performance:presence', this._onIncomingPresenceSampleSynchronization);
-    this.communication.on('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSampleSynchronization);
-    this.communication.on('synchronization:incoming:performance:presence:stats', this._onIncomingPresenceStatsSynchronization);
-    this.communication.on('synchronization:outgoing:performance:presence:stats', this._onOutgoingPresenceStatsSynchronization);
-
-
-
-    this.communication.emitAsync('synchronization:outgoing:periodic:register', {
-        companyResource: 'employee_performances',
-        event: 'synchronization:outgoing:performance:presence'
-    });
-
-
-    this.communication.emitAsync('synchronization:outgoing:periodic:register', {
-        companyResource: 'employee_performances',
-        event: 'synchronization:outgoing:performance:presence:stats'
-    });
-
-
-    this.communication.on('performance:presence:stats:update:yesterday', this._updateAllEmployeeStatsWithYesterday);
-
-    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '5 minutes');
+    _startSubmodules.bind(this)(this.submodules);
 };
 
 presence.prototype.stop = function () {
-    this.communication.removeListener('person:employee:nearby', this._onEmployeePresenceSample);
-    this.communication.removeListener('person:employee:faraway', this._onEmployeePresenceSample);
-    this.communication.removeListener('synchronization:incoming:person:employee:create', this._onCreateEmployeeIncomingSynchronization);
+    _stopSubmodules(this.submodules);
 
-    this.communication.removeListener('synchronization:incoming:performance:presence', this._onIncomingPresenceSampleSynchronization);
-    this.communication.removeListener('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSampleSynchronization);
-    this.communication.removeListener('synchronization:incoming:performance:presence:stats', this._onIncomingPresenceStatsSynchronization);
-    this.communication.removeListener('synchronization:outgoing:performance:presence:stats', this._onOutgoingPresenceStatsSynchronization);
-
-
-    this.communication.removeListener('performance:presence:stats:generate:yesterday', this._generateAllEmployeeStatsForYesterday);
-
-    this.communication.emit('worker:job:dequeue', 'performance:presence:stats:generate:yesterday');
-
+    this.communication.removeListener('person:employee:nearby', this._onEmployeePresenceSample.bind(this));
+    this.communication.removeListener('person:employee:faraway', this._onEmployeePresenceSample.bind(this));
 };
 
 presence.prototype._onEmployeePresenceSample = function (employee) {
-    instance._findLatestPresenceByEmployeeId(employee.id).then(function (performance) {
+    var self = this;
+
+    this._findLatestPresenceByEmployeeId(employee.id).then(function (performance) {
         if (performance !== undefined) {
             if (performance.is_present == employee.is_present) {
                 return;
@@ -101,7 +105,7 @@ presence.prototype._onEmployeePresenceSample = function (employee) {
             }
         }
 
-        return instance._createPresence({
+        return self._createPresence({
             employee_id: employee.id,
             is_present: employee.is_present,
             created_date: employee.last_presence_date
@@ -111,6 +115,4 @@ presence.prototype._onEmployeePresenceSample = function (employee) {
     });
 };
 
-var instance = new presence();
-
-module.exports = instance;
+module.exports = new presence();
