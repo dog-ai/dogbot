@@ -16,7 +16,7 @@ function presence() {
 presence.prototype.start = function () {
     this.communication.on('performance:presence:stats:update:yesterday', this._updateAllEmployeeStatsWithYesterday.bind(this));
 
-    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '4 hours');
+    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '5 minutes');
 };
 
 presence.prototype.stop = function () {
@@ -250,7 +250,7 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
         throw new Error('unable to compute employee monthly stats');
     }
 
-    stats.period = period;
+    _stats.period = period;
 
     return _stats;
 });
