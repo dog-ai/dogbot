@@ -136,7 +136,7 @@ presence.prototype._onOutgoingPresenceStatsSynchronization = function (params, c
                 return self._findStatsByEmployeeId(employee.id, period)
                     .then(function (stats) {
 
-                        if (stats && stats.is_synced) {
+                        if (stats && !stats.is_synced) {
 
                             var _stats = _.extend(stats, {employee_id: employee.id, name: self.name});
 

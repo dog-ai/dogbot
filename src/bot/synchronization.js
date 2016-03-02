@@ -355,7 +355,7 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
 
             var companyResourceRef;
             if (companyResource == 'employee_performances') {
-                val = _.omit(val, ['name', 'period', 'employee_id']);
+                val = _.omit(val, ['name', 'employee_id']);
 
                 var date = moment(companyResourceObj.created_date);
 
@@ -365,11 +365,15 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
                 if (companyResourceObj.period) {
                     switch (companyResourceObj.period) {
                         case 'monthly':
+                            date = moment(companyResourceObj.started_date);
+
                             logger.debug('sending employee performance monthly stats: %s', JSON.stringify(companyResourceObj));
 
                             dateFormatPattern = 'YYYY/MM';
                             break;
                         case 'yearly':
+                            date = moment(companyResourceObj.started_date);
+
                             logger.debug('sending employee performance yearly stats: %s', JSON.stringify(companyResourceObj));
 
                             dateFormatPattern = 'YYYY';
@@ -383,8 +387,12 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
                             val = _.omit(val, ['created_date', 'updated_date']);
                             logger.debug('sending employee performance daily stats: %s', JSON.stringify(companyResourceObj));
                     }
+                    val = _.omit(val, ['period']);
+
                     isStats = true;
                 } else {
+                    val = _.omit(val, ['updated_date']);
+
                     logger.debug('sending employee performances: %s', JSON.stringify(companyResourceObj));
                 }
 
