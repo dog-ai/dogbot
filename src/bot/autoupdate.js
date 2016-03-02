@@ -5,7 +5,7 @@
 var logger = require('../utils/logger'),
     path = require('path');
 
-var nodegit = require('nodegit');
+//var nodegit = require('nodegit');
 
 function autoupdate() {
 
@@ -38,7 +38,7 @@ autoupdate.prototype.terminate = function () {
 
 autoupdate.prototype._check = function (params, callback) {
 
-    nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
+    /*nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
         .then(function (repository) {
             return repository.fetch("origin", {
                 callbacks: {
@@ -61,7 +61,7 @@ autoupdate.prototype._check = function (params, callback) {
         })
         .catch(function (error) {
             callback(error);
-        });
+     });*/
 };
 
 var instance = new autoupdate();
