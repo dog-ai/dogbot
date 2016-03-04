@@ -64,8 +64,8 @@ presence.prototype._onCreateEmployeeIncomingSynchronization = function (employee
             period: period,
             employeeId: employee.id,
             name: 'presence',
-            onCompanyResourceChangedCallback: function (stats) {
-                self.communication.emit('synchronization:incoming:performance:presence:stats', employee, stats, period);
+            onCompanyResourceChangedCallback: function (stats, date) {
+                self.communication.emit('synchronization:incoming:performance:presence:stats', employee, stats, period, date);
             }
         });
     });
@@ -121,9 +121,14 @@ presence.prototype._onOutgoingPresenceSampleSynchronization = function (params, 
         });
 };
 
-presence.prototype._onIncomingPresenceStatsSynchronization = function (employee, stats, period) {
+presence.prototype._onIncomingPresenceStatsSynchronization = function (employee, stats, period, date) {
+    if (!stats || !period) {
+        return;
+    }
+
     var _stats = _.extend(stats, {is_synced: true});
-    this._createOrUpdateStatsByEmployeeId(employee.id, _stats, period);
+
+    this._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, date, _stats);
 };
 
 presence.prototype._onOutgoingPresenceStatsSynchronization = function (params, callback) {
@@ -133,12 +138,12 @@ presence.prototype._onOutgoingPresenceStatsSynchronization = function (params, c
         .mapSeries(function (employee) {
 
             return Promise.mapSeries(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
-                return self._findStatsByEmployeeId(employee.id, period)
-                    .then(function (stats) {
+                return self._findAllStatsByEmployeeIdAndPeriod(employee.id, period)
+                    .mapSeries(function (pair) {
 
-                        if (stats && !stats.is_synced) {
+                        if (pair && !pair.stats.is_synced) {
 
-                            var _stats = _.extend(stats, {employee_id: employee.id, name: self.name});
+                            var _stats = _.extend(pair.stats, {employee_id: employee.id, name: self.name});
 
                             callback(null, _stats, function (error) {
                                 if (error) {
@@ -147,7 +152,7 @@ presence.prototype._onOutgoingPresenceStatsSynchronization = function (params, c
 
                                     stats.is_synced = true;
 
-                                    self._createOrUpdateStatsByEmployeeId(employee.id, stats, period);
+                                    self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, stats, period, pair.dateFormat);
                                 }
                             });
                         }

@@ -12,6 +12,8 @@ function performance() {
 
     this._setFn = this._set.bind(this);
     this._getFn = this._get.bind(this);
+    this._hsetFn = this._hset.bind(this);
+    this._hgetFn = this._hget.bind(this);
     this._hmsetFn = this._hmset.bind(this);
     this._hgetallFn = this._hgetall.bind(this);
 }
@@ -25,6 +27,8 @@ performance.prototype.start = function (communication) {
 
     this.communication.on('database:nosql:' + this.name + ':set', this._setFn);
     this.communication.on('database:nosql:' + this.name + ':get', this._getFn);
+    this.communication.on('database:nosql:' + this.name + ':hset', this._hsetFn);
+    this.communication.on('database:nosql:' + this.name + ':hget', this._hgetFn);
     this.communication.on('database:nosql:' + this.name + ':hmset', this._hmsetFn);
     this.communication.on('database:nosql:' + this.name + ':hgetall', this._hgetallFn);
 
@@ -34,6 +38,8 @@ performance.prototype.start = function (communication) {
 performance.prototype.stop = function () {
     this.communication.removeListener('database:nosql:' + this.name + ':set', this._setFn);
     this.communication.removeListener('database:nosql:' + this.name + ':get', this._getFn);
+    this.communication.removeListener('database:nosql:' + this.name + ':hset', this._hsetFn);
+    this.communication.removeListener('database:nosql:' + this.name + ':hget', this._hgetFn);
     this.communication.removeListener('database:nosql:' + this.name + ':hmset', this._hmsetFn);
     this.communication.removeListener('database:nosql:' + this.name + ':hgetall', this._hgetallFn);
 

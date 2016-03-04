@@ -16,7 +16,7 @@ function presence() {
 presence.prototype.start = function () {
     this.communication.on('performance:presence:stats:update:yesterday', this._updateAllEmployeeStatsWithYesterday.bind(this));
 
-    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '5 minutes');
+    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 minutes');
 };
 
 presence.prototype.stop = function () {
@@ -42,10 +42,10 @@ presence.prototype._updateAllEmployeeStatsForDate = function (date) {
     var self = this;
 
     return self._findAllEmployees()
-        .map(function (employee) {
+        .mapSeries(function (employee) {
             return self._updateEmployeeDailyStats(employee, date)
                 .then(function () {
-                    return Promise.map(['monthly', 'yearly', 'alltime'], function (period) {
+                    return Promise.mapSeries(['monthly', 'yearly', 'alltime'], function (period) {
                         return self._updateEmployeePeriodStats(employee, date, period);
                     });
                 })
@@ -68,7 +68,7 @@ presence.prototype._updateEmployeeDailyStats = function (employee, date) {
         })
         .then(function (stats) {
             stats = _.extend(stats, {is_synced: false, created_date: date.format(), updated_date: date.format()});
-            return self._createOrUpdateStatsByEmployeeId(employee.id, stats, stats.period)
+            return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, stats.period, date, stats)
         })
 };
 
@@ -124,13 +124,15 @@ presence.prototype._computeEmployeeDailyEndTime = function (date, performance) {
 presence.prototype._updateEmployeePeriodStats = function (employee, date, period) {
     var self = this;
 
-    Promise.join(this._findStatsByEmployeeId(employee.id, 'daily'), this._findStatsByEmployeeId(employee.id, period),
+    Promise.join(this._findAllStatsByEmployeeIdAndPeriod(employee.id, 'daily'), this._findAllStatsByEmployeeIdAndPeriod(employee.id, period),
         function (dailyStats, oldStats) {
             return self._computeEmployeePeriodStats(employee, dailyStats, oldStats, date, period)
                 .then(function (newStats) {
                     if (!_.isEqual(oldStats, newStats)) {
-                        return self._createOrUpdateStatsByEmployeeId(employee.id, _.extend(newStats, {is_synced: false}), period);
+                        return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, date, _.extend(newStats, {is_synced: false}));
                     }
+                })
+                .catch(function () {
                 });
         });
 };
@@ -246,7 +248,6 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
         }
 
     } catch (error) {
-        logger.error(error.stack);
         throw new Error('unable to compute employee monthly stats');
     }
 
