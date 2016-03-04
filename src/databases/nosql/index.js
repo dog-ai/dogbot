@@ -132,11 +132,8 @@ nosql.prototype._hgetall = function (prefix, key, callback) {
             callback(error);
         } else {
 
-            var _reply = _.map(reply, function (value, key) {
-                return {
-                    dateFormat: key,
-                    stats: value
-                }
+            var _reply = _.map(reply, function (value) {
+                return JSON.parse(value);
             });
 
             /*if (reply) {

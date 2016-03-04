@@ -2,7 +2,8 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var _ = require('lodash');
+var _ = require('lodash'),
+    moment = require('moment');
 
 function presence() {
 }
@@ -63,7 +64,7 @@ presence.prototype._findAllEmployees = function () {
     return this.communication.emitAsync('database:person:retrieveAll', 'SELECT * FROM employee;', []);
 };
 
-presence.prototype._createOrUpdateStatsByEmployeeIdAndPeriod = function (employeeId, period, date, stats) {
+presence.prototype._createOrUpdateStatsByEmployeeIdAndPeriod = function (employeeId, period, stats) {
     if (!employeeId || !period) {
         throw new Error('invalid parameters');
     }
@@ -81,11 +82,7 @@ presence.prototype._createOrUpdateStatsByEmployeeIdAndPeriod = function (employe
                 dateFormatPattern = 'YYYY';
             }
 
-            if (!date) {
-                throw new Error('invalid parameters');
-            }
-
-            return this.communication.emitAsync('database:nosql:performance:hset', 'presence:stats:' + period, employeeId, date.format(dateFormatPattern), stats);
+            return this.communication.emitAsync('database:nosql:performance:hset', 'presence:stats:' + period, employeeId, moment(stats.started_date).format(dateFormatPattern), stats);
 
             break;
 
@@ -97,7 +94,7 @@ presence.prototype._createOrUpdateStatsByEmployeeIdAndPeriod = function (employe
     }
 };
 
-presence.prototype._findAllStatsByEmployeeIdAndPeriod = function (employeeId, period, date) {
+presence.prototype._findAllStatsByEmployeeIdAndPeriod = function (employeeId, period) {
     if (!employeeId || !period) {
         throw new Error('invalid parameters');
     }
@@ -115,14 +112,13 @@ presence.prototype._findAllStatsByEmployeeIdAndPeriod = function (employeeId, pe
                 dateFormatPattern = 'YYYY';
             }
 
-            if (date) {
-                return this.communication.emitAsync('database:nosql:performance:hget', 'presence:stats:' + period, employeeId, date.format(dateFormatPattern));
-            } else {
-                return this.communication.emitAsync('database:nosql:performance:hgetall', 'presence:stats:' + period, employeeId);
-            }
+            return this.communication.emitAsync('database:nosql:performance:hgetall', 'presence:stats:' + period, employeeId);
 
         case 'alltime':
-            return this.communication.emitAsync('database:nosql:performance:get', 'presence:stats:' + period, employeeId);
+            return this.communication.emitAsync('database:nosql:performance:get', 'presence:stats:' + period, employeeId)
+                .then(function (stats) {
+                    return [stats];
+                });
 
         default:
             throw new Error('invalid parameters');

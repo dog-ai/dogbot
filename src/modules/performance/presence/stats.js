@@ -16,7 +16,7 @@ function presence() {
 presence.prototype.start = function () {
     this.communication.on('performance:presence:stats:update:yesterday', this._updateAllEmployeeStatsWithYesterday.bind(this));
 
-    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 minutes');
+    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '5 minutes');
 };
 
 presence.prototype.stop = function () {
@@ -62,14 +62,22 @@ presence.prototype._updateEmployeeDailyStats = function (employee, date) {
     var startDate = date.clone().startOf('day').toDate();
     var endDate = date.clone().endOf('day').toDate();
 
-    return this._findAllByEmployeeIdAndBetweenDates(employee.id, startDate, endDate)
-        .then(function (performance) {
+    return Promise.join(
+        this._findAllByEmployeeIdAndBetweenDates(employee.id, startDate, endDate),
+        this._findAllStatsByEmployeeIdAndPeriod(employee.id, 'daily'), function (performance, oldStats) {
+            var _oldStats = oldStats && oldStats.length > 0 && oldStats[oldStats.length - 1] || undefined;
+
             return self._computeEmployeeDailyStats(employee, date, performance)
-        })
-        .then(function (stats) {
-            stats = _.extend(stats, {is_synced: false, created_date: date.format(), updated_date: date.format()});
-            return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, stats.period, date, stats)
-        })
+                .then(function (newStats) {
+                    var metadata = ['is_synced', 'created_date', 'updated_date'];
+
+                    if (!_.isEqual(_.omit(_oldStats, metadata), _.omit(newStats, metadata))) {
+                        var _newStats = _.extend(newStats, {is_synced: false});
+
+                        return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, _newStats.period, _newStats);
+                    }
+                })
+        });
 };
 
 presence.prototype._computeEmployeeDailyStats = function (employee, date, performance) {
@@ -80,7 +88,15 @@ presence.prototype._computeEmployeeDailyStats = function (employee, date, perfor
         start_time: self._computeEmployeeDailyStartTime(date, performance),
         end_time: self._computeEmployeeDailyEndTime(date, performance)
     }).then(function (stats) {
-        return _.extend(stats, {period: 'daily'});
+        var now = moment();
+        var _stats = _.extend(stats, {
+            created_date: now.format(),
+            updated_date: now.format(),
+            period: 'daily',
+            started_date: date.clone().startOf('day').format(),
+            ended_date: date.clone().endOf('day').format()
+        });
+        return _stats;
     });
 };
 
@@ -126,10 +142,16 @@ presence.prototype._updateEmployeePeriodStats = function (employee, date, period
 
     Promise.join(this._findAllStatsByEmployeeIdAndPeriod(employee.id, 'daily'), this._findAllStatsByEmployeeIdAndPeriod(employee.id, period),
         function (dailyStats, oldStats) {
-            return self._computeEmployeePeriodStats(employee, dailyStats, oldStats, date, period)
+            var _oldStats = oldStats && oldStats.length > 0 && oldStats[oldStats.length - 1] || undefined;
+
+            return self._computeEmployeePeriodStats(employee, dailyStats, _oldStats, date, period)
                 .then(function (newStats) {
-                    if (!_.isEqual(oldStats, newStats)) {
-                        return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, date, _.extend(newStats, {is_synced: false}));
+                    var metadata = ['is_synced', 'created_date', 'updated_date'];
+
+                    if (!_.isEqual(_.omit(_oldStats, metadata), _.omit(newStats, metadata))) {
+                        var _newStats = _.extend(newStats, {is_synced: false});
+
+                        return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, _newStats);
                     }
                 })
                 .catch(function () {
@@ -159,7 +181,7 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
     if (!stats) {
         stats = {
             created_date: now,
-            started_date: date.format(),
+            started_date: date.clone().startOf('day').format(),
             updated_date: now,
             ended_date: date.clone().endOf('day').format(),
 
