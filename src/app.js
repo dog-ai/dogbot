@@ -9,14 +9,18 @@ var SECRET = process.env.DOGBOT_SECRET,
 var bot = require('./bot')(SECRET);
 
 // shutdown gracefully
-function shutdown() {
+function _shutdown() {
     bot.stop(function () {
         process.exit(0);
     });
 }
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+function _error(error) {
+    bot.error(error);
+}
+
+process.on('SIGINT', _shutdown);
+process.on('SIGTERM', _shutdown);
 
 // force immediate shutdown, i.e. systemd watchdog?
 process.on('SIGABRT', function () {
@@ -24,7 +28,7 @@ process.on('SIGABRT', function () {
 });
 
 process.on('SIGHUP', function () { // reload
-    shutdown();
+    _shutdown();
 });
 
 // stop and then shutdown, i.e. forever daemon
@@ -37,11 +41,10 @@ process.once('SIGUSR2', function () {
 process.on('exit', function () {
 });
 
-process.on('uncaughtException', function (error) {
-    bot.error(error);
-});
+process.on('uncaughtException', _error);
+process.on('unhandledRejection', _error);
 
-if (SECRET === undefined) {
+if (!SECRET) {
     bot.error("Please provide a dog.ai secret.", function () {
         process.exit(1);
     });
@@ -69,7 +72,7 @@ if (SECRET === undefined) {
 
         if (REPO_BRANCH) {
             bot.autoupdate(REPO_BRANCH, function (oldVer, newVer) {
-                shutdown();
+                _shutdown();
             });
         }
     });

@@ -369,7 +369,7 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
             if (companyResource == 'employee_performances') {
                 val = _.omit(val, ['name', 'employee_id']);
 
-                var date = moment(companyResourceObj.created_date);
+                var date = moment(companyResourceObj.started_date);
 
                 var dateFormatPattern = 'YYYY/MM/DD';
                 var isStats = false;
@@ -396,7 +396,6 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
                             dateFormatPattern = null;
                             break;
                         default:
-                            val = _.omit(val, ['created_date', 'updated_date']);
                             logger.debug('Outgoing employee performance daily stats: %s', JSON.stringify(companyResourceObj));
                     }
                     val = _.omit(val, ['period']);
