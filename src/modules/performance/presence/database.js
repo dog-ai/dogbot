@@ -63,12 +63,70 @@ presence.prototype._findAllEmployees = function () {
     return this.communication.emitAsync('database:person:retrieveAll', 'SELECT * FROM employee;', []);
 };
 
-presence.prototype._createOrUpdateStatsByEmployeeId = function (id, stats, period) {
-    return this.communication.emitAsync('database:nosql:performance:set', 'presence:stats:' + period, id, stats);
+presence.prototype._createOrUpdateStatsByEmployeeIdAndPeriod = function (employeeId, period, date, stats) {
+    if (!employeeId || !period) {
+        throw new Error('invalid parameters');
+    }
+
+    var dateFormatPattern;
+    switch (period) {
+        case 'daily':
+            dateFormatPattern = 'YYYYMMDD';
+        case 'monthly':
+            if (!dateFormatPattern) {
+                dateFormatPattern = 'YYYYMM';
+            }
+        case 'yearly':
+            if (!dateFormatPattern) {
+                dateFormatPattern = 'YYYY';
+            }
+
+            if (!date) {
+                throw new Error('invalid parameters');
+            }
+
+            return this.communication.emitAsync('database:nosql:performance:hset', 'presence:stats:' + period, employeeId, date.format(dateFormatPattern), stats);
+
+            break;
+
+        case 'alltime':
+            return this.communication.emitAsync('database:nosql:performance:set', 'presence:stats:' + period, employeeId, stats);
+
+        default:
+            throw new Error('invalid parameters');
+    }
 };
 
-presence.prototype._findStatsByEmployeeId = function (id, period) {
-    return this.communication.emitAsync('database:nosql:performance:get', 'presence:stats:' + period, id);
+presence.prototype._findAllStatsByEmployeeIdAndPeriod = function (employeeId, period, date) {
+    if (!employeeId || !period) {
+        throw new Error('invalid parameters');
+    }
+
+    var dateFormatPattern;
+    switch (period) {
+        case 'daily':
+            dateFormatPattern = 'YYYYMMDD';
+        case 'monthly':
+            if (!dateFormatPattern) {
+                dateFormatPattern = 'YYYYMM';
+            }
+        case 'yearly':
+            if (!dateFormatPattern) {
+                dateFormatPattern = 'YYYY';
+            }
+
+            if (date) {
+                return this.communication.emitAsync('database:nosql:performance:hget', 'presence:stats:' + period, employeeId, date.format(dateFormatPattern));
+            } else {
+                return this.communication.emitAsync('database:nosql:performance:hgetall', 'presence:stats:' + period, employeeId);
+            }
+
+        case 'alltime':
+            return this.communication.emitAsync('database:nosql:performance:get', 'presence:stats:' + period, employeeId);
+
+        default:
+            throw new Error('invalid parameters');
+    }
 };
 
 module.exports = presence;

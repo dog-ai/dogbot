@@ -92,12 +92,36 @@ nosql.prototype._get = function (prefix, key, callback) {
     });
 };
 
+nosql.prototype._hset = function (prefix, key, field, val, callback) {
+    var _val = _.clone(val);
+
+    if (_val instanceof Array || _val instanceof Object) {
+        _val = JSON.stringify(_val);
+    }
+
+    this.client.hset(prefix + ':' + key, field, _val, callback);
+};
+
+nosql.prototype._hget = function (prefix, key, field, callback) {
+    this.client.hget(prefix + ':' + key, field, function (error, reply) {
+        if (error) {
+            callback(error);
+        } else {
+            if (reply && (reply.charAt(0) === '{' || reply.charAt(0) === '[')) {
+                reply = JSON.parse(reply);
+            }
+
+            callback(null, reply);
+        }
+    });
+};
+
 nosql.prototype._hmset = function (prefix, key, val, callback) {
     var _val = _.clone(val);
 
-    _val['start_time_by_day'] = _val['start_time_by_day'] && JSON.stringify(_val['start_time_by_day']);
+    /*_val['start_time_by_day'] = _val['start_time_by_day'] && JSON.stringify(_val['start_time_by_day']);
     _val['end_time_by_day'] = _val['end_time_by_day'] && JSON.stringify(_val['end_time_by_day']);
-    _val['total_duration_by_day'] = _val['total_duration_by_day'] && JSON.stringify(_val['total_duration_by_day']);
+     _val['total_duration_by_day'] = _val['total_duration_by_day'] && JSON.stringify(_val['total_duration_by_day']);*/
 
     this.client.hmset(prefix + ':' + key, _val, callback);
 };
@@ -108,7 +132,14 @@ nosql.prototype._hgetall = function (prefix, key, callback) {
             callback(error);
         } else {
 
-            if (reply) {
+            var _reply = _.map(reply, function (value, key) {
+                return {
+                    dateFormat: key,
+                    stats: value
+                }
+            });
+
+            /*if (reply) {
                 reply['maximum_start_time'] = reply['maximum_start_time'] && parseInt(reply['maximum_start_time']);
                 reply['minimum_start_time'] = reply['minimum_start_time'] && parseInt(reply['minimum_start_time']);
                 reply['average_start_time'] = reply['average_start_time'] && parseInt(reply['average_start_time']);
@@ -126,9 +157,9 @@ nosql.prototype._hgetall = function (prefix, key, callback) {
 
                 reply['present_days'] = reply['present_days'] && parseInt(reply['present_days']);
                 reply['total_days'] = reply['total_days'] && parseInt(reply['total_days']);
-            }
+             }*/
 
-            callback(null, reply);
+            callback(null, _reply);
         }
     });
 };

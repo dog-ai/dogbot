@@ -188,9 +188,12 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                         (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
                         '/_stats')
                     .once('value', function (snapshot) {
-                    var _stats = snapshot.val();
-                    if (_stats !== null) {
-                        params.onCompanyResourceChangedCallback(_stats);
+                        var stats = snapshot.val();
+                        if (stats) {
+
+                            logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(stats));
+
+                            params.onCompanyResourceChangedCallback(stats, date);
                     }
                 });
 
@@ -224,6 +227,9 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                             if (performance.created_date !== undefined && performance.created_date !== null) {
                                 performance.created_date = new Date(performance.created_date);
                             }
+
+                            logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(performance));
+
                             params.onCompanyResourceChangedCallback(_.extend({
                                 employee_id: params.employeeId,
                                 is_synced: true
@@ -236,6 +242,9 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                                         if (performance.created_date !== undefined && performance.created_date !== null) {
                                             performance.created_date = new Date(performance.created_date);
                                         }
+
+                                        logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(performance));
+
                                         params.onCompanyResourceChangedCallback(_.extend({
                                             employee_id: params.employeeId,
                                             is_synced: true
@@ -248,6 +257,9 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                                                     if (performance.created_date !== undefined && performance.created_date !== null) {
                                                         performance.created_date = new Date(performance.created_date);
                                                     }
+
+                                                    logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(performance));
+
                                                     params.onCompanyResourceChangedCallback(_.extend({
                                                         employee_id: params.employeeId,
                                                         is_synced: true
@@ -294,7 +306,7 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                         firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value', function (snapshot) {
                             var resource = snapshot.val();
 
-                            logger.debug('received ' + params.companyResource + ': %s', JSON.stringify(resource));
+                            logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
 
                             convert(resource);
 
@@ -311,7 +323,7 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                 function (snapshot) {
                     var resourceId = snapshot.key();
 
-                    logger.debug('deleted ' + params.companyResource + ': %s', resourceId);
+                    logger.debug('Incoming deleted ' + params.companyResource + ': %s', resourceId);
 
                     firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).off('value');
                     params.onCompanyResourceRemovedCallback({id: resourceId});
@@ -367,25 +379,25 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
                         case 'monthly':
                             date = moment(companyResourceObj.started_date);
 
-                            logger.debug('sending employee performance monthly stats: %s', JSON.stringify(companyResourceObj));
+                            logger.debug('Outgoing employee performance monthly stats: %s', JSON.stringify(companyResourceObj));
 
                             dateFormatPattern = 'YYYY/MM';
                             break;
                         case 'yearly':
                             date = moment(companyResourceObj.started_date);
 
-                            logger.debug('sending employee performance yearly stats: %s', JSON.stringify(companyResourceObj));
+                            logger.debug('Outgoing employee performance yearly stats: %s', JSON.stringify(companyResourceObj));
 
                             dateFormatPattern = 'YYYY';
                             break;
                         case 'alltime':
-                            logger.debug('sending employee performance alltime stats: %s', JSON.stringify(companyResourceObj));
+                            logger.debug('Outgoing employee performance alltime stats: %s', JSON.stringify(companyResourceObj));
 
                             dateFormatPattern = null;
                             break;
                         default:
                             val = _.omit(val, ['created_date', 'updated_date']);
-                            logger.debug('sending employee performance daily stats: %s', JSON.stringify(companyResourceObj));
+                            logger.debug('Outgoing employee performance daily stats: %s', JSON.stringify(companyResourceObj));
                     }
                     val = _.omit(val, ['period']);
 
@@ -393,7 +405,7 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
                 } else {
                     val = _.omit(val, ['updated_date']);
 
-                    logger.debug('sending employee performances: %s', JSON.stringify(companyResourceObj));
+                    logger.debug('Outgoing employee performances: %s', JSON.stringify(companyResourceObj));
                 }
 
                 companyResourceRef = firebase.child('company_' + companyResource + '/' +
