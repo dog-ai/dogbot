@@ -34,7 +34,7 @@ function _startSubmodules(submodules) {
     });
 }
 
-function _stopSubmodules() {
+function _stopSubmodules(submodules) {
     var self = this;
 
     _.forEach(submodules, function (submoduleName) {
@@ -85,7 +85,7 @@ presence.prototype.start = function () {
 };
 
 presence.prototype.stop = function () {
-    _stopSubmodules(this.submodules);
+    _stopSubmodules.bind(this)(this.submodules);
 
     this.communication.removeListener('person:employee:nearby', this._onEmployeePresenceSample.bind(this));
     this.communication.removeListener('person:employee:faraway', this._onEmployeePresenceSample.bind(this));
