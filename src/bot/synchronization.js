@@ -306,7 +306,6 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                         firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value', function (snapshot) {
                             var resource = snapshot.val();
 
-                            _.after(1, function () {
                                 logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
 
                                 convert(resource);
@@ -315,7 +314,6 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                                     id: resourceId,
                                     is_synced: true
                                 }, resource));
-                            });
                         });
                     });
 
