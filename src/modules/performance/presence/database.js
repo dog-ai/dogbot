@@ -40,7 +40,7 @@ presence.prototype._findLatestPresenceByEmployeeId = function (id) {
         });
 };
 
-presence.prototype._findAllByEmployeeIdAndBetweenDates = function (id, startDate, endDate) {
+presence.prototype._findAllPresencesByEmployeeIdAndBetweenDates = function (id, startDate, endDate) {
     var self = this;
 
     startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');

@@ -16,7 +16,7 @@ function presence() {
 presence.prototype.start = function () {
     this.communication.on('performance:presence:stats:update:yesterday', this._updateAllEmployeeStatsWithYesterday.bind(this));
 
-    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '5 minutes');
+    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 hour');
 };
 
 presence.prototype.stop = function () {
@@ -63,13 +63,13 @@ presence.prototype._updateEmployeeDailyStats = function (employee, date) {
     var endDate = date.clone().endOf('day').toDate();
 
     return Promise.join(
-        this._findAllByEmployeeIdAndBetweenDates(employee.id, startDate, endDate),
+        this._findAllPresencesByEmployeeIdAndBetweenDates(employee.id, startDate, endDate),
         this._findAllStatsByEmployeeIdAndPeriod(employee.id, 'daily'), function (performance, oldStats) {
             var _oldStats = oldStats && oldStats.length > 0 && oldStats[oldStats.length - 1] || undefined;
 
             return self._computeEmployeeDailyStats(employee, date, performance)
                 .then(function (newStats) {
-                    var metadata = ['is_synced', 'created_date', 'updated_date'];
+                    var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'period', 'employee_id'];
 
                     if (!_.isEqual(_.omit(_oldStats, metadata), _.omit(newStats, metadata))) {
                         var _newStats = _.extend(newStats, {is_synced: false});
@@ -100,19 +100,29 @@ presence.prototype._computeEmployeeDailyStats = function (employee, date, perfor
     });
 };
 
-presence.prototype._computeEmployeeDailyTotalDuration = function (date, performance) {
+presence.prototype._computeEmployeeDailyTotalDuration = function (date, presences) {
     var totalDuration = moment.duration();
 
-    if (performance) {
-        for (var i = 0; i < performance.length; i++) {
-            if (performance[i].is_present) {
-                if (i + 1 < performance.length) {
-                    var next = performance[i + 1];
-                    var diff = moment(next.created_date).diff(moment(performance[i].created_date));
-                    totalDuration = totalDuration.add(diff);
-                }
-            } else {
+    if (presences) {
+        for (var i = 0; i < presences.length; i++) {
+            if (presences[i])
 
+                var diff;
+            if (presences[i].is_present) {
+                var next;
+                if (i + 1 < presences.length) {
+                    next = moment(presences[i + 1].created_date);
+                    diff = next.diff(moment(presences[i].created_date));
+                } else {
+                    next = moment(presences[i].created_date).clone().endOf('day');
+                    diff = next.diff(moment(presences[i].created_date));
+                }
+                totalDuration = totalDuration.add(diff);
+
+            } else if (i == 0) {
+                var previous = moment(presences[i].created_date).clone().startOf('day');
+                diff = moment(presences[i].created_date).diff(previous);
+                totalDuration = totalDuration.add(diff);
             }
         }
     }
@@ -121,7 +131,7 @@ presence.prototype._computeEmployeeDailyTotalDuration = function (date, performa
 };
 
 presence.prototype._computeEmployeeDailyStartTime = function (date, performance) {
-    if (performance && performance[0]) {
+    if (performance && performance[0] && performance[0].is_present) {
         return moment(performance[0].created_date).diff(date.clone().startOf('day'), 'seconds');
     } else {
         return 0;
@@ -129,8 +139,15 @@ presence.prototype._computeEmployeeDailyStartTime = function (date, performance)
 };
 
 presence.prototype._computeEmployeeDailyEndTime = function (date, performance) {
-    if (performance && performance[performance.length - 1]) {
-        return moment(performance[performance.length - 1].created_date).diff(date.clone().startOf('day'), 'seconds');
+    if (performance && performance.length > 0) {
+        var endDate;
+        if (performance[performance.length - 1].is_present) {
+            endDate = moment(performance[performance.length - 1].created_date).clone().endOf('day');
+            return endDate.diff(date.clone().startOf('day'), 'seconds');
+        } else {
+            endDate = moment(performance[performance.length - 1].created_date);
+            return endDate.diff(date.clone().startOf('day'), 'seconds');
+        }
     } else {
         return 0;
     }
@@ -142,11 +159,12 @@ presence.prototype._updateEmployeePeriodStats = function (employee, date, period
 
     Promise.join(this._findAllStatsByEmployeeIdAndPeriod(employee.id, 'daily'), this._findAllStatsByEmployeeIdAndPeriod(employee.id, period),
         function (dailyStats, oldStats) {
-            var _oldStats = oldStats && oldStats.length > 0 && oldStats[oldStats.length - 1] || undefined;
+            var _dailyStats = dailyStats && dailyStats.length > 0 && dailyStats[dailyStats.length - 1] || undefined;
+            var _oldStats = oldStats && oldStats.length > 0 && oldStats[dailyStats.length - 1] || undefined;
 
-            return self._computeEmployeePeriodStats(employee, dailyStats, _oldStats, date, period)
+            return self._computeEmployeePeriodStats(employee, _dailyStats, _oldStats, date, period)
                 .then(function (newStats) {
-                    var metadata = ['is_synced', 'created_date', 'updated_date'];
+                    var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'period', 'employee_id'];
 
                     if (!_.isEqual(_.omit(_oldStats, metadata), _.omit(newStats, metadata))) {
                         var _newStats = _.extend(newStats, {is_synced: false});
@@ -154,12 +172,18 @@ presence.prototype._updateEmployeePeriodStats = function (employee, date, period
                         return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, _newStats);
                     }
                 })
-                .catch(function () {
+                .catch(function (error) {
+                    logger.error(error.stack);
                 });
         });
 };
 
 presence.prototype._computeEmployeePeriodStats = Promise.method(function (employee, dailyStats, stats, date, period) {
+
+    if (dailyStats && stats && moment(dailyStats.started_date).isBefore(stats.ended_date)) {
+        return stats;
+    }
+
     var now = moment().format();
 
     switch (period) {
@@ -229,7 +253,7 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
     var _stats = _.cloneDeep(stats);
 
     try {
-        var result = this._computeEmployeePeriodStatsStartTime(employee, dailyStats, stats, date, period);
+        var result = this._computeEmployeePeriodStatsStartTime(employee, dailyStats, _stats, date, period);
         _stats.minimum_start_time = result[0];
         _stats.maximum_start_time = result[1];
         _stats.average_start_time = result[2];
@@ -242,7 +266,7 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
             _stats.previous_average_start_time = stats.average_start_time;
         }
 
-        result = this._computeEmployeePeriodStatsEndTime(employee, dailyStats, stats, date, period);
+        result = this._computeEmployeePeriodStatsEndTime(employee, dailyStats, _stats, date, period);
         _stats.minimum_end_time = result[0];
         _stats.maximum_end_time = result[1];
         _stats.average_end_time = result[2];
@@ -255,7 +279,7 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
             _stats.previous_average_end_time = stats.average_end_time;
         }
 
-        result = this._computeEmployeePeriodStatsTotalDuration(employee, dailyStats, stats, date, period);
+        result = this._computeEmployeePeriodStatsTotalDuration(employee, dailyStats, _stats, date, period);
         _stats.minimum_total_duration = result[0];
         _stats.maximum_total_duration = result[1];
         _stats.average_total_duration = result[2];
@@ -279,7 +303,7 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
 });
 
 presence.prototype._computeEmployeePeriodStatsStartTime = function (employee, dailyStats, stats, date, period) {
-    if (!dailyStats || dailyStats.start_time == 0) {
+    if (!dailyStats) {
         throw new Error('unable to compute employee start time');
     }
 
@@ -339,6 +363,7 @@ presence.prototype._computeEmployeePeriodStatsTotalDuration = function (employee
     totalDurationByDay[date.clone().startOf('day').unix()] = dailyStats.total_duration;
 
     var presentDays = stats.present_days + 1;
+
     if (stats.minimum_total_duration == 0) {
         var minimumTotalDuration = dailyStats.total_duration;
     } else {

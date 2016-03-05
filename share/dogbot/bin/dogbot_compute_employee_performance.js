@@ -27,10 +27,7 @@ var mkdirSync = require("fs").mkdirSync,
     readFile = Promise.promisify(require("fs").readFile),
     writeFile = Promise.promisify(require('fs').writeFile);
 
-var performancePresenceFn = function () {
-};
-var performancePresence = new performancePresenceFn();
-require('../../../src/modules/performance/presence/stats')(performancePresenceFn, performancePresence);
+var performancePresence = require('../../../src/modules/performance/presence');
 
 var synchronization = require('../../../src/bot/synchronization');
 
@@ -207,7 +204,21 @@ var _retrieveCompanyEmployees = function (companyId) {
 var _retrieveCompanyEmployeePerformance = function (companyId, employeeId, performanceName) {
     return new Promise(function (resolve, reject) {
         firebase.child('company_employee_performances/' + companyId + '/' + employeeId + '/' + performanceName).once("value", function (snapshot) {
-            resolve(snapshot.val());
+            var val = snapshot.val();
+
+            for (year in val) {
+                for (month in val[year]) {
+                    for (day in val[year][month]) {
+                        for (presence in val[year][month][day]) {
+                            if (presence.indexOf('_') == 0) {
+                                delete val[year][month][day][presence];
+                            }
+                        }
+                    }
+                }
+            }
+
+            resolve(val);
         }, reject);
     });
 };
