@@ -306,14 +306,16 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                         firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value', function (snapshot) {
                             var resource = snapshot.val();
 
-                            logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
+                            _.after(1, function () {
+                                logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
 
-                            convert(resource);
+                                convert(resource);
 
-                            params.onCompanyResourceChangedCallback(_.extend({
-                                id: resourceId,
-                                is_synced: true
-                            }, resource));
+                                params.onCompanyResourceChangedCallback(_.extend({
+                                    id: resourceId,
+                                    is_synced: true
+                                }, resource));
+                            });
                         });
                     });
 
