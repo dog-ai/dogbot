@@ -14,10 +14,10 @@ presence.prototype.start = function () {
 
     this.communication.on('synchronization:incoming:person:employee:create', this._onCreateEmployeeIncomingSynchronization.bind(this));
 
-    this.communication.on('synchronization:incoming:performance:presence', this._onIncomingPresenceSampleSynchronization.bind(this));
-    this.communication.on('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSampleSynchronization.bind(this));
-    this.communication.on('synchronization:incoming:performance:presence:stats', this._onIncomingPresenceStatsSynchronization.bind(this));
-    this.communication.on('synchronization:outgoing:performance:presence:stats', this._onOutgoingPresenceStatsSynchronization.bind(this));
+    this.communication.on('synchronization:incoming:performance:presence', this._onIncomingPresenceSynchronization.bind(this));
+    this.communication.on('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSynchronization.bind(this));
+    this.communication.on('synchronization:incoming:performance:presence:stats', this._onIncomingStatsSynchronization.bind(this));
+    this.communication.on('synchronization:outgoing:performance:presence:stats', this._onOutgoingStatsSynchronization.bind(this));
 
 
     this.communication.emitAsync('synchronization:outgoing:periodic:register', {
@@ -37,10 +37,10 @@ presence.prototype.stop = function () {
 
     this.communication.removeListener('synchronization:incoming:person:employee:create', this._onCreateEmployeeIncomingSynchronization.bind(this));
 
-    this.communication.removeListener('synchronization:incoming:performance:presence', this._onIncomingPresenceSampleSynchronization.bind(this));
-    this.communication.removeListener('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSampleSynchronization.bind(this));
-    this.communication.removeListener('synchronization:incoming:performance:presence:stats', this._onIncomingPresenceStatsSynchronization.bind(this));
-    this.communication.removeListener('synchronization:outgoing:performance:presence:stats', this._onOutgoingPresenceStatsSynchronization.bind(this));
+    this.communication.removeListener('synchronization:incoming:performance:presence', this._onIncomingPresenceSynchronization.bind(this));
+    this.communication.removeListener('synchronization:outgoing:performance:presence', this._onOutgoingPresenceSynchronization.bind(this));
+    this.communication.removeListener('synchronization:incoming:performance:presence:stats', this._onIncomingStatsSynchronization.bind(this));
+    this.communication.removeListener('synchronization:outgoing:performance:presence:stats', this._onOutgoingStatsSynchronization.bind(this));
 
 };
 
@@ -80,7 +80,7 @@ presence.prototype._onCreateEmployeeIncomingSynchronization = function (employee
     });
 };
 
-presence.prototype._onIncomingPresenceSampleSynchronization = function (syncingPresence) {
+presence.prototype._onIncomingPresenceSynchronization = function (syncingPresence) {
     var self = this;
 
     this.communication.emit('database:performance:retrieveAll', 'PRAGMA table_info(presence)', [], function (error, rows) {
@@ -99,7 +99,7 @@ presence.prototype._onIncomingPresenceSampleSynchronization = function (syncingP
     });
 };
 
-presence.prototype._onOutgoingPresenceSampleSynchronization = function (params, callback) {
+presence.prototype._onOutgoingPresenceSynchronization = function (params, callback) {
     var self = this;
 
     this.communication.emit('database:performance:retrieveOneByOne',
@@ -130,7 +130,7 @@ presence.prototype._onOutgoingPresenceSampleSynchronization = function (params, 
         });
 };
 
-presence.prototype._onIncomingPresenceStatsSynchronization = function (employee, period, stats) {
+presence.prototype._onIncomingStatsSynchronization = function (employee, period, stats) {
     if (!stats || !period) {
         return;
     }
@@ -140,7 +140,7 @@ presence.prototype._onIncomingPresenceStatsSynchronization = function (employee,
     this._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, _stats);
 };
 
-presence.prototype._onOutgoingPresenceStatsSynchronization = function (params, callback) {
+presence.prototype._onOutgoingStatsSynchronization = function (params, callback) {
     var self = this;
 
     this._findAllEmployees()
