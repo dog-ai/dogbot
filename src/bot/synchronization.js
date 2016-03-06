@@ -89,7 +89,9 @@ synchronization.prototype._authenticate = function (token) {
                     }
 
                     var now = moment().format();
-                    instance.dogRef.update({last_seen_date: now, updated_date: now});
+                    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+                        instance.dogRef.update({last_seen_date: now, updated_date: now});
+                    }
 
                     resolve(dog);
 
@@ -105,7 +107,10 @@ synchronization.prototype._authenticate = function (token) {
 synchronization.prototype._unauthenthicate = function () {
     return new Promise(function (resolve) {
         var now = moment().format();
-        instance.dogRef.update({last_seen_date: now, updated_date: now});
+
+        if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+            instance.dogRef.update({last_seen_date: now, updated_date: now});
+        }
 
         firebase.unauth();
 
@@ -133,7 +138,10 @@ synchronization.prototype._periodicOutgoingSynchronization = function (params, c
     }
 
     var now = moment().format();
-    instance.dogRef.update({last_seen_date: now, updated_date: now});
+
+    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+        instance.dogRef.update({last_seen_date: now, updated_date: now});
+    }
 
     callback();
 };
@@ -151,7 +159,10 @@ synchronization.prototype._quickshotOutgoingSynchronization = function (register
     });
 
     var now = moment().format();
-    instance.dogRef.update({last_seen_date: now, updated_date: now});
+
+    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+        instance.dogRef.update({last_seen_date: now, updated_date: now});
+    }
 
     if (callback) {
         callback();
@@ -194,8 +205,8 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                             logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(stats));
 
                             params.onCompanyResourceChangedCallback(stats, date);
-                    }
-                });
+                        }
+                    });
 
             } else {
 
@@ -306,14 +317,14 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                         firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value', function (snapshot) {
                             var resource = snapshot.val();
 
-                                logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
+                            logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
 
-                                convert(resource);
+                            convert(resource);
 
-                                params.onCompanyResourceChangedCallback(_.extend({
-                                    id: resourceId,
-                                    is_synced: true
-                                }, resource));
+                            params.onCompanyResourceChangedCallback(_.extend({
+                                id: resourceId,
+                                is_synced: true
+                            }, resource));
                         });
                     });
 
@@ -341,119 +352,138 @@ synchronization.prototype._registerPeriodicOutgoingSynchronization = function (p
 };
 
 synchronization.prototype._sendCompanyResource = function (companyResource, companyResourceObj, callback) {
-    if (instance.companyRef) {
-        if (companyResourceObj.is_to_be_deleted) {
-            instance.companyRef.child(companyResource + '/' + companyResourceObj.id).remove(function (error) {
-                if (error) {
-                    logger.error(error.stack);
-                } else {
-                    var companyResourceRef = firebase.child('company_' + companyResource + '/' + instance.companyId + '/' + companyResourceObj.id);
-                    companyResourceRef.remove(function (error) {
+    if (!instance.companyRef) {
+        callback();
+    }
+
+    if (companyResourceObj.is_to_be_deleted) {
+
+        instance.companyRef.child(companyResource + '/' + companyResourceObj.id).remove(function (error) {
+            if (error) {
+                logger.error(error.stack);
+            } else {
+                var companyResourceRef = firebase.child('company_' + companyResource + '/' + instance.companyId + '/' + companyResourceObj.id);
+
+                if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+                    companyResourceRef.set(null, function (error) {
                         callback(error, companyResourceObj);
                     });
-                }
-            });
-        } else {
-            var val = _.omit(companyResourceObj, ['id', 'is_synced']);
-            val.created_date = moment(val.created_date).format();
-            val.updated_date = moment(val.updated_date).format();
-            if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
-                val.last_presence_date = moment(val.last_presence_date).format();
-            }
-
-            if (companyResourceObj.is_manual) {
-                val = _.omit(val, ['name', 'type', 'os']);
-            }
-
-            var companyResourceRef;
-            if (companyResource == 'employee_performances') {
-                val = _.omit(val, ['name', 'employee_id']);
-
-                var date = moment(companyResourceObj.started_date);
-
-                var dateFormatPattern = 'YYYY/MM/DD';
-                var isStats = false;
-
-                if (companyResourceObj.period) {
-                    switch (companyResourceObj.period) {
-                        case 'monthly':
-                            date = moment(companyResourceObj.started_date);
-
-                            logger.debug('Outgoing employee performance monthly stats: %s', JSON.stringify(companyResourceObj));
-
-                            dateFormatPattern = 'YYYY/MM';
-                            break;
-                        case 'yearly':
-                            date = moment(companyResourceObj.started_date);
-
-                            logger.debug('Outgoing employee performance yearly stats: %s', JSON.stringify(companyResourceObj));
-
-                            dateFormatPattern = 'YYYY';
-                            break;
-                        case 'alltime':
-                            logger.debug('Outgoing employee performance alltime stats: %s', JSON.stringify(companyResourceObj));
-
-                            dateFormatPattern = null;
-                            break;
-                        default:
-                            logger.debug('Outgoing employee performance daily stats: %s', JSON.stringify(companyResourceObj));
-                    }
-                    val = _.omit(val, ['period']);
-
-                    isStats = true;
                 } else {
-                    val = _.omit(val, ['updated_date']);
-
-                    logger.debug('Outgoing employee performances: %s', JSON.stringify(companyResourceObj));
+                    callback(null, companyResourceObj);
                 }
+            }
+        });
 
-                companyResourceRef = firebase.child('company_' + companyResource + '/' +
-                    instance.companyId + '/' +
-                    companyResourceObj.employee_id + '/' +
-                    companyResourceObj.name + '/' +
-                    (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
-                    (isStats ? '_stats' : ''));
 
+    } else {
+        var val = _.omit(companyResourceObj, ['id', 'is_synced']);
+        val.created_date = moment(val.created_date).format();
+        val.updated_date = moment(val.updated_date).format();
+        if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
+            val.last_presence_date = moment(val.last_presence_date).format();
+        }
+
+        if (companyResourceObj.is_manual) {
+            val = _.omit(val, ['name', 'type', 'os']);
+        }
+
+        var companyResourceRef;
+        if (companyResource == 'employee_performances') {
+            val = _.omit(val, ['name', 'employee_id']);
+
+            var date;
+
+            var dateFormatPattern = 'YYYY/MM/DD';
+            var isStats = false;
+
+            if (companyResourceObj.period) {
+                switch (companyResourceObj.period) {
+                    case 'monthly':
+                        date = moment(companyResourceObj.started_date);
+
+                        logger.debug('Outgoing employee performance monthly stats: %s', JSON.stringify(companyResourceObj));
+
+                        dateFormatPattern = 'YYYY/MM';
+                        break;
+                    case 'yearly':
+                        date = moment(companyResourceObj.started_date);
+
+                        logger.debug('Outgoing employee performance yearly stats: %s', JSON.stringify(companyResourceObj));
+
+                        dateFormatPattern = 'YYYY';
+                        break;
+                    case 'alltime':
+                        logger.debug('Outgoing employee performance alltime stats: %s', JSON.stringify(companyResourceObj));
+
+                        dateFormatPattern = null;
+                        break;
+                    default:
+                        date = moment(companyResourceObj.started_date);
+
+                        logger.debug('Outgoing employee performance daily stats: %s', JSON.stringify(companyResourceObj));
+                }
+                val = _.omit(val, ['period']);
+
+                isStats = true;
+            } else {
+                date = moment(companyResourceObj.created_date);
+
+                val = _.omit(val, ['updated_date']);
+
+                logger.debug('Outgoing employee performances: %s', JSON.stringify(companyResourceObj));
+            }
+
+            companyResourceRef = firebase.child('company_' + companyResource + '/' +
+                instance.companyId + '/' +
+                companyResourceObj.employee_id + '/' +
+                companyResourceObj.name + '/' +
+                (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
+                (isStats ? '_stats' : ''));
+
+            if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
                 if (isStats) {
                     companyResourceRef.set(val, callback);
                 } else {
                     companyResourceRef.push(val, callback);
                 }
-
             } else {
+                callback(null);
+            }
 
-                logger.debug('sending ' + companyResource + ': %s', JSON.stringify(companyResourceObj));
+        } else {
 
-                val = _.omit(val, ['is_to_be_deleted', 'last_discovery_date']);
+            logger.debug('sending ' + companyResource + ': %s', JSON.stringify(companyResourceObj));
 
-                if (companyResource == 'mac_addresses') {
-                    val = _.omit(val, ['is_present']);
-                }
+            val = _.omit(val, ['is_to_be_deleted', 'last_discovery_date']);
 
-                val = _.extend(val, {company_id: instance.companyId});
+            if (companyResource == 'mac_addresses') {
+                val = _.omit(val, ['is_present']);
+            }
 
-                companyResourceRef = firebase.child('company_' + companyResource + '/' +
-                    instance.companyId + '/' +
-                    companyResourceObj.id);
+            val = _.extend(val, {company_id: instance.companyId});
+
+            companyResourceRef = firebase.child('company_' + companyResource + '/' +
+                instance.companyId + '/' +
+                companyResourceObj.id);
+
+            if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
                 companyResourceRef.update(val, function (error) {
                     if (error) {
-                        logger.error(error.stack);
+                        callback(error);
                     } else {
                         instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).set(true, function (error) {
-                            if (error) {
-                                logger.error(error.stack);
-                            } else {
-                                if (callback !== undefined) {
-                                    callback(error);
-                                }
-                            }
+                            callback(error);
                         });
                     }
                 });
+            } else {
+                callback(null);
             }
         }
     }
+
 };
+
 
 synchronization.prototype.healthCheck = function () {
     return Promise.resolve();

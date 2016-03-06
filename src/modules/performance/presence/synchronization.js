@@ -147,8 +147,8 @@ presence.prototype._onOutgoingStatsSynchronization = function (params, callback)
         .mapSeries(function (employee) {
 
             return Promise.mapSeries(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
-                return self._findAllStatsByEmployeeIdAndPeriod(employee.id, period)
-                    .mapSeries(function (stats) {
+                return self._findStatsByEmployeeIdAndPeriod(employee.id, period)
+                    .then(function (stats) {
 
                         if (stats && !stats.is_synced) {
 

@@ -15,10 +15,10 @@ presence.prototype.databases = [
 ];
 
 presence.prototype.modules = [
-    {type: 'monitor', name: 'arp'},
+    /*{type: 'monitor', name: 'arp'},
     {type: 'monitor', name: 'ip', optional: true},
     {type: 'monitor', name: 'bonjour', optional: true},
-    {type: 'monitor', name: 'upnp', optional: true},
+     {type: 'monitor', name: 'upnp', optional: true},*/
     {type: 'person', name: 'device'},
     {type: 'person', name: 'employee'},
     {type: 'person', name: 'mac_address'},
