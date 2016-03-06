@@ -132,9 +132,9 @@ nosql.prototype._hgetall = function (prefix, key, callback) {
             callback(error);
         } else {
 
-            var _reply = _.map(reply, function (value) {
+            /*var _reply = _.map(reply, function (value) {
                 return JSON.parse(value);
-            });
+             });*/
 
             /*if (reply) {
                 reply['maximum_start_time'] = reply['maximum_start_time'] && parseInt(reply['maximum_start_time']);
@@ -156,7 +156,7 @@ nosql.prototype._hgetall = function (prefix, key, callback) {
                 reply['total_days'] = reply['total_days'] && parseInt(reply['total_days']);
              }*/
 
-            callback(null, _reply);
+            callback(null, reply);
         }
     });
 };

@@ -16,7 +16,7 @@ function presence() {
 presence.prototype.start = function () {
     this.communication.on('performance:presence:stats:update:yesterday', this._updateAllEmployeeStatsWithYesterday.bind(this));
 
-    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 hour');
+    this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '30 seconds');
 };
 
 presence.prototype.stop = function () {
@@ -64,15 +64,17 @@ presence.prototype._updateEmployeeDailyStats = function (employee, date) {
 
     return Promise.join(
         this._findAllPresencesByEmployeeIdAndBetweenDates(employee.id, startDate, endDate),
-        this._findAllStatsByEmployeeIdAndPeriod(employee.id, 'daily'), function (performance, oldStats) {
-            var _oldStats = oldStats && oldStats.length > 0 && oldStats[oldStats.length - 1] || undefined;
-
+        this._findStatsByEmployeeIdAndPeriod(employee.id, 'daily'), function (performance, oldStats) {
             return self._computeEmployeeDailyStats(employee, date, performance)
                 .then(function (newStats) {
                     var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'period', 'employee_id'];
 
-                    if (!_.isEqual(_.omit(_oldStats, metadata), _.omit(newStats, metadata))) {
+                    if (!_.isEqual(_.omit(oldStats, metadata), _.omit(newStats, metadata))) {
                         var _newStats = _.extend(newStats, {is_synced: false});
+
+                        if (newStats) {
+                            _newStats.created_date = newStats.created_date;
+                        }
 
                         return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, _newStats.period, _newStats);
                     }
@@ -157,16 +159,13 @@ presence.prototype._computeEmployeeDailyEndTime = function (date, performance) {
 presence.prototype._updateEmployeePeriodStats = function (employee, date, period) {
     var self = this;
 
-    Promise.join(this._findAllStatsByEmployeeIdAndPeriod(employee.id, 'daily'), this._findAllStatsByEmployeeIdAndPeriod(employee.id, period),
+    Promise.join(this._findStatsByEmployeeIdAndPeriod(employee.id, 'daily'), this._findStatsByEmployeeIdAndPeriod(employee.id, period),
         function (dailyStats, oldStats) {
-            var _dailyStats = dailyStats && dailyStats.length > 0 && dailyStats[dailyStats.length - 1] || undefined;
-            var _oldStats = oldStats && oldStats.length > 0 && oldStats[dailyStats.length - 1] || undefined;
-
-            return self._computeEmployeePeriodStats(employee, _dailyStats, _oldStats, date, period)
+            return self._computeEmployeePeriodStats(employee, dailyStats, oldStats, date, period)
                 .then(function (newStats) {
                     var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'period', 'employee_id'];
 
-                    if (!_.isEqual(_.omit(_oldStats, metadata), _.omit(newStats, metadata))) {
+                    if (!_.isEqual(_.omit(oldStats, metadata), _.omit(newStats, metadata))) {
                         var _newStats = _.extend(newStats, {is_synced: false});
 
                         return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, _newStats);

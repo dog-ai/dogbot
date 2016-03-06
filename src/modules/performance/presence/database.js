@@ -2,8 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var _ = require('lodash'),
-    moment = require('moment');
+var _ = require('lodash');
 
 function presence() {
 }
@@ -25,12 +24,8 @@ presence.prototype._createPresence = function (presence) {
 };
 
 presence.prototype._findLatestPresenceByEmployeeId = function (id) {
-    var self = this;
-
-
     return this.communication.emitAsync('database:performance:retrieveOne',
-        "SELECT * from presence WHERE employee_id = ? ORDER BY created_date DESC;",
-        [id])
+        "SELECT * from presence WHERE employee_id = ? ORDER BY created_date DESC;", [id])
         .then(function (row) {
             if (row !== undefined) {
                 row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -41,14 +36,15 @@ presence.prototype._findLatestPresenceByEmployeeId = function (id) {
 };
 
 presence.prototype._findAllPresencesByEmployeeIdAndBetweenDates = function (id, startDate, endDate) {
-    var self = this;
-
-    startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    endDate = endDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var _startDate = startDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var _endDate = endDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
     return this.communication.emitAsync('database:performance:retrieveAll',
-        "SELECT * from presence WHERE employee_id = ? AND Datetime(?) < created_date AND created_date < Datetime(?) ORDER BY created_date ASC;",
-        [id, startDate, endDate]
+        "SELECT * from presence " +
+        "WHERE employee_id = ? " +
+        "AND Datetime(?) < created_date AND created_date < Datetime(?) " +
+        "ORDER BY created_date ASC;",
+        [id, _startDate, _endDate]
     ).then(function (rows) {
         if (rows !== undefined) {
             rows.forEach(function (row) {
@@ -65,64 +61,11 @@ presence.prototype._findAllEmployees = function () {
 };
 
 presence.prototype._createOrUpdateStatsByEmployeeIdAndPeriod = function (employeeId, period, stats) {
-    if (!employeeId || !period) {
-        throw new Error('invalid parameters');
-    }
-
-    var dateFormatPattern;
-    switch (period) {
-        case 'daily':
-            dateFormatPattern = 'YYYYMMDD';
-        case 'monthly':
-            if (!dateFormatPattern) {
-                dateFormatPattern = 'YYYYMM';
-            }
-        case 'yearly':
-            if (!dateFormatPattern) {
-                dateFormatPattern = 'YYYY';
-            }
-
-            return this.communication.emitAsync('database:nosql:performance:hset', 'presence:stats:' + period, employeeId, moment(stats.started_date).format(dateFormatPattern), stats);
-
-            break;
-
-        case 'alltime':
-            return this.communication.emitAsync('database:nosql:performance:set', 'presence:stats:' + period, employeeId, stats);
-
-        default:
-            throw new Error('invalid parameters');
-    }
+    return this.communication.emitAsync('database:nosql:performance:set', 'presence:stats:' + period, employeeId, stats);
 };
 
-presence.prototype._findAllStatsByEmployeeIdAndPeriod = function (employeeId, period) {
-    if (!employeeId || !period) {
-        throw new Error('invalid parameters');
-    }
-
-    var dateFormatPattern;
-    switch (period) {
-        case 'daily':
-            dateFormatPattern = 'YYYYMMDD';
-        case 'monthly':
-            if (!dateFormatPattern) {
-                dateFormatPattern = 'YYYYMM';
-            }
-        case 'yearly':
-            if (!dateFormatPattern) {
-                dateFormatPattern = 'YYYY';
-            }
-
-            return this.communication.emitAsync('database:nosql:performance:hgetall', 'presence:stats:' + period, employeeId);
-
-        case 'alltime':
-            return this.communication.emitAsync('database:nosql:performance:get', 'presence:stats:' + period, employeeId)
-                .then(function (stats) {
-                    return [stats];
-                });
-
-        default:
-            throw new Error('invalid parameters');
-    }
+presence.prototype._findStatsByEmployeeIdAndPeriod = function (employeeId, period) {
+    return this.communication.emitAsync('database:nosql:performance:get', 'presence:stats:' + period, employeeId);
 };
 
 module.exports = presence;
