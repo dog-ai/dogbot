@@ -155,32 +155,43 @@ _authWithCustomTokenAsync(FIREBASE_CUSTOM_USER_ADMIN_TOKEN)
 
                             var promises = [];
 
-                            _.forEach(performance, function (months, year) {
-                                _.forEach(months, function (days, month) {
-                                    _.forEach(days, function (samples, day) {
-                                        console.log('Processing employee ' + employeeId + ' ' + performanceName + ' stats with date ' + year + '/' + month + '/' + day);
+                          var previousSample = undefined;
 
-                                        var previousSampleId = undefined;
+                          var years = _.sortBy(_.keys(performance))
+                          _.forEach(years, function (year) {
+
+                            var months = _.sortBy(_.keys(performance[year]))
+                            _.forEach(months, function (month) {
+
+                              var days = _.sortBy(_.keys(performance[year][month]))
+                              _.forEach(days, function (day) {
+
+                                console.log('Importing employee ' + employeeId + ' ' + performanceName + ' stats with date ' + year + '/' + month + '/' + day);
+
+                                var samples = performance[year][month][day];
                                         _.forEach(samples, function (sample, sampleId) {
+
                                             sample.employee_id = employeeId;
                                             sample.created_date = moment(sample.created_date).toDate();
+                                          sample.is_synced = true;
 
-                                            if (!previousSampleId || moment(sample.created_date).isAfter(moment(samples[previousSampleId].created_date))) {
+                                          if (previousSample && !moment(sample.created_date).isAfter(moment(previousSample.created_date))) {
+                                            console.log('Found created_date inconsistency');
+                                            promises.push(_deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId));
 
+                                          } else if (previousSample && sample.is_present == previousSample.is_present) {
+                                            console.log('Found is_present inconsistency');
+                                            return _deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId)
+                                          } else {
                                                 promises.push(performancePresence._createPresence(sample)
                                                     .catch(function () {
-                                                        console.log('Duplicate found');
-                                                        return _deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId);
+                                                      console.log('Found duplicate');
+                                                      return _deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId)
                                                     })
                                                 );
 
-                                                previousSampleId = sampleId;
-                                            } else {
-                                                console.log('Found created_date inconsistency');
-                                                return _deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId);
+                                            previousSample = _.clone(sample);
                                             }
-
-
                                         });
                                     });
                                 });

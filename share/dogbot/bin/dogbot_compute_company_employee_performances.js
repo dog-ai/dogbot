@@ -75,7 +75,7 @@ var _computeMonthlyStats = function (companyId, employeeId, performanceName, mon
                 return;
             }
 
-            console.log('Updating employee ' + employeeId + ' ' + performanceName + ' stats with date: ' + year + '/' + month + '/' + day);
+        console.log('Computing employee ' + employeeId + ' ' + performanceName + ' stats with date: ' + year + '/' + month + '/' + day);
 
             var dayPerformance = monthPerformance[day];
 

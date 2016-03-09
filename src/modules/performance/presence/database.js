@@ -8,8 +8,6 @@ function presence() {
 }
 
 presence.prototype._createPresence = function (presence) {
-    var self = this;
-
     if (presence.created_date !== undefined && presence.created_date !== null) {
         presence.created_date = presence.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
     }
