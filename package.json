@@ -52,7 +52,13 @@
   "description": "",
   "main": "index.js",
   "devDependencies": {
-    "node-uuid": "^1.4.3"
+    "chai": "^3.5.0",
+    "mocha": "^2.4.5",
+    "mockery": "^1.4.1",
+    "node-uuid": "^1.4.3",
+    "sinon": "^1.17.3",
+    "standard": "^6.0.8",
+    "standard-format": "^2.1.1"
   },
   "repository": {
     "type": "git",

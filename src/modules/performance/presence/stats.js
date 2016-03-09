@@ -10,19 +10,23 @@ var logger = require('../../../utils/logger.js'),
 
 later.date.localTime();
 
+var utils = require('../../utils.js');
+
 function presence() {
 }
 
 presence.prototype.start = function () {
-    this.communication.on('performance:presence:stats:update:yesterday', this._updateAllEmployeeStatsWithYesterday.bind(this));
+
+    utils.startListening.bind(this)({'performance:presence:stats:update:yesterday': this._updateAllEmployeeStatsWithYesterday.bind(this)});
 
     this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 hour');
 };
 
 presence.prototype.stop = function () {
-    this.communication.removeListener('performance:presence:stats:generate:yesterday', this._updateAllEmployeeStatsWithYesterday.bind(this));
 
-    this.communication.emit('worker:job:dequeue', 'performance:presence:stats:generate:yesterday');
+    utils.stopListening.bind(this)(['performance:presence:stats:update:yesterday']);
+
+    this.communication.emit('worker:job:dequeue', 'performance:presence:stats:update:yesterday');
 };
 
 presence.prototype._updateAllEmployeeStatsWithYesterday = function (params, callback) {

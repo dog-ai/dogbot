@@ -39,7 +39,7 @@ worker.prototype.initialize = function (enqueue, dequeue, processJob) {
 
                     instance.queue.process('worker', process);
 
-                    instance.queue.process('slow', 4, process);
+                    instance.queue.process('slow', 2, process);
 
                     instance.queue.process('fast', process);
 
