@@ -183,6 +183,10 @@ presence.prototype._updateEmployeePeriodStats = function (employee, date, period
 
 presence.prototype._computeEmployeePeriodStats = Promise.method(function (employee, dailyStats, stats, date, period) {
 
+  if (!dailyStats) {
+    return stats;
+  }
+
   if (dailyStats && stats && moment(dailyStats.period_start_date).isBefore(stats.period_end_date)) {
     return stats;
   }
@@ -242,15 +246,6 @@ presence.prototype._computeEmployeePeriodStats = Promise.method(function (employ
   } else {
     stats.updated_date = now;
     stats.period_end_date = date.clone().endOf('day').format();
-  }
-
-  // no daily stats
-  if (!dailyStats) {
-    dailyStats = {
-      total_duration: 0,
-      start_time: 0,
-      end_time: 0
-    };
   }
 
   var _stats = _.cloneDeep(stats);

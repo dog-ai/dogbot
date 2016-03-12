@@ -48,22 +48,12 @@ var _retrieveCompanyEmployeePerformance = function (companyId, employeeId, perfo
         var val = snapshot.val();
 
         for (year in val) {
-          if (year.indexOf('_') == 0) {
-            delete val[year]
-          }
-
           for (month in val[year]) {
-            if (month.indexOf('_') == 0) {
-              delete val[year][month]
-            }
 
             for (day in val[year][month]) {
-              if (day.indexOf('_') == 0) {
-                delete val[year][month][day]
-              }
 
               for (presence in val[year][month][day]) {
-                if (presence.indexOf('_') == 0) {
+                if (presence.indexOf('_') != 0) {
                   delete val[year][month][day][presence];
                 }
               }
@@ -143,64 +133,36 @@ _authWithCustomTokenAsync(FIREBASE_CUSTOM_USER_ADMIN_TOKEN)
 
     return this.companyId;
   })
-  .then(function () {
-    return Promise.mapSeries(['presence'], function (performanceName) {
-      return communication.emitAsync('database:performance:delete', 'DELETE FROM ' + performanceName, [])
-        .then(function () {
-          return _retrieveCompanyEmployees(this.companyId);
-        })
-        .mapSeries(function (employeeId) {
-          return _readCacheOrRetrieveCompanyEmployeePerformance(this.companyId, employeeId, performanceName)
-            .then(function (performance) {
+  .then(_retrieveCompanyEmployees)
+  .mapSeries(function (employeeId) {
+    return _readCacheOrRetrieveCompanyEmployeePerformance(this.companyId, employeeId, 'presence')
+      .then(function (performance) {
 
-              var promises = [];
+        var promises = [];
 
-              var previousSample = undefined;
+        var years = _.sortBy(_.keys(performance))
+        _.forEach(years, function (year) {
 
-              var years = _.sortBy(_.keys(performance))
-              _.forEach(years, function (year) {
+          var months = _.sortBy(_.keys(performance[year]))
+          _.forEach(months, function (month) {
 
-                var months = _.sortBy(_.keys(performance[year]))
-                _.forEach(months, function (month) {
+            var days = _.sortBy(_.keys(performance[year][month]))
+            _.forEach(days, function (day) {
 
-                  var days = _.sortBy(_.keys(performance[year][month]))
-                  _.forEach(days, function (day) {
-
-                    console.log('Importing employee ' + employeeId + ' ' + performanceName + ' stats with date ' + year + '/' + month + '/' + day);
-
-                    var samples = performance[year][month][day];
-                    _.forEach(samples, function (sample, sampleId) {
-
-                      sample.employee_id = employeeId;
-                      sample.created_date = moment(sample.created_date).toDate();
-                      sample.is_synced = true;
-
-                      if (previousSample && !moment(sample.created_date).isAfter(moment(previousSample.created_date))) {
-                        console.log('Found created_date inconsistency');
-                        promises.push(_deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId));
-
-                      } else if (previousSample && sample.is_present == previousSample.is_present) {
-                        console.log('Found is_present inconsistency');
-                        return _deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId)
-                      } else {
-                        promises.push(performancePresence._createPresence(sample)
-                          .catch(function () {
-                            console.log('Found duplicate');
-                            return _deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, performanceName, year, month, day, sampleId)
-                          })
-                        );
-
-                        previousSample = _.clone(sample);
-                      }
-                    });
-                  });
-                });
-              })
-              return Promise.all(promises);
+              var samples = performance[year][month][day];
+              _.forEach(samples, function (sample, sampleId) {
+                if (typeof sampleId === 'string' && sampleId.indexOf('_') === 0) {
+                  if (sample.start_time === 0 && sample.end_time === 0 && sample.total_duration === 0) {
+                    promises.push(_deleteCompanyEmployeePerformanceSample(this.companyId, employeeId, 'presence', year, month, day, sampleId).delay(100));
+                  }
+                }
+              });
             });
+          });
+        })
+        return Promise.all(promises);
+      });
 
-        });
-    })
   })
 
   .then(function () {

@@ -31,7 +31,7 @@ var synchronization = require('../../../src/bot/synchronization');
 
 var _computeAlltimeStats = function (companyId, employeeId, performanceName, performance) {
 
-    var alltimeStats = undefined;
+  delete this.alltimeStats;
 
     return Promise.mapSeries(_.sortBy(_.keys(performance)), function (year) {
         if (year.indexOf('_') == '0') {
@@ -40,13 +40,13 @@ var _computeAlltimeStats = function (companyId, employeeId, performanceName, per
 
         var yearPerformance = performance[year];
 
-        return _computeYearlyStats(companyId, employeeId, performanceName, yearPerformance, year, alltimeStats).bind(this);
+      return _computeYearlyStats(companyId, employeeId, performanceName, yearPerformance, year).bind(this);
     })
 };
 
 var _computeYearlyStats = function (companyId, employeeId, performanceName, yearPerformance, year, alltimeStats) {
 
-    var yearStats = undefined;
+  delete this.yearStats;
 
     return Promise.mapSeries(_.sortBy(_.keys(yearPerformance)), function (month) {
         if (month.indexOf('_') == '0') {
@@ -55,11 +55,11 @@ var _computeYearlyStats = function (companyId, employeeId, performanceName, year
 
         var monthPerformance = yearPerformance[month];
 
-        return _computeMonthlyStats(companyId, employeeId, performanceName, monthPerformance, year, month, alltimeStats).bind(this);
+      return _computeMonthlyStats(companyId, employeeId, performanceName, monthPerformance, year, month).bind(this);
     })
 };
 
-var _computeMonthlyStats = function (companyId, employeeId, performanceName, monthPerformance, year, month, alltimeStats) {
+var _computeMonthlyStats = function (companyId, employeeId, performanceName, monthPerformance, year, month) {
 
     var monthStats = undefined;
 
