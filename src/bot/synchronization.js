@@ -177,17 +177,17 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
                 var date = moment();
                 var dateFormatPattern;
                 switch (params.period) {
-                    case 'daily':
+                    case 'day':
                         date.subtract(1, 'day');
                         dateFormatPattern = 'YYYY/MM/DD';
                         break;
-                    case 'monthly':
+                    case 'month':
                         dateFormatPattern = 'YYYY/MM';
                         break;
-                    case 'yearly':
+                    case 'year':
                         dateFormatPattern = 'YYYY';
                         break;
-                    case 'alltime':
+                    case 'all-time':
                     default:
                         date = null;
                 }
@@ -401,28 +401,28 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
                     case 'monthly':
                         date = moment(companyResourceObj.started_date);
 
-                        logger.debug('Outgoing employee performance monthly stats: %s', JSON.stringify(companyResourceObj));
+                        logger.debug('Outgoing employee performance month stats: %s', JSON.stringify(companyResourceObj));
 
                         dateFormatPattern = 'YYYY/MM';
                         break;
                     case 'yearly':
                         date = moment(companyResourceObj.started_date);
 
-                        logger.debug('Outgoing employee performance yearly stats: %s', JSON.stringify(companyResourceObj));
+                        logger.debug('Outgoing employee performance year stats: %s', JSON.stringify(companyResourceObj));
 
                         dateFormatPattern = 'YYYY';
                         break;
                     case 'alltime':
-                        logger.debug('Outgoing employee performance alltime stats: %s', JSON.stringify(companyResourceObj));
+                        logger.debug('Outgoing employee performance all-time stats: %s', JSON.stringify(companyResourceObj));
 
                         dateFormatPattern = null;
                         break;
                     default:
                         date = moment(companyResourceObj.started_date);
 
-                        logger.debug('Outgoing employee performance daily stats: %s', JSON.stringify(companyResourceObj));
+                        logger.debug('Outgoing employee performance day stats: %s', JSON.stringify(companyResourceObj));
                 }
-                val = _.omit(val, ['period']);
+                //val = _.omit(val, ['period']);
 
                 isStats = true;
             } else {

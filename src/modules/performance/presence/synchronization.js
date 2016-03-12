@@ -60,7 +60,7 @@ presence.prototype._onCreateEmployeeIncomingSynchronization = function (employee
     }
   });
 
-  _.forEach(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
+  _.forEach(['day', 'month', 'year', 'all-time'], function (period) {
     self.communication.emitAsync('synchronization:incoming:register:setup', {
       companyResource: 'employee_performances',
       period: period,
@@ -148,7 +148,7 @@ presence.prototype._onOutgoingStatsSynchronization = function (params, callback)
   this._findAllEmployees()
     .mapSeries(function (employee) {
 
-      return Promise.mapSeries(['daily', 'monthly', 'yearly', 'alltime'], function (period) {
+      return Promise.mapSeries(['day', 'month', 'year', 'all-time'], function (period) {
         return self._findStatsByEmployeeIdAndPeriod(employee.id, period)
           .then(function (stats) {
 
