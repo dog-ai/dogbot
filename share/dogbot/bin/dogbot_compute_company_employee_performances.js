@@ -82,9 +82,9 @@ var _computeMonthlyStats = function (companyId, employeeId, performanceName, mon
             return _computeDailyStats(companyId, employeeId, performanceName, dayPerformance, year, month, day)
                 .then(function (dayStats) {
                     return Promise.props({
-                        monthStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, monthStats, date, 'monthly'),
-                        yearStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, this.yearStats, date, 'yearly'),
-                        alltimeStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, this.alltimeStats, date, 'alltime')
+                      monthStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, monthStats, date, 'month'),
+                      yearStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, this.yearStats, date, 'year'),
+                      alltimeStats: performancePresence._computeEmployeePeriodStats({id: employeeId}, dayStats, this.alltimeStats, date, 'all-time')
                     });
                 })
                 .then(function (result) {
@@ -95,8 +95,6 @@ var _computeMonthlyStats = function (companyId, employeeId, performanceName, mon
 
         })
         .then(function () {
-            monthStats = _.omit(monthStats, 'period');
-
             return new Promise(function (resolve, reject) {
                 firebase.child(
                         'company_employee_performances/' +
@@ -116,8 +114,6 @@ var _computeMonthlyStats = function (companyId, employeeId, performanceName, mon
 
         })
         .then(function () {
-            this.yearStats = _.omit(this.yearStats, 'period');
-
             return new Promise(function (resolve, reject) {
                 firebase.child(
                         'company_employee_performances/' +
@@ -136,8 +132,6 @@ var _computeMonthlyStats = function (companyId, employeeId, performanceName, mon
 
         })
         .then(function () {
-            this.alltimeStats = _.omit(this.alltimeStats, 'period');
-
             return new Promise(function (resolve, reject) {
                 firebase.child(
                         'company_employee_performances/' +
@@ -163,8 +157,6 @@ var _computeDailyStats = function (companyId, employeeId, performanceName, dayPe
     return performancePresence._computeEmployeeDailyStats({id: employeeId}, date, _.map(dayPerformance))
         .delay(100)
         .then(function (dayStats) {
-            dayStats = _.omit(dayStats, 'period');
-
             return new Promise(function (resolve, reject) {
                 firebase.child(
                         'company_employee_performances/' +
