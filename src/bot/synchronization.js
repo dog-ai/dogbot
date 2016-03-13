@@ -398,21 +398,21 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
 
             if (companyResourceObj.period) {
                 switch (companyResourceObj.period) {
-                    case 'monthly':
+                    case 'month':
                         date = moment(companyResourceObj.started_date);
 
                         logger.debug('Outgoing employee performance month stats: %s', JSON.stringify(companyResourceObj));
 
                         dateFormatPattern = 'YYYY/MM';
                         break;
-                    case 'yearly':
+                    case 'year':
                         date = moment(companyResourceObj.started_date);
 
                         logger.debug('Outgoing employee performance year stats: %s', JSON.stringify(companyResourceObj));
 
                         dateFormatPattern = 'YYYY';
                         break;
-                    case 'alltime':
+                    case 'all-time':
                         logger.debug('Outgoing employee performance all-time stats: %s', JSON.stringify(companyResourceObj));
 
                         dateFormatPattern = null;

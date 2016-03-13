@@ -160,6 +160,18 @@ describe('Presence', function () {
       }).and.have.all.keys(['created_date', 'updated_date']);
     })
 
+    it('should not compute employee stats for day when no samples available', function () {
+      var date = moment('2016-03-08T00:00:00+01:00:00')
+
+      var presences = []
+
+      Presence.load(communication)
+
+      var promise = Presence._computeEmployeeDailyStats(null, date, presences);
+
+      return expect(promise).to.eventually.be.undefined;
+    })
+
     it('should compute employee stats for month', function () {
       var date = moment('2016-03-09T00:00:00+01:00:00')
 
@@ -223,6 +235,42 @@ describe('Presence', function () {
          total_duration_by_day: {'1457391600': 21600, '1457478000': 21600}
          */
       }).and.have.all.keys(['created_date', 'updated_date'])
+    })
+
+    it('should not compute employee stats for month when no day stats available', function () {
+      var date = moment('2016-03-09T00:00:00+01:00:00')
+
+      var dayStats = undefined
+
+      var monthStats = {
+        created_date: '2016-03-09T03:00:00+01:00',
+        updated_date: '2016-03-09T03:00:00+01:00',
+        period: 'month',
+        period_start_date: '2016-03-08T00:00:00+01:00',
+        period_end_date: '2016-03-08T23:59:59+01:00',
+        total_days: 31,
+        present_days: 1,
+        average_start_time: 18000,
+        average_end_time: 82800,
+        average_total_duration: 21600,
+        maximum_start_time: 18000,
+        maximum_end_time: 82800,
+        minimum_total_duration: 21600,
+        minimum_start_time: 18000,
+        minimum_end_time: 82800,
+        maximum_total_duration: 21600,
+        start_time_by_day: {'1457391600': 18000},
+        end_time_by_day: {'1457391600': 82800},
+        total_duration_by_day: {'1457391600': 21600}
+      }
+
+      var period = 'month'
+
+      Presence.load(communication)
+
+      var promise = Presence._computeEmployeePeriodStats(null, dayStats, monthStats, date, period)
+
+      return expect(promise).to.eventually.become(monthStats)
     })
 
     it('should compute employee stats for year', function () {
