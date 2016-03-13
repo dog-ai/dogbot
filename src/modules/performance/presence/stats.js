@@ -72,7 +72,7 @@ presence.prototype._updateEmployeeDailyStats = function (employee, date) {
     this._findStatsByEmployeeIdAndPeriod(employee.id, 'day'), function (performance, oldStats) {
       return self._computeEmployeeDailyStats(employee, date, performance)
         .then(function (newStats) {
-          var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'period', 'employee_id'];
+          var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'employee_id'];
 
           if (!_.isEqual(_.omit(oldStats, metadata), _.omit(newStats, metadata))) {
             var _newStats = _.extend(newStats, {is_synced: false});
@@ -87,13 +87,17 @@ presence.prototype._updateEmployeeDailyStats = function (employee, date) {
     });
 };
 
-presence.prototype._computeEmployeeDailyStats = function (employee, date, performance) {
+presence.prototype._computeEmployeeDailyStats = function (employee, date, samples) {
   var self = this;
 
+  if (!samples || samples.length === 0) {
+    return new Promise.resolve();
+  }
+
   return Promise.props({
-    total_duration: self._computeEmployeeDailyTotalDuration(date, performance),
-    start_time: self._computeEmployeeDailyStartTime(date, performance),
-    end_time: self._computeEmployeeDailyEndTime(date, performance)
+    total_duration: self._computeEmployeeDailyTotalDuration(date, samples),
+    start_time: self._computeEmployeeDailyStartTime(date, samples),
+    end_time: self._computeEmployeeDailyEndTime(date, samples)
   }).then(function (stats) {
     var now = moment();
     var _stats = _.extend(stats, {
@@ -167,7 +171,7 @@ presence.prototype._updateEmployeePeriodStats = function (employee, date, period
     function (dailyStats, oldStats) {
       return self._computeEmployeePeriodStats(employee, dailyStats, oldStats, date, period)
         .then(function (newStats) {
-          var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'period', 'employee_id'];
+          var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'employee_id'];
 
           if (!_.isEqual(_.omit(oldStats, metadata), _.omit(newStats, metadata))) {
             var _newStats = _.extend(newStats, {is_synced: false});
