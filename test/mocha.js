@@ -46,6 +46,11 @@ global.sinon = sinon
  }*/
 
 var mockery = require('mockery')
+mockery.enable({
+  warnOnReplace: false,
+  warnOnUnregistered: false,
+  useCleanCache: true
+})
 global.mockery = mockery
 
 var _ = require('lodash')

@@ -4,20 +4,20 @@
 
 'use strict'
 
-var Slack, communication
+var Notification, communication
 
-describe('Slack', function () {
+describe('Notification', function () {
   before(function () {
   })
 
   beforeEach(function () {
-    Slack = require(SRC_PATH + 'modules/io/slack')
+    Notification = require(SRC_PATH + 'modules/person/notification')
     communication = require(SRC_PATH + 'utils/communication')
   })
 
   afterEach(function () {
-    delete require.cache[require.resolve(SRC_PATH + 'modules/io/slack')]
     delete require.cache[require.resolve(SRC_PATH + 'utils/communication')];
+    delete require.cache[require.resolve(SRC_PATH + 'modules/person/notification')]
   })
 
   after(function () {
@@ -26,17 +26,17 @@ describe('Slack', function () {
   describe('#load()', function () {
     it('should start listening to events', function () {
 
-      Slack.load(communication)
+      Notification.load(communication)
 
       expect(communication._eventsCount).to.be.above(0)
-
     })
   })
 
   describe('#unload()', function () {
     it('should stop listening to events', function () {
-      Slack.load(communication)
-      Slack.unload()
+
+      Notification.load(communication)
+      Notification.unload()
 
       expect(communication._eventsCount).to.equal(0)
     })

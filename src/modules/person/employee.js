@@ -61,7 +61,7 @@ employee.prototype.start = function () {
         event: 'synchronization:outgoing:person:employee'
     });
 
-    this.communication.emitAsync('synchronization:outgoing:quickshot:register', {
+    this.communication.emit('synchronization:outgoing:quickshot:register', {
         companyResource: 'employees',
         registerEvents: ['person:employee:nearby', 'person:employee:faraway'],
         outgoingEvent: 'synchronization:outgoing:person:employee'
