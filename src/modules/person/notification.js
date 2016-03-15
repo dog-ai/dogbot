@@ -1,61 +1,93 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+var logger = require('../../utils/logger.js'),
+  moment = require('moment');
+
+var utils = require('../utils.js');
 
 function notification() {
-    var moduleManager = {};
 }
 
 notification.prototype.type = "PERSON";
 
 notification.prototype.name = "notification";
 
+notification.prototype.events = {}
+
 notification.prototype.info = function () {
-    return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
-        this.type.toLowerCase() + " module_";
+  return "*" + this.name + "* - " +
+    "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " " +
+    this.type.toLowerCase() + " module_";
 };
 
-notification.prototype.load = function (moduleManager) {
-    this.moduleManager = moduleManager;
+notification.prototype.load = function (communication) {
+  this.communication = communication;
 
-    this.start();
+  this.start();
 };
 
 notification.prototype.unload = function () {
-    this.stop();
+  this.stop();
 };
 
 notification.prototype.start = function () {
-    this.moduleManager.on('person:employee:nearby', this._handleEmployeeNearby);
-    this.moduleManager.on('person:employee:faraway', this._handleEmployeeFaraway);
-    this.moduleManager.on('person:employee:online', this._handleEmployeeOnline);
-    this.moduleManager.on('person:employee:offline', this._handleEmployeeOffline);
+
+  utils.startListening.bind(this)({
+    'person:employee:nearby': this._onEmployeeNearby.bind(this),
+    'person:employee:faraway': this._onEmployeeFaraway.bind(this),
+    'person:employee:online': this._onEmployeeOnline.bind(this),
+    'person:employee:offline': this._onEmployeeOffline.bind(this),
+  });
+
+  this.communication.emit('synchronization:outgoing:quickshot:register', {
+    companyResource: 'notifications',
+    registerEvents: ['person:device:discover:stop'],
+    outgoingFunction: this._onDeviceDiscoverStop
+  });
+
+  setTimeout(function () {
+
+  }, 5000);
 };
 
 notification.prototype.stop = function () {
-    this.moduleManager.removeListener('person:employee:nearby', this._handleEmployeeNearby);
-    this.moduleManager.removeListener('person:employee:faraway', this._handleEmployeeFaraway);
-    this.moduleManager.removeListener('person:employee:online', this._handleEmployeeOnline);
-    this.moduleManager.removeListener('person:employee:offline', this._handleEmployeeOffline);
+  utils.stopListening.bind(this)([
+    'person:employee:nearby',
+    'person:employee:faraway',
+    'person:employee:online',
+    'person:employee:offline'
+  ]);
 };
 
-notification.prototype._handleEmployeeNearby = function (employee) {
-    logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is nearby');
+notification.prototype._onEmployeeNearby = function (employee) {
+  logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is nearby');
 };
 
-notification.prototype._handleEmployeeFaraway = function (employee) {
-    logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is faraway');
+notification.prototype._onEmployeeFaraway = function (employee) {
+  logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is faraway');
 };
 
-notification.prototype._handleEmployeeOnline = function (employee) {
-    logger.info(new Date() + ' ' + employee.full_name + ' is online');
+notification.prototype._onEmployeeOnline = function (employee) {
+  logger.info(new Date() + ' ' + employee.full_name + ' is online');
 };
 
-notification.prototype._handleEmployeeOffline = function (employee) {
-    logger.info(new Date() + ' ' + employee.full_name + ' is offline');
+notification.prototype._onEmployeeOffline = function (employee) {
+  logger.info(new Date() + ' ' + employee.full_name + ' is offline');
+};
+
+notification.prototype._onDeviceDiscoverStop = function (device, macAddress, isCreated) {
+  if (device && isCreated) {
+    // we just discovered a new device
+    return {
+      created_date: moment(),
+      app: 'presence',
+      module: 'device',
+      device: device.id,
+      message: 'Detected new device called ' + device.name
+    }
+  }
 };
 
 var instance = new notification();

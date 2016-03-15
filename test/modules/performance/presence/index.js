@@ -16,8 +16,8 @@ describe('Presence', function () {
   })
 
   afterEach(function () {
-    delete require.cache[require.resolve(SRC_PATH + 'modules/performance/presence')]
     delete require.cache[require.resolve(SRC_PATH + 'utils/communication')];
+    delete require.cache[require.resolve(SRC_PATH + 'modules/performance/presence')]
   })
 
   after(function () {
