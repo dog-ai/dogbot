@@ -169,23 +169,28 @@ device.prototype._discover = function (macAddress, callback) {
                     macAddress.last_discovery_date = new Date();
                     return instance._updateMacAddressByAddress(macAddress.address, macAddress)
                       .then(function () {
+
+                        instance.communication.emit('person:device:discover:stop', _device, macAddress, !device);
+
                         return _device;
                       });
-                  });
+                  })
               } else {
                 _device.updated_date = new Date();
                 _device.is_synced = false;
                 return instance._updateById(_device.id, _device)
                   .then(function () {
+
+                    instance.communication.emit('person:device:discover:stop', _device, macAddress, !device);
+
                     return _device;
                   });
               }
             }
-          });
+          })
       }
     })
     .then(function (result) {
-      instance.communication.emit('person:device:discover:stop', result, macAddress, !device);
       callback(null, result);
     })
     .catch(callback);
