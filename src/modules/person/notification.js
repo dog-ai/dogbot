@@ -46,10 +46,6 @@ notification.prototype.start = function () {
     registerEvents: ['person:device:discover:stop'],
     outgoingFunction: this._onDeviceDiscoverStop
   });
-
-  setTimeout(function () {
-
-  }, 5000);
 };
 
 notification.prototype.stop = function () {
