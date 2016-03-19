@@ -63,7 +63,7 @@ notification.prototype._onEmployeeNearby = function (employee, callback) {
     app: 'presence',
     module: 'employee',
     device: employee.id,
-    message: employee.name + ' is nearby'
+    message: employee.full_name + ' is nearby'
   };
 
   callback(null, notification);
@@ -78,7 +78,7 @@ notification.prototype._onEmployeeFaraway = function (employee, callback) {
     app: 'presence',
     module: 'employee',
     device: employee.id,
-    message: employee.name + ' is faraway'
+    message: employee.full_name + ' is faraway'
   };
 
   callback(null, notification);
