@@ -5,6 +5,8 @@
 var logger = require('../../utils/logger.js'),
   moment = require('moment');
 
+var utils = require('../utils.js');
+
 function notification() {
 }
 
@@ -32,16 +34,9 @@ notification.prototype.unload = function () {
 
 notification.prototype.start = function () {
 
-  this.communication.emit('synchronization:outgoing:quickshot:register', {
-    companyResource: 'notifications',
-    registerEvents: ['person:employee:nearby'],
-    outgoingFunction: this._onEmployeeNearby
-  });
-
-  this.communication.emit('synchronization:outgoing:quickshot:register', {
-    companyResource: 'notifications',
-    registerEvents: ['person:employee:faraway'],
-    outgoingFunction: this._onEmployeeFaraway
+  utils.startListening.bind(this)({
+    'person:employee:nearby': this._onEmployeeNearby.bind(this),
+    'person:employee:faraway': this._onEmployeeFaraway.bind(this)
   });
 
   this.communication.emit('synchronization:outgoing:quickshot:register', {
@@ -52,36 +47,19 @@ notification.prototype.start = function () {
 };
 
 notification.prototype.stop = function () {
+
+  utils.stopListening.bind(this)([
+    'person:employee:nearby',
+    'person:employee:faraway'
+  ]);
 };
 
-notification.prototype._onEmployeeNearby = function (employee, callback) {
+notification.prototype._onEmployeeNearby = function (employee) {
   logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is nearby');
-
-  var notification = {
-    id: instance._generatePushID(),
-    created_date: employee.last_presence_date,
-    app: 'presence',
-    module: 'employee',
-    employee: employee.id,
-    message: employee.full_name + ' is nearby'
-  };
-
-  callback(null, notification);
 };
 
-notification.prototype._onEmployeeFaraway = function (employee, callback) {
+notification.prototype._onEmployeeFaraway = function (employee) {
   logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is faraway');
-
-  var notification = {
-    id: instance._generatePushID(),
-    created_date: employee.last_presence_date,
-    app: 'presence',
-    module: 'employee',
-    employee: employee.id,
-    message: employee.full_name + ' is faraway'
-  };
-
-  callback(null, notification);
 };
 
 notification.prototype._onDeviceDiscoverCreate = function (device, callback) {
