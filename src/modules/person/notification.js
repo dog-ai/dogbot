@@ -54,7 +54,7 @@ notification.prototype.start = function () {
 notification.prototype.stop = function () {
 };
 
-notification.prototype._onEmployeeNearby = function (employee) {
+notification.prototype._onEmployeeNearby = function (employee, callback) {
   logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is nearby');
 
   var notification = {
@@ -69,7 +69,7 @@ notification.prototype._onEmployeeNearby = function (employee) {
   callback(null, notification);
 };
 
-notification.prototype._onEmployeeFaraway = function (employee) {
+notification.prototype._onEmployeeFaraway = function (employee, callback) {
   logger.info(employee.last_presence_date + ' ' + employee.full_name + ' is faraway');
 
   var notification = {
