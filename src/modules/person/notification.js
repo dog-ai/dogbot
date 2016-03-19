@@ -72,20 +72,18 @@ notification.prototype._onEmployeeOffline = function (employee) {
 };
 
 notification.prototype._onDeviceDiscoverCreate = function (device, callback) {
-  if (device) {
-    // we just discovered a new device
+  logger.info('Discovered device ' + device.name);
 
-    var notification = {
-      id: instance._generatePushID(),
-      created_date: moment(),
-      app: 'presence',
-      module: 'device',
-      device: device.id,
-      message: 'Discovered device ' + device.name
-    };
+  var notification = {
+    id: instance._generatePushID(),
+    created_date: moment(),
+    app: 'presence',
+    module: 'device',
+    device: device.id,
+    message: 'Discovered device ' + device.name
+  };
 
-    callback(null, notification);
-  }
+  callback(null, notification);
 };
 
 notification.prototype._generatePushID = (function () {
