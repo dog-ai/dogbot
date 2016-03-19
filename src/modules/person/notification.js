@@ -38,13 +38,13 @@ notification.prototype.start = function () {
     'person:employee:nearby': this._onEmployeeNearby.bind(this),
     'person:employee:faraway': this._onEmployeeFaraway.bind(this),
     'person:employee:online': this._onEmployeeOnline.bind(this),
-    'person:employee:offline': this._onEmployeeOffline.bind(this),
+    'person:employee:offline': this._onEmployeeOffline.bind(this)
   });
 
   this.communication.emit('synchronization:outgoing:quickshot:register', {
     companyResource: 'notifications',
-    registerEvents: ['person:device:discover:stop'],
-    outgoingFunction: this._onDeviceDiscoverStop
+    registerEvents: ['person:device:discover:create'],
+    outgoingFunction: this._onDeviceDiscoverCreate
   });
 };
 
@@ -66,23 +66,24 @@ notification.prototype._onEmployeeFaraway = function (employee) {
 };
 
 notification.prototype._onEmployeeOnline = function (employee) {
-  logger.info(new Date() + ' ' + employee.full_name + ' is online');
 };
 
 notification.prototype._onEmployeeOffline = function (employee) {
-  logger.info(new Date() + ' ' + employee.full_name + ' is offline');
 };
 
-notification.prototype._onDeviceDiscoverStop = function (device, macAddress, isCreated) {
-  if (device && isCreated) {
+notification.prototype._onDeviceDiscoverCreate = function (device, callback) {
+  if (device) {
     // we just discovered a new device
-    return {
+
+    var notification = {
       created_date: moment(),
       app: 'presence',
       module: 'device',
       device: device.id,
-      message: 'Detected new device called ' + device.name
-    }
+      message: 'Discovered device ' + device.name
+    };
+
+    callback(null, notification);
   }
 };
 

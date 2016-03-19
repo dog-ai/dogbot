@@ -98,11 +98,11 @@ var bot = {
             _.forEach(registerParams.registerEvents, function (registerEvent) {
 
               // listen for outgoing quickshot events
-              communication.on(registerEvent, function () {
+              communication.on(registerEvent, function (outgoingParams, outgoingCallback) {
 
                 // split quickshot event arguments
-                var outgoingCallback = arguments.length > 1 && _.isFunction(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : undefined;
-                var outgoingParams = [].slice.call(arguments, 0, outgoingCallback ? arguments.length - 1 : arguments.length);
+                //var outgoingCallback = arguments.length > 1 && _.isFunction(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : undefined;
+                //var outgoingParams = [].slice.call(arguments, 0, outgoingCallback ? arguments.length - 1 : arguments.length);
 
                 // synchronization module will take care of doing the quickshot
                 callback(registerParams, outgoingParams, outgoingCallback);
