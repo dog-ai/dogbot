@@ -471,11 +471,11 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
         val = _.omit(val, ['is_present']);
       }
 
+      val = _.extend(val, {company_id: instance.companyId});
+
       if (companyResource == 'notifications') {
         val = _.omit(val, ['company_id', 'updated_date']);
       }
-
-      val = _.extend(val, {company_id: instance.companyId});
 
       companyResourceRef = firebase.child('company_' + companyResource + '/' +
         instance.companyId + '/' +
