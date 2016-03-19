@@ -61,6 +61,12 @@ mac_address.prototype.start = function () {
         companyResource: 'mac_addresses',
         event: 'synchronization:outgoing:person:mac_address'
     });
+
+  this.communication.emit('synchronization:outgoing:quickshot:register', {
+    companyResource: 'mac_addresses',
+    registerEvents: ['person:device:discover:create'],
+    outgoingFunction: this._onDeviceDiscoverCreate
+  });
 };
 
 mac_address.prototype.stop = function () {
@@ -97,6 +103,13 @@ mac_address.prototype._clean = function (params, callback) {
         .catch(function (error) {
             callback(error);
         });
+};
+
+mac_address.prototype._onDeviceDiscoverCreate = function (device, callback) {
+  instance._findAllByDeviceId(device.id)
+    .mapSeries(function (macAddress) {
+      return instance._onMacAddressOutgoingSynchronization(macAddress, callback);
+    })
 };
 
 mac_address.prototype._onArpCreateOrUpdate = function (address) {
@@ -288,7 +301,8 @@ mac_address.prototype._onDeleteMacAddressIncomingSynchronization = function (mac
 
 mac_address.prototype._onMacAddressOutgoingSynchronization = function (params, callback) {
     instance.communication.emit('database:person:retrieveOneByOne',
-        'SELECT * FROM mac_address WHERE is_synced = 0', [], function (error, row) {
+      'SELECT * FROM mac_address WHERE is_synced = 0' +
+      (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
             if (error) {
                 logger.error(error.stack);
             } else {
@@ -342,6 +356,13 @@ mac_address.prototype._findByAddress = function (mac_address, callback) {
 
             callback(error, row);
         });
+};
+
+mac_address.prototype._findAllByDeviceId = function (deviceId) {
+  return this.communication.emitAsync('database:person:retrieveAll',
+    "SELECT * FROM mac_address WHERE device_id = ?;",
+    [deviceId]
+  );
 };
 
 mac_address.prototype._generatePushID = (function () {

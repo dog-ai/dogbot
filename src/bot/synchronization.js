@@ -167,10 +167,7 @@ synchronization.prototype._quickshotOutgoingSynchronization = function (register
     instance.onOutgoingSynchronizeCallback(registerParams.outgoingEvent, outgoingParams, quickshot);
   } else {
     // quickshot function callback
-    var companyResourceObj = registerParams.outgoingFunction.apply(null, outgoingParams);
-    if (companyResourceObj) {
-      quickshot(null, companyResourceObj);
-    }
+    registerParams.outgoingFunction(outgoingParams, quickshot);
   }
 
   var now = moment().format();

@@ -35,7 +35,7 @@ device.prototype.start = function () {
   this.communication.on('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
   this.communication.on('person:mac_address:offline', this._onMacAddressOffline);
   this.communication.on('person:device:is_present', this._isPresent);
-  this.communication.on('person:device:discover:start', this._discover);
+  this.communication.on('person:device:discover', this._discover);
   this.communication.on('synchronization:incoming:person:device:create', this._onCreateOrUpdateDeviceIncomingSynchronization);
   this.communication.on('synchronization:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
   this.communication.on('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
@@ -61,7 +61,7 @@ device.prototype.start = function () {
 
   this.communication.emit('synchronization:outgoing:quickshot:register', {
     companyResource: 'devices',
-    registerEvents: ['person:device:online', 'person:device:offline'],
+    registerEvents: ['person:device:online', 'person:device:offline', 'person:device:discover:create'],
     outgoingEvent: 'synchronization:outgoing:person:device'
   });
 };
@@ -74,7 +74,7 @@ device.prototype.stop = function () {
   this.communication.removeListener('synchronization:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
   this.communication.removeListener('synchronization:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
   this.communication.removeListener('person:device:is_present', this._isPresent);
-  this.communication.removeListener('person:device:discover:start', this._discover);
+  this.communication.removeListener('person:device:discover', this._discover);
   this.communication.removeListener('synchronization:outgoing:person:device', this._onDeviceOutgoingSynchronization);
 
   this.communication.removeAllListeners('monitor:arp:discover:finish');
@@ -153,7 +153,6 @@ device.prototype._discover = function (macAddress, callback) {
             if (result.nmap.os !== undefined && result.nmap.os !== null && result.nmap.os.length > 0) {
               _device.os = result.nmap.os;
             }
-            2
 
             // do we fulfill the requirement to create or update existing device?
             if (_device.name) {
@@ -164,13 +163,13 @@ device.prototype._discover = function (macAddress, callback) {
               if (!device) {
                 return instance._add(_device)
                   .then(function (row) {
-                    macAddress.device_id = row.id;
+                    macAddress.device_id = _device.id = row.id;
                     macAddress.updated_date = new Date();
                     macAddress.last_discovery_date = new Date();
                     return instance._updateMacAddressByAddress(macAddress.address, macAddress)
                       .then(function () {
 
-                        instance.communication.emit('person:device:discover:stop', _device, macAddress, !device);
+                        instance.communication.emit('person:device:discover:create', _device);
 
                         return _device;
                       });
@@ -180,9 +179,6 @@ device.prototype._discover = function (macAddress, callback) {
                 _device.is_synced = false;
                 return instance._updateById(_device.id, _device)
                   .then(function () {
-
-                    instance.communication.emit('person:device:discover:stop', _device, macAddress, !device);
-
                     return _device;
                   });
               }
@@ -504,7 +500,7 @@ device.prototype._onMacAddressOnlineAgain = function (mac_address) {
     mac_address.updated_date = new Date();
     mac_address.last_discovery_date = new Date();
     return instance._updateMacAddressByAddress(mac_address.address, mac_address).then(function () {
-      instance.communication.emit('worker:job:enqueue', 'person:device:discover:start', mac_address, null, false);
+      instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null, false);
     })
   }
 };
@@ -539,7 +535,8 @@ device.prototype._onMacAddressOffline = function (mac_address) {
 };
 
 device.prototype._onDeviceOutgoingSynchronization = function (params, callback) {
-  instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM device WHERE is_synced = 0' + (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
+  instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM device WHERE is_synced = 0' +
+    (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
     if (error) {
       logger.error(error.stack);
     } else {
