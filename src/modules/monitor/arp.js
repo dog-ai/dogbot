@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js');
@@ -116,7 +116,7 @@ arp.prototype._execArpScan = function (callback) {
     var _interface = process.platform === 'linux' ? "wlan0" : "en0";
 
     var spawn = require('child_process').spawn;
-    var _process = spawn('arp-scan', ['--interface=' + _interface, '-lqNg', '-t 500', '-r 4']);
+    var _process = spawn('arp-scan', ['--interface=' + _interface, '-lqNg', '-t 500', '-r 4', '-A aaaaaaaaaaaaaaaaaa']);
 
     _process.stdout.setEncoding('utf8');
     _process.stdout.pipe(require('split')()).on('data', function (line) {
