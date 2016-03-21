@@ -116,7 +116,7 @@ arp.prototype._execArpScan = function (callback) {
     var _interface = process.platform === 'linux' ? "wlan0" : "en0";
 
     var spawn = require('child_process').spawn;
-    var _process = spawn('arp-scan', ['--interface=' + _interface, '-lqNg', '-t 500', '-r 4', '-A aaaaaaaaaaaaaaaaaa']);
+    var _process = spawn('arp-scan', ['--interface=' + _interface, '-lqNg', '-t 500', '-r 4']);
 
     _process.stdout.setEncoding('utf8');
     _process.stdout.pipe(require('split')()).on('data', function (line) {
