@@ -15,21 +15,21 @@ function presence() {
 presence.prototype.start = function () {
 
   utils.startListening.bind(this)({
-    'synchronization:incoming:person:employee:create': this._onCreateEmployeeIncomingSynchronization.bind(this),
-    'synchronization:incoming:performance:presence': this._onIncomingPresenceSynchronization.bind(this),
-    'synchronization:outgoing:performance:presence': this._onOutgoingPresenceSynchronization.bind(this),
-    'synchronization:incoming:performance:presence:stats': this._onIncomingStatsSynchronization.bind(this),
-    'synchronization:outgoing:performance:presence:stats': this._onOutgoingStatsSynchronization.bind(this)
+    'sync:incoming:person:employee:create': this._onCreateEmployeeIncomingSynchronization.bind(this),
+    'sync:incoming:performance:presence': this._onIncomingPresenceSynchronization.bind(this),
+    'sync:outgoing:performance:presence': this._onOutgoingPresenceSynchronization.bind(this),
+    'sync:incoming:performance:presence:stats': this._onIncomingStatsSynchronization.bind(this),
+    'sync:outgoing:performance:presence:stats': this._onOutgoingStatsSynchronization.bind(this)
   });
 
-  this.communication.emitAsync('synchronization:outgoing:periodic:register', {
+  this.communication.emitAsync('sync:outgoing:periodic:register', {
     companyResource: 'employee_performances',
-    event: 'synchronization:outgoing:performance:presence'
+    event: 'sync:outgoing:performance:presence'
   });
 
-  this.communication.emitAsync('synchronization:outgoing:periodic:register', {
+  this.communication.emitAsync('sync:outgoing:periodic:register', {
     companyResource: 'employee_performances',
-    event: 'synchronization:outgoing:performance:presence:stats'
+    event: 'sync:outgoing:performance:presence:stats'
   });
 
 };
@@ -37,11 +37,11 @@ presence.prototype.start = function () {
 presence.prototype.stop = function () {
 
   utils.stopListening.bind(this)([
-    'synchronization:incoming:person:employee:create',
-    'synchronization:incoming:performance:presence',
-    'synchronization:outgoing:performance:presence',
-    'synchronization:incoming:performance:presence:stats',
-    'synchronization:outgoing:performance:presence:stats'
+    'sync:incoming:person:employee:create',
+    'sync:incoming:performance:presence',
+    'sync:outgoing:performance:presence',
+    'sync:incoming:performance:presence:stats',
+    'sync:outgoing:performance:presence:stats'
   ]);
 
 };
@@ -49,19 +49,19 @@ presence.prototype.stop = function () {
 presence.prototype._onCreateEmployeeIncomingSynchronization = function (employee) {
   var self = this;
 
-  this.communication.emitAsync('synchronization:incoming:register:setup', {
+  this.communication.emitAsync('sync:incoming:register:setup', {
     companyResource: 'employee_performances',
     employeeId: employee.id,
     name: 'presence',
     onCompanyResourceChangedCallback: function (performance) {
-      self.communication.emit('synchronization:incoming:performance:presence', performance);
+      self.communication.emit('sync:incoming:performance:presence', performance);
     },
     onCompanyResourceRemovedCallback: function (performance) {
     }
   });
 
   _.forEach(['day', 'month', 'year', 'all-time'], function (period) {
-    self.communication.emitAsync('synchronization:incoming:register:setup', {
+    self.communication.emitAsync('sync:incoming:register:setup', {
       companyResource: 'employee_performances',
       period: period,
       employeeId: employee.id,
@@ -76,7 +76,7 @@ presence.prototype._onCreateEmployeeIncomingSynchronization = function (employee
           _stats.period = period;
         }
 
-        self.communication.emit('synchronization:incoming:performance:presence:stats', employee, period, _stats);
+        self.communication.emit('sync:incoming:performance:presence:stats', employee, period, _stats);
       }
     });
   });

@@ -39,7 +39,7 @@ notification.prototype.start = function () {
     'person:employee:faraway': this._onEmployeeFaraway.bind(this)
   });
 
-  this.communication.emit('synchronization:outgoing:quickshot:register', {
+  this.communication.emit('sync:outgoing:quickshot:register', {
     companyResource: 'notifications',
     registerEvents: ['person:device:discover:create'],
     outgoingFunction: this._onDeviceDiscoverCreate
