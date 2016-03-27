@@ -16,6 +16,8 @@ LinkedIn.prototype.type = "person";
 
 LinkedIn.prototype.name = "linkedin";
 
+LinkedIn.prototype.events = {};
+
 LinkedIn.prototype.load = function (communication) {
   this.communication = communication;
 
