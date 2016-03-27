@@ -3,170 +3,189 @@
  */
 
 var logger = require('../utils/logger.js'),
-    _ = require('lodash'),
-    kue = require('kue-scheduler'),
-    Promise = require('bluebird');
+  _ = require('lodash'),
+  Promise = require('bluebird');
+
+var kue = require('kue-scheduler');
 
 var WORKER_DATABASE_TYPE = 'nosql',
-    WORKER_DATABASE_NAME = 'worker';
+  WORKER_DATABASE_NAME = 'worker';
+
+var JobTypeEnum = Object.freeze({
+  FAST: 'FAST',
+  NORMAL: 'NORMAL',
+  SLOW: 'SLOW'
+});
+
+var JobTypeTtlEnum = Object.freeze({
+  FAST: 10000, // 10 sec,
+  NORMAL: 60000, // 1 min
+  SLOW: 240000 // 4 min
+});
 
 function worker() {
 }
 
-worker.prototype.initialize = function (enqueue, dequeue, processJob) {
-    return new Promise(function (resolve, reject) {
+worker.prototype.initialize = function (enqueue, dequeue, emit) {
+  return new Promise(function (resolve, reject) {
 
-        if (!instance.databases) {
-            reject(new Error("Unable to initialize worker because no database available"));
-        } else {
-            instance.databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
-                .then(function (result) {
+    if (!instance.databases) {
+      reject(new Error("Unable to initialize worker because no database available"));
+    } else {
+      instance.databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
+        .then(function (result) {
 
-                    instance.queue = kue.createQueue(result);
+          instance.queue = kue.createQueue(result);
 
-                    var process = function (job, done) {
-                        logger.debug('Job ' + job.id + ' started' +
-                            (job.data.params !== undefined && job.data.params !== null ? ' with params ' + JSON.stringify(job.data.params) : ''));
+          var process = function (job, callback) {
+            var id = job.id;
+            var event = job.data.event;
+            var params = job.data.params;
+            var callbacks = job.data.callbacks || {};
 
-                        processJob(job.data.event, job.data.params)
-                            .then(function (result) {
-                                done(null, result);
-                            })
-                            .catch(function (error) {
-                                done(error);
-                            });
-                    };
+            logger.debug('Job ' + id + ' started' + (params ? ' with params ' + JSON.stringify(params) : ''));
 
-                    instance.queue.process('worker', process);
+            emit(event, params)
+              .then(function (result) {
+                callback(null, result);
 
-                    instance.queue.process('slow', 2, process);
+                if (callbacks.resolve) {
+                  emit(callbacks.resolve, result);
+                }
+              })
+              .catch(function (error) {
+                callback(error);
 
-                    instance.queue.process('fast', process);
+                if (callbacks.reject) {
+                  emit(callbacks.reject, error);
+                }
+              });
+          };
 
-                    instance.queue
-                        .on('job enqueue', function (id, type) {
-                            kue.Job.get(id, function (error, job) {
-                                logger.debug('Job ' + id + ' queued with ' + job.data.event +
-                                    (job.data.params !== undefined && job.data.params !== null ? ' and params ' + JSON.stringify(job.data.params) : ''));
-                            });
-                        }).on('job complete', function (id, result) {
+          instance.queue.process(JobTypeEnum.FAST, process);
+          instance.queue.process(JobTypeEnum.NORMAL, process);
+          instance.queue.process(JobTypeEnum.SLOW, 2, process);
 
-                        logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''));
+          instance.queue.on('job enqueue', function (id, type) {
+            kue.Job.get(id, function (error, job) {
+              logger.debug('Job ' + id + ' queued with ' + job.data.event +
+                (job.data.params !== undefined && job.data.params !== null ? ' and params ' + JSON.stringify(job.data.params) : ''));
+            });
+          });
+          instance.queue.on('job complete', function (id, result) {
 
-                        kue.Job.get(id, function (error, job) {
-                            if (error) {
-                                return;
-                            }
+            logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''));
 
-                            job.remove(function (error) {
-                                if (error) {
-                                    logger.error(error.stack);
-                                }
-                            });
-                        });
-                    }).on('job failed', function (id, error) {
-                        logger.debug('Job ' + id + ' failed because of ' + error);
-                    }).on('job failed attempt', function (id, attempts) {
-                        logger.debug('Job ' + id + ' failed ' + attempts + ' times');
-                    }).on('schedule success', function (job) {
-                        instance._schedules[job.data.event] = _.pick(job.data, ['expiryKey', 'dataKey']);
-                    }).on('schedule error', function (error) {
-                        logger.error('schedule error: ' + error);
-                    }).on('already scheduled', function (job) {
-                    }).on('scheduler unknown job expiry key', function (message) {
-                    }).on('error', function (error) {
-                        logger.error(error.stack);
-                    });
+            kue.Job.get(id, function (error, job) {
+              if (error) {
+                return;
+              }
 
-                    enqueue(instance._enqueue);
-                    dequeue(instance._dequeue);
-                })
-                .then(resolve).catch(reject);
-        }
-    });
+              job.remove(function (error) {
+                if (error) {
+                  logger.error(error.stack);
+                }
+              });
+            });
+          });
+          instance.queue.on('job failed', function (id, error) {
+            logger.debug('Job ' + id + ' failed because of ' + error.message);
+            logger.error(error);
+          });
+          instance.queue.on('job failed attempt', function (id, attempts) {
+            logger.debug('Job ' + id + ' failed ' + attempts + ' times');
+          });
+          instance.queue.on('schedule success', function (job) {
+            instance._schedules[job.data.event] = _.pick(job.data, ['expiryKey', 'dataKey']);
+          });
+          instance.queue.on('schedule error', function (error) {
+            logger.error('schedule error: ' + error);
+          });
+          instance.queue.on('already scheduled', function (job) {
+          });
+          instance.queue.on('scheduler unknown job expiry key', function (message) {
+          });
+          instance.queue.on('error', function (error) {
+            logger.error(error.stack);
+          });
+
+          enqueue(instance._enqueue);
+          dequeue(instance._dequeue);
+
+        })
+        .then(resolve).catch(reject);
+    }
+  });
 };
 
 worker.prototype.terminate = function () {
-    return new Promise(function (resolve, reject) {
-        if (instance.queue !== undefined && instance.queue !== null) {
-            instance.queue.shutdown(5000, function (error) {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve();
-                }
-            });
+  return new Promise(function (resolve, reject) {
+    if (instance.queue !== undefined && instance.queue !== null) {
+      instance.queue.shutdown(5000, function (error) {
+        if (error) {
+          reject(error);
         } else {
-            resolve();
+          resolve();
         }
-    })
-        .then(function () {
-            return instance.databases.stopDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME);
-        });
+      });
+    } else {
+      resolve();
+    }
+  })
+    .then(function () {
+      return instance.databases.stopDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME);
+    });
 };
 
-worker.prototype._enqueue = function (event, params, schedule) {
-    var type;
-    switch (event) {
-        case 'person:device:discover':
-            type = 'slow';
-            break;
-        case 'bot:heartbeat':
-            type = 'fast';
-            break;
-        default:
-            type = 'worker';
-    }
+worker.prototype._enqueue = function (event, params, schedule, callbacks) {
+  var type;
+  switch (event) {
+    case 'person:device:discover':
+      type = JobTypeEnum.SLOW;
+      break;
+    case 'bot:heartbeat':
+      type = JobTypeEnum.FAST;
+      break;
+    default:
+      type = JobTypeEnum.NORMAL;
+  }
 
-    var job = instance.queue.create(type, {
-        event: event,
-        params: params
+  var job = instance.queue.create(type, {event: event, params: params, callbacks: callbacks});
+  job.ttl(JobTypeTtlEnum[type]);
+
+  if (schedule) {
+    instance.queue.every(schedule, job);
+  } else {
+    job.save(function (error) {
+      if (error) {
+        logger.error(error.stack);
+      }
     });
-
-    switch (type) {
-        case 'fast':
-            job.ttl(10000); // 10 seconds
-            break;
-        case 'slow':
-            job.ttl(240000); // 4 minutes
-            break;
-        default:
-            job.ttl(60000); // 1 minute
-    }
-
-    if (schedule !== undefined && schedule !== null) {
-        instance.queue.every(schedule, job);
-    } else {
-        job.save(function (error) {
-            if (error) {
-                logger.error(error.stack);
-            }
-        });
-    }
+  }
 };
 
 worker.prototype._dequeue = function (event) {
 
-    if (instance.queue && instance._schedules[event]) {
-        instance.queue.remove(instance._schedules[event], function (error) {
-            if (error) {
-                logger.error(error.stack);
-            } else {
-                delete instance._schedules[event];
-            }
-        });
-    }
+  if (instance.queue && instance._schedules[event]) {
+    instance.queue.remove(instance._schedules[event], function (error) {
+      if (error) {
+        logger.error(error.stack);
+      } else {
+        delete instance._schedules[event];
+      }
+    });
+  }
 };
 
 worker.prototype.healthCheck = function () {
-    return new Promise.resolve();
+  return new Promise.resolve();
 };
 
 var instance = new worker();
 
 module.exports = function (databases) {
-    instance.databases = databases;
-    instance._schedules = {};
+  instance.databases = databases;
+  instance._schedules = {};
 
-    return instance;
+  return instance;
 };

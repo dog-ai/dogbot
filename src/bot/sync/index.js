@@ -2,23 +2,26 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../utils/logger.js'),
+var logger = require('../../utils/logger.js'),
   _ = require('lodash'),
   moment = require('moment-timezone'),
-  Firebase = require('firebase'),
-  firebase = new Firebase('https://dazzling-torch-7723.firebaseIO.com'),
   Promise = require('bluebird');
 
-function synchronization() {
+var Firebase = require('firebase'),
+  firebase = new Firebase('https://dazzling-torch-7723.firebaseIO.com');
+
+var Task = require('./task.js');
+
+function Sync() {
 }
 
-synchronization.prototype.initialize = function (token,
-                                                 startOutgoingPeriodicSynchronizationFn,
-                                                 onCompanyAppChangedCallback,
-                                                 registerIncomingSynchronizationFn,
-                                                 registerOutgoingPeriodicSynchronizationFn,
-                                                 registerOutgoingQuickshotSynchronizationFn,
-                                                 onOutgoingSynchronizeCallback) {
+Sync.prototype.initialize = function (token,
+                                      startOutgoingPeriodicSynchronizationFn,
+                                      onCompanyAppChangedCallback,
+                                      registerIncomingSynchronizationFn,
+                                      registerOutgoingPeriodicSynchronizationFn,
+                                      registerOutgoingQuickshotSynchronizationFn,
+                                      onOutgoingSynchronizeCallback) {
 
   return new Promise(function (resolve, reject) {
 
@@ -29,20 +32,23 @@ synchronization.prototype.initialize = function (token,
 
         startOutgoingPeriodicSynchronizationFn(instance._periodicOutgoingSynchronization);
         instance.onCompanyAppChangedCallback = onCompanyAppChangedCallback;
-        registerIncomingSynchronizationFn(synchronization.prototype._registerIncomingSynchronization);
-        registerOutgoingPeriodicSynchronizationFn(synchronization.prototype._registerPeriodicOutgoingSynchronization);
-        registerOutgoingQuickshotSynchronizationFn(synchronization.prototype._quickshotOutgoingSynchronization);
+        registerIncomingSynchronizationFn(Sync.prototype._registerIncomingSynchronization);
+        registerOutgoingPeriodicSynchronizationFn(Sync.prototype._registerPeriodicOutgoingSynchronization);
+        registerOutgoingQuickshotSynchronizationFn(Sync.prototype._quickshotOutgoingSynchronization);
         instance.onOutgoingSynchronizeCallback = onOutgoingSynchronizeCallback;
 
         if (dog.company_id) {
+
           instance.companyId = dog.company_id;
           instance.companyRef = firebase.child('companies/' + dog.company_id);
+
           instance.companyRef.child('/apps').on('child_changed', function (snapshot) {
             var app = {};
             app[snapshot.key()] = snapshot.val();
 
             instance.onCompanyAppChangedCallback(app);
           });
+
           instance.companyRef.child('/apps').once('value',
             function (snapshot) {
               resolve([
@@ -53,6 +59,7 @@ synchronization.prototype.initialize = function (token,
             function (error) {
               reject(error);
             });
+
         } else {
           resolve([instance.dogId]);
         }
@@ -60,10 +67,15 @@ synchronization.prototype.initialize = function (token,
   });
 };
 
-synchronization.prototype.terminate = function () {
+Sync.prototype.initializeTask = function (onIncomingTaskCallback) {
+  Task.initialize(firebase, instance.companyId, onIncomingTaskCallback);
+};
+
+Sync.prototype.terminate = function () {
   return new Promise(function (resolve, reject) {
 
-    return instance._unauthenthicate()
+    return Task.terminate()
+      .then(instance._unauthenthicate)
       .then(function () {
         delete instance.companyId;
         delete instance.companyRef;
@@ -73,7 +85,7 @@ synchronization.prototype.terminate = function () {
   });
 };
 
-synchronization.prototype._authenticate = function (token) {
+Sync.prototype._authenticate = function (token) {
   return new Promise(function (resolve, reject) {
 
     firebase.authWithCustomToken(token, function (error, authData) {
@@ -104,7 +116,7 @@ synchronization.prototype._authenticate = function (token) {
   });
 };
 
-synchronization.prototype._unauthenthicate = function () {
+Sync.prototype._unauthenthicate = function () {
   return new Promise(function (resolve) {
     var now = moment().format();
 
@@ -121,7 +133,7 @@ synchronization.prototype._unauthenthicate = function () {
   });
 };
 
-synchronization.prototype._periodicOutgoingSynchronization = function (params, callback) {
+Sync.prototype._periodicOutgoingSynchronization = function (params, callback) {
 
   if (instance.companyRef) {
     _.forEach(instance.outgoingSynchronizeEvents, function (outgoing) {
@@ -146,7 +158,7 @@ synchronization.prototype._periodicOutgoingSynchronization = function (params, c
   callback();
 };
 
-synchronization.prototype._quickshotOutgoingSynchronization = function (registerParams, outgoingParams, callback) {
+Sync.prototype._quickshotOutgoingSynchronization = function (registerParams, outgoingParams, callback) {
 
   function quickshot(error, companyResourceObj, callback) {
     if (error) {
@@ -181,7 +193,7 @@ synchronization.prototype._quickshotOutgoingSynchronization = function (register
   }
 };
 
-synchronization.prototype._registerIncomingSynchronization = function (params, callback) {
+Sync.prototype._registerIncomingSynchronization = function (params, callback) {
   if (instance.companyRef) {
     if (params.companyResource == 'employee_performances') {
 
@@ -357,13 +369,13 @@ synchronization.prototype._registerIncomingSynchronization = function (params, c
   callback();
 };
 
-synchronization.prototype._registerPeriodicOutgoingSynchronization = function (params, callback) {
+Sync.prototype._registerPeriodicOutgoingSynchronization = function (params, callback) {
   instance.outgoingSynchronizeEvents.push({event: params.event, companyResource: params.companyResource});
 
   callback();
 };
 
-synchronization.prototype._sendCompanyResource = function (companyResource, companyResourceObj, callback) {
+Sync.prototype._sendCompanyResource = function (companyResource, companyResourceObj, callback) {
   if (!instance.companyRef) {
     callback();
   }
@@ -499,10 +511,10 @@ synchronization.prototype._sendCompanyResource = function (companyResource, comp
 
 };
 
-synchronization.prototype.healthCheck = function () {
+Sync.prototype.healthCheck = function () {
   return Promise.resolve();
 };
 
-var instance = new synchronization();
+var instance = new Sync();
 
 module.exports = instance;
