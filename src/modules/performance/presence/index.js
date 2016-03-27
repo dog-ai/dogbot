@@ -61,7 +61,7 @@ presence.prototype.submodules = [
   './stats'
 ];
 
-presence.prototype.events = {}
+presence.prototype.events = {};
 
 presence.prototype.info = function () {
   return "*" + this.name + "* - " +

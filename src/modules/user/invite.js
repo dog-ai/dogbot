@@ -14,6 +14,8 @@ Invite.prototype.type = "user";
 
 Invite.prototype.name = "invite";
 
+Invite.prototype.events = {};
+
 Invite.prototype.load = function (communication) {
   this.communication = communication;
 
