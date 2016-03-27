@@ -37,32 +37,32 @@ mac_address.prototype.start = function () {
   this.communication.on('monitor:arp:create', this._onArpCreateOrUpdate);
   this.communication.on('monitor:arp:update', this._onArpCreateOrUpdate);
   this.communication.on('monitor:arp:delete', this._onArpDelete);
-  this.communication.on('synchronization:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.on('synchronization:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.on('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
-  this.communication.on('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+  this.communication.on('sync:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  this.communication.on('sync:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  this.communication.on('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
+  this.communication.on('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 
   this.communication.emit('worker:job:enqueue', 'person:macAddress:clean', null, '6 hours');
 
-  this.communication.emitAsync('synchronization:incoming:register:setup', {
+  this.communication.emitAsync('sync:incoming:register:setup', {
     companyResource: 'mac_addresses',
     onCompanyResourceAddedCallback: function (macAddress) {
-      instance.communication.emit('synchronization:incoming:person:macAddress:create', macAddress);
+      instance.communication.emit('sync:incoming:person:macAddress:create', macAddress);
     },
     onCompanyResourceChangedCallback: function (macAddress) {
-      instance.communication.emit('synchronization:incoming:person:macAddress:update', macAddress);
+      instance.communication.emit('sync:incoming:person:macAddress:update', macAddress);
     },
     onCompanyResourceRemovedCallback: function (macAddress) {
-      instance.communication.emit('synchronization:incoming:person:macAddress:delete', macAddress);
+      instance.communication.emit('sync:incoming:person:macAddress:delete', macAddress);
     }
   });
 
-  this.communication.emitAsync('synchronization:outgoing:periodic:register', {
+  this.communication.emitAsync('sync:outgoing:periodic:register', {
     companyResource: 'mac_addresses',
-    event: 'synchronization:outgoing:person:mac_address'
+    event: 'sync:outgoing:person:mac_address'
   });
 
-  this.communication.emit('synchronization:outgoing:quickshot:register', {
+  this.communication.emit('sync:outgoing:quickshot:register', {
     companyResource: 'mac_addresses',
     registerEvents: ['person:device:discover:create'],
     outgoingFunction: this._onDeviceDiscoverCreate
@@ -74,10 +74,10 @@ mac_address.prototype.stop = function () {
   this.communication.removeListener('monitor:arp:create', this._onArpCreateOrUpdate);
   this.communication.removeListener('monitor:arp:update', this._onArpCreateOrUpdate);
   this.communication.removeListener('monitor:arp:delete', this._onArpDelete);
-  this.communication.removeListener('synchronization:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.removeListener('synchronization:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.removeListener('synchronization:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
-  this.communication.removeListener('synchronization:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+  this.communication.removeListener('sync:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  this.communication.removeListener('sync:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  this.communication.removeListener('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
+  this.communication.removeListener('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 };
 
 mac_address.prototype._clean = function (params, callback) {
