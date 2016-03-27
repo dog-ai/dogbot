@@ -11,6 +11,8 @@ SendGrid.prototype.type = "email";
 
 SendGrid.prototype.name = "sendgrid";
 
+SendGrid.prototype.events = {};
+
 SendGrid.prototype.load = function (communication) {
   this.communication = communication;
 
