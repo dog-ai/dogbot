@@ -10,8 +10,10 @@ brain.prototype.name = 'brain';
 brain.prototype.databases = [];
 
 brain.prototype.modules = [
-    {type: 'nlp', name: 'wit'},
-    {type: 'action', name: 'slap'}
+  {type: 'nlp', name: 'wit'},
+  {type: 'action', name: 'slap'},
+  {type: 'email', name: 'sendgrid'},
+  {type: 'user', name: 'invite'}
 ];
 
 module.exports = new brain();
