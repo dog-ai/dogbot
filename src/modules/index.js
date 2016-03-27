@@ -16,7 +16,6 @@ function modules() {
 modules.prototype.loadModule = function (type, name, optional, config, reload) {
     var self = this;
 
-
     reload = reload || false;
 
     var module = _.find(this.loaded, {name: name});
