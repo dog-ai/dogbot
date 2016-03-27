@@ -56,7 +56,7 @@ var Bot = {
     heartbeat.initialize(interval, heartbeatFn, function () {
         return Promise.all([
           apps.healthCheck(),
-          sync.healthCheck(),
+          Sync.healthCheck(),
           worker.healthCheck()
         ])
       })
