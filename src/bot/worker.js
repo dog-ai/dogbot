@@ -106,7 +106,7 @@ worker.prototype.initialize = function (enqueue, dequeue, emit) {
           instance.queue.on('scheduler unknown job expiry key', function (message) {
           });
           instance.queue.on('error', function (error) {
-            logger.error(error.stack);
+            //logger.error(error.stack);
           });
 
           enqueue(instance._enqueue);
@@ -121,7 +121,7 @@ worker.prototype.initialize = function (enqueue, dequeue, emit) {
 worker.prototype.terminate = function () {
   return new Promise(function (resolve, reject) {
     if (instance.queue !== undefined && instance.queue !== null) {
-      instance.queue.shutdown(5000, function (error) {
+      instance.queue.shutdown(100, function (error) {
         if (error) {
           reject(error);
         } else {
