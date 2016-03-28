@@ -502,7 +502,7 @@ device.prototype._onMacAddressOnlineAgain = function (mac_address) {
     mac_address.updated_date = new Date();
     mac_address.last_discovery_date = new Date();
     return instance._updateMacAddressByAddress(mac_address.address, mac_address).then(function () {
-      instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address, null);
+      instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address);
     })
   }
 };

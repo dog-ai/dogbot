@@ -39,6 +39,8 @@ LinkedIn.prototype.start = function () {
 };
 
 LinkedIn.prototype.stop = function () {
+  this.communication.emit('worker:job:dequeue', 'person:employee:profile:linkedin:auto');
+
   utils.stopListening.bind(this)([
     'person:employee:profile:linkedin',
     'person:employee:profile:linkedin:auto'
@@ -52,9 +54,11 @@ LinkedIn.prototype._auto = function (params, callback) {
 
   return this._findAllEmployeesBeforeLinkedInLastImportDate(linkedInLastImportDate)
     .mapSeries(function (employee) {
-      _this.communication.emit('person:employee:profile:linkedin', {employee: employee});
+      _this.communication.emit('worker:job:enqueue', 'person:employee:profile:linkedin', {employee: employee});
     })
-    .then(callback)
+    .then(function () {
+      callback();
+    })
     .catch(callback);
 }
 
@@ -91,14 +95,15 @@ LinkedIn.prototype._import = function (params, callback) {
           .catch(callback);
       });
 
-    });
+    })
+    .catch(callback);
 };
 
 LinkedIn.prototype._findAllEmployeesBeforeLinkedInLastImportDate = function (linkedInLastImportDate) {
   var _linkedInLastImportDate = linkedInLastImportDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
   return this.communication.emitAsync('database:person:retrieveAll',
-    'SELECT * FROM employee WHERE last_presence_date < Datetime(?);', [_linkedInLastImportDate])
+    'SELECT * FROM employee WHERE linkedin_last_import_date < Datetime(?) OR linkedin_last_import_date IS NULL;', [_linkedInLastImportDate])
     .then(function (rows) {
       if (rows !== undefined) {
         rows.forEach(function (row) {
