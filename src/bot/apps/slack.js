@@ -2,15 +2,15 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-function slack() {
+function Slack() {
 }
 
-slack.prototype.name = 'slack';
+Slack.prototype.id = 'slack';
 
-slack.prototype.databases = [];
+Slack.prototype.databases = [];
 
-slack.prototype.modules = [
+Slack.prototype.modules = [
     {type: 'io', name: 'slack'}
 ];
 
-module.exports = new slack();
+module.exports = new Slack();
