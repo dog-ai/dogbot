@@ -5,14 +5,14 @@
 var moment = require('moment'),
   _ = require('lodash');
 
-var utils = require('../../../utils.js');
+var utils = require('../utils.js');
 
 var LP = require('linkedin-public-profile-parser');
 
 function LinkedIn() {
 }
 
-LinkedIn.prototype.type = "person";
+LinkedIn.prototype.type = "social";
 
 LinkedIn.prototype.name = "linkedin";
 
