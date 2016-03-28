@@ -24,7 +24,7 @@
     "kue-scheduler": "0.4.2",
     "later": "1.1.10",
     "linkedin-public-profile-parser": "3.0.2",
-    "lodash": "3.10.0",
+    "lodash": "3.10.1",
     "macvendor": "0.1.1",
     "moment": "2.10.3",
     "moment-timezone": "0.4.0",
