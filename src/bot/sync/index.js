@@ -328,28 +328,30 @@ Sync.prototype._registerIncomingSynchronization = function (params, callback) {
             }
           }
 
-          firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).once('value', function (snapshot) {
-            var resource = snapshot.val();
-
-            convert(resource);
-
-            params.onCompanyResourceAddedCallback(_.extend({
+          function addedCallback() {
+            return params.onCompanyResourceAddedCallback(_.extend({
               id: resourceId,
               is_synced: true
             }, resource));
+          }
 
-            firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value', function (snapshot) {
-              var resource = snapshot.val();
+          function changedCallback() {
+            return params.onCompanyResourceChangedCallback(_.extend({
+              id: resourceId,
+              is_synced: true
+            }, resource));
+          }
 
-              logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
+          firebase.child('company_' + params.companyResource + '/' + instance.companyId + '/' + resourceId).on('value', function (snapshot) {
+            var resource = snapshot.val();
 
-              convert(resource);
+            logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(resource));
 
-              params.onCompanyResourceChangedCallback(_.extend({
-                id: resourceId,
-                is_synced: true
-              }, resource));
-            });
+            convert(resource);
+
+            _.once(addedCallback);
+            _.after(1, changedCallback);
+
           });
 
         });
