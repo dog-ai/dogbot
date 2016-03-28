@@ -2,18 +2,18 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-function brain() {
+function Brain() {
 }
 
-brain.prototype.name = 'brain';
+Brain.prototype.id = 'brain';
 
-brain.prototype.databases = [];
+Brain.prototype.databases = [];
 
-brain.prototype.modules = [
+Brain.prototype.modules = [
   {type: 'nlp', name: 'wit'},
   {type: 'action', name: 'slap'},
   {type: 'email', name: 'sendgrid'},
   {type: 'user', name: 'invite'}
 ];
 
-module.exports = new brain();
+module.exports = new Brain();
