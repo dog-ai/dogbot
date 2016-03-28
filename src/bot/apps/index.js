@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js'),
@@ -13,14 +13,14 @@ var APPS_DIR = path.join(__dirname, '/');
 function apps() {
 }
 
-apps.prototype.enableApp = function (name, config) {
+apps.prototype.enableApp = function (id, config) {
     var self = this;
 
-    if (_.find(this.enabled, {name: name}) || !_.contains(this.available, name)) {
+    if (_.find(this.enabled, {id: id}) || !_.contains(this.available, id)) {
         return;
     }
 
-    var app = require(APPS_DIR + name);
+    var app = require(APPS_DIR + id);
     var promises = [];
 
     _.forEach(app.databases, function (database) {
@@ -41,7 +41,7 @@ apps.prototype.enableApp = function (name, config) {
         .then(function () {
             self.enabled.push(app);
 
-            logger.info('Enabled app: ' + app.name);
+            logger.info('Enabled app: ' + app.id);
         })
         .catch(function (error) {
 
@@ -55,16 +55,16 @@ apps.prototype.enableApp = function (name, config) {
                 promises.push(self.modules.unloadModule(module.name));
             });
 
-            logger.error('Unable to enable app ' + name + ' because ' + error.message);
+            logger.error('Unable to enable app ' + id + ' because ' + error.message);
 
             return Promise.all(promises);
         });
 };
 
-apps.prototype.disableApp = function (name) {
+apps.prototype.disableApp = function (id) {
     var self = this;
 
-    var app = _.find(this.enabled, {name: name});
+    var app = _.find(this.enabled, {id: id});
 
     if (!app) {
         return;
@@ -87,12 +87,12 @@ apps.prototype.disableApp = function (name) {
             return Promise.all(promises);
         })
         .then(function () {
-            _.remove(self.enabled, {name: name});
+            _.remove(self.enabled, {id: id});
 
-            logger.info('Disabled app: ' + name);
+            logger.info('Disabled app: ' + id);
 
         }).catch(function (error) {
-            logger.info('Unable to disable app ' + name + ' because ' + error.message);
+          logger.info('Unable to disable app ' + id + ' because ' + error.message);
         });
 };
 
@@ -102,7 +102,7 @@ apps.prototype.disableAllApps = function () {
     var promises = [];
 
     _.forEach(this.enabled, function (app) {
-        promises.push(self.disableApp(app.name));
+        promises.push(self.disableApp(app.id));
     });
 
     return Promise.all(promises);
