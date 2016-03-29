@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var logger = require('../../utils/logger.js'),
@@ -74,7 +74,7 @@ bonjour.prototype._execAvahiBrowse = function () {
             process.stdin.pause();
             process.stderr.pause();
             process.kill();
-            reject(new Error("Child process hanged"));
+            resolve(bonjours);
         }, 15000); // wait 15 seconds for process to finish
 
         process.stdout.setEncoding('utf8');
