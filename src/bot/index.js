@@ -49,7 +49,7 @@ var Bot = {
   error: function (error, callback) {
     // https://github.com/winstonjs/winston/pull/838
     var _callback = callback == undefined ? null : callback;
-    logger.log('error', error.message, error, _callback);
+    logger.error(error.message, error, _callback);
   },
 
   heartbeat: function (interval, heartbeatFn, callback) {
