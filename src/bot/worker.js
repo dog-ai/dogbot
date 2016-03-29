@@ -69,28 +69,22 @@ worker.prototype.initialize = function (enqueue, dequeue, emit) {
           instance.queue.on('job enqueue', function (id, type) {
             kue.Job.get(id, function (error, job) {
               logger.debug('Job ' + id + ' queued with ' + job.data.event +
-                (job.data.params !== undefined && job.data.params !== null ? ' and params ' + JSON.stringify(job.data.params) : ''));
+                (job.data.params ? ' and params ' + JSON.stringify(job.data.params) : ''));
             });
           });
           instance.queue.on('job complete', function (id, result) {
-
             logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''));
 
             kue.Job.get(id, function (error, job) {
-              if (error) {
-                return;
+              if (!error) {
+                job.remove();
               }
-
-              job.remove(function (error) {
-                if (error) {
-                  logger.error(error.stack);
-                }
-              });
             });
           });
           instance.queue.on('job failed', function (id, error) {
             logger.debug('Job ' + id + ' failed because of ' + error.message);
-            logger.error(error);
+
+            logger.error(error.message, error);
           });
           instance.queue.on('job failed attempt', function (id, attempts) {
             logger.debug('Job ' + id + ' failed ' + attempts + ' times');
@@ -99,14 +93,12 @@ worker.prototype.initialize = function (enqueue, dequeue, emit) {
             instance._schedules[job.data.event] = _.pick(job.data, ['expiryKey', 'dataKey']);
           });
           instance.queue.on('schedule error', function (error) {
-            logger.error('schedule error: ' + error);
           });
           instance.queue.on('already scheduled', function (job) {
           });
           instance.queue.on('scheduler unknown job expiry key', function (message) {
           });
           instance.queue.on('error', function (error) {
-            //logger.error(error.stack);
           });
 
           enqueue(instance._enqueue);
@@ -158,7 +150,7 @@ worker.prototype._enqueue = function (event, params, schedule, callbacks) {
   } else {
     job.save(function (error) {
       if (error) {
-        logger.error(error.stack);
+        throw error;
       }
     });
   }
@@ -169,7 +161,7 @@ worker.prototype._dequeue = function (event) {
   if (instance.queue && instance._schedules[event]) {
     instance.queue.remove(instance._schedules[event], function (error) {
       if (error) {
-        logger.error(error.stack);
+        throw error;
       } else {
         delete instance._schedules[event];
       }
