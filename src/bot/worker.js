@@ -35,6 +35,7 @@ worker.prototype.initialize = function (enqueue, dequeue, emit) {
       instance.databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
         .then(function (result) {
 
+          console.log(result);
           instance.queue = kue.createQueue(result);
 
           var process = function (job, callback) {
