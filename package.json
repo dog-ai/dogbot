@@ -23,7 +23,7 @@
     "kue": "0.9.6",
     "kue-scheduler": "0.4.2",
     "later": "1.1.10",
-    "linkedin-public-profile-parser": "3.0.2",
+    "linkedin-public-profile-parser" : "git://github.com/hfreire/linkedin-public-profile-parser.git#137f5d8",
     "lodash": "3.10.1",
     "macvendor": "0.1.1",
     "moment": "2.10.3",
