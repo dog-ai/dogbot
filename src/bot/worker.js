@@ -35,7 +35,6 @@ worker.prototype.initialize = function (enqueue, dequeue, emit) {
       instance.databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
         .then(function (result) {
 
-          console.log(result);
           instance.queue = kue.createQueue(result);
 
           var process = function (job, callback) {
@@ -113,14 +112,17 @@ worker.prototype.initialize = function (enqueue, dequeue, emit) {
 
 worker.prototype.terminate = function () {
   return new Promise(function (resolve, reject) {
-    if (instance.queue !== undefined && instance.queue !== null) {
-      instance.queue.shutdown(100, function (error) {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
+    if (instance.queue) {
+      try {
+        instance.queue.shutdown(100, function (error) {
+          if (error) {
+            //reject(error);
+            resolve()
+          } else {
+            resolve();
+          }
+        });
+      } catch (ignored) {}
     } else {
       resolve();
     }
@@ -149,11 +151,13 @@ worker.prototype._enqueue = function (event, params, schedule, callbacks) {
   if (schedule) {
     instance.queue.every(schedule, job);
   } else {
-    job.save(function (error) {
-      if (error) {
-        throw error;
-      }
-    });
+    try {
+      job.save(function (error) {
+        if (error) {
+          throw error;
+        }
+      });
+    } catch (ignored) {}
   }
 };
 
@@ -162,7 +166,7 @@ worker.prototype._dequeue = function (event) {
   if (instance.queue && instance._schedules[event]) {
     instance.queue.remove(instance._schedules[event], function (error) {
       if (error) {
-        throw error;
+        //throw error;
       } else {
         delete instance._schedules[event];
       }
