@@ -17,10 +17,3 @@ DOGBOT_HOME
 DOGBOT_SECRET
 DOGBOT_REPO_BRANCH
 WATCHDOG_USEC
-
-
-
-Important:
-Sticky dependencies:
-
-kue: need to upgrade but still waiting from kue-scheduler
