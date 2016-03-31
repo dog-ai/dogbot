@@ -19,7 +19,7 @@ LinkedIn.prototype.name = "linkedin";
 
 LinkedIn.prototype.events = {};
 
-LinkedIn.prototype.load = function (communication, config) {
+LinkedIn.prototype.load = function (communication) {
   this.communication = communication;
 
   this.start();
@@ -50,44 +50,82 @@ LinkedIn.prototype.stop = function () {
   ]);
 };
 
+LinkedIn.prototype._getLinkedInProfile = function (linkedInProfileUrl) {
+  return new Promise(function (resolve, reject) {
+    LP.profile(linkedInProfileUrl, function (error, profile) {
+      if (error) {
+        return reject(error);
+      } else {
+        return resolve(profile);
+      }
+    });
+  });
+};
+
 LinkedIn.prototype._importProfile = function (params, callback) {
   var _this = this;
 
-  var employeeId = params.employee.id;
+  var linkedInProfileUrl = params.employee_linkedin_profile_url;
+  var employeeId = params.employee_id;
 
-  if (!employeeId) {
-    return callback();
+  function updateEmployeeWithProfile(employee, profile) {
+    employee.full_name = profile.fullname || employee.full_name;
+    employee.professional_headline = profile.current || employee.professional_headline;
+    employee.picture_url = profile.picture || employee.picture_url;
+    employee.updated_date = new Date();
+    employee.linkedin_profile_url = profile.canonicalurl || employee.linkedin_profile_url;
+    employee.linkedin_last_import_date = new Date();
+    employee.is_synced = false;
+    return employee;
   }
 
-  return this._findEmployeeById(employeeId)
-    .then(function (employee) {
+  return _this._getLinkedInProfile(linkedInProfileUrl)
+    .then(function (profile) {
 
-      if (!employee || !employee.linkedin_profile_url) {
-        return callback();
+      if (employeeId) {
+        return _this._findEmployeeById(employeeId)
+          .then(function (employee) {
+            if (employee) {
+               employee = updateEmployeeWithProfile(employee, profile);
+
+              return _this._updateEmployeeById(employee.id, employee)
+                .then(function () {
+                  _this.communication.emit('person:employee:update', employee);
+                });
+            }
+          })
+          .then(function () {
+            return profile;
+          });
+      } else {
+        return _this._findEmployeeByLinkedInProfileUrl(profile.canonicalurl)
+          .then(function (employee) {
+            if (employee) {
+              employee = updateEmployeeWithProfile(employee, profile);
+
+              return _this._updateEmployeeById(employee.id, employee)
+                .then(function () {
+                  _this.communication.emit('person:employee:update', employee);
+                });
+            } else {
+              employee = {};
+              employee.id = _this._generatePushID();
+              employee.created_date = new Date();
+              employee = updateEmployeeWithProfile(employee, profile);
+
+              return _this._addEmployee(employee)
+                .then(function () {
+                  _this.communication.emit('person:employee:update', employee);
+                });
+            }
+          })
+          .then(function () {
+            return profile;
+          });
       }
-
-      LP.profile(employee.linkedin_profile_url, function (error, data) {
-        if (error) {
-          return callback(error);
-        }
-
-        employee.full_name = data.fullname || employee.full_name;
-        employee.professional_headline = data.current || employee.professional_headline;
-        employee.picture_url = data.picture || employee.picture_url;
-        employee.updated_date = new Date();
-        employee.linkedin_last_import_date = new Date();
-        employee.is_synced = false;
-
-        return _this._updateEmployeeById(employee.id, employee)
-          .then(function () {
-            _this.communication.emit('person:employee:update', employee);
-          })
-          .then(function () {
-            return callback(null, data);
-          })
-          .catch(callback);
-      });
-
+    })
+    .then(function (profile) {
+      return callback(null, profile);
     })
     .catch(callback);
 };
@@ -122,21 +160,7 @@ LinkedIn.prototype._importCompany = function (params, callback) {
     } else {
 
       Promise.mapSeries(data.employee_urls, function (employee_url) {
-          return _this._findEmployeeByLinkedInProfileUrl(employee_url)
-            .then(function (employee) {
-              if (!employee) {
-                employee = {};
-                employee.id = _this._generatePushID();
-                employee.created_date = new Date();
-                employee.updated_date = new Date();
-                employee.linkedin_profile_url = employee_url;
-
-                return _this._addEmployee(employee)
-                  .then(function () {
-                    _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {employee: employee});
-                  })
-              }
-            })
+          return _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {employee_linkedin_profile_url: employee_url});
         })
         .then(function () {
           return callback(null, data);
