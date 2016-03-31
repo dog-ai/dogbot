@@ -38,7 +38,7 @@ nosql.prototype._open = function (prefix) {
 
             resolve({
               redis: {
-                socket: __dirname + '/../../../var/run/redis.sock',
+                socket: REDIS_UNIX_SOCKET,
                 options: {
                   max_attempts: 1
                 }
