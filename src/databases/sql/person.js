@@ -49,7 +49,7 @@ person.prototype.start = function (communication) {
             'last_presence_date DATETIME DEFAULT NULL,' +
             'is_to_be_deleted INTEGER NOT NULL DEFAULT 0,' +
             'is_synced INTEGER NOT NULL DEFAULT 0, ' +
-            'last_discovery_date DATETIME' +
+            'last_scan_date DATETIME' +
             ');',
             []);
         })
