@@ -124,8 +124,7 @@ arp.prototype._execArpScan = function (callback) {
       '--ignoredups', // Don't display duplicate packets.
       '--timeout=1000', // Set initial per host timeout to ms.
       '--retry=4',
-      '--plain', // Display plain output showing only responding hosts.
-      '-A aaaaaaaaaaaaaaaaaa' // Append data to the packet. Make routers/linux kernel happier?
+      '--plain' // Display plain output showing only responding hosts.
     ]);
 
     _process.stdout.setEncoding('utf8');
