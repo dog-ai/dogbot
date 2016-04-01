@@ -113,10 +113,11 @@ ip.prototype._execFping = function () {
 
         var process = require('child_process')
             .spawn('fping', [
-                '-a',
-                '-r 0',
-                '-i 10',
-                '-t 100',
+                '-a', // Show targets that are alive
+                '-r 1', // Number of retries (default 3)
+                '-i 10', // Interval between sending ping packets (in millisec) (default 25)
+                '-t 500', // Individual target initial timeout (in millisec) (default 500)
+                '-q',
                 '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
             ]);
 
