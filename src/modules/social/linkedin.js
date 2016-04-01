@@ -76,6 +76,7 @@ LinkedIn.prototype._importProfile = function (params, callback) {
     employee.linkedin_profile_url = profile.canonicalurl || employee.linkedin_profile_url;
     employee.linkedin_last_import_date = new Date();
     employee.is_synced = false;
+
     return employee;
   }
 
@@ -86,7 +87,7 @@ LinkedIn.prototype._importProfile = function (params, callback) {
         return _this._findEmployeeById(employeeId)
           .then(function (employee) {
             if (employee) {
-               employee = updateEmployeeWithProfile(employee, profile);
+              employee = updateEmployeeWithProfile(employee, profile);
 
               return _this._updateEmployeeById(employee.id, employee)
                 .then(function () {
@@ -154,16 +155,64 @@ LinkedIn.prototype._importCompany = function (params, callback) {
     return callback();
   }
 
-  LP.company(linkedInCompanyPageUrl, function (error, data) {
+  LP.company(linkedInCompanyPageUrl, function (error, company) {
     if (error) {
       return callback(error);
     } else {
 
-      Promise.mapSeries(data.employee_urls, function (employee_url) {
-          return _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {employee_linkedin_profile_url: employee_url});
+      var employee_urls = _.clone(company.employee_urls);
+
+      return Promise.mapSeries(company.employee_urls, function (employee_url) {
+
+          return _this._getLinkedInProfile(employee_url)
+            .then(function (profile) {
+
+              var employee_related_urls = [];
+
+              if (profile.related) {
+                for (var i = 0; i < profile.related.length; i++) {
+                  if (profile.related[i].headline.indexOf(company.name) != -1) {
+                    employee_related_urls.push(profile.related[i].url);
+                  }
+                }
+              }
+
+              employee_urls = _.union(employee_urls, employee_related_urls);
+
+              var employee_related_related_urls = [];
+
+              return Promise.mapSeries(employee_related_urls, function (related_employee_url) {
+
+                if (!_.includes(employee_urls, related_employee_url)) {
+                  return _this._getLinkedInProfile(related_employee_url)
+                    .then(function (profile) {
+
+                      if (profile.related) {
+                        for (var i = 0; i < profile.related.length; i++) {
+                          if (profile.related[i].headline.indexOf(company.name) != -1) {
+                            employee_related_related_urls.push(profile.related[i].url);
+                          }
+                        }
+                      }
+                    }).delay(2000);
+                }
+              })
+                .finally(function () {
+                  employee_urls = _.union(employee_urls, employee_related_related_urls);
+                });
+            })
+            .delay(3000)
+            .catch(function () {
+            });
+
         })
         .then(function () {
-          return callback(null, data);
+          _.forEach(employee_urls, function (employee_url) {
+            _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {employee_linkedin_profile_url: employee_url});
+          });
+        })
+        .then(function () {
+          return callback(null, employee_urls);
         })
         .catch(callback);
     }

@@ -135,6 +135,7 @@ worker.prototype.terminate = function () {
 worker.prototype._enqueue = function (event, params, schedule, callbacks) {
   var type;
   switch (event) {
+    case 'social:linkedin:company:import':
     case 'person:device:discover':
       type = JobTypeEnum.SLOW;
       break;

@@ -167,7 +167,7 @@ device.prototype._discover = function (macAddress, callback) {
                   .then(function (row) {
                     macAddress.device_id = _device.id = row.id;
                     macAddress.updated_date = new Date();
-                    macAddress.last_discovery_date = new Date();
+                    macAddress.last_scan_date = new Date();
                     return instance._updateMacAddressByAddress(macAddress.address, macAddress)
                       .then(function () {
 
@@ -496,11 +496,10 @@ device.prototype._onMacAddressOnlineAgain = function (mac_address) {
       });
   }
 
-  if (mac_address.last_discovery_date === null ||
-    moment(mac_address.last_discovery_date).isBefore(moment().subtract(1, 'hour'))) {
+  if (!mac_address.last_scan_date || moment(mac_address.last_scan_date).isBefore(moment().subtract(1, 'hour'))) {
 
     mac_address.updated_date = new Date();
-    mac_address.last_discovery_date = new Date();
+    mac_address.last_scan_date = new Date();
     return instance._updateMacAddressByAddress(mac_address.address, mac_address).then(function () {
       instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address);
     })
@@ -590,8 +589,8 @@ device.prototype._findMacAddressesByDeviceId = function (id) {
             row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
           }
 
-          if (row.last_discovery_date !== undefined && row.last_discovery_date !== null) {
-            row.last_discovery_date = new Date(row.last_discovery_date.replace(' ', 'T'));
+          if (row.last_scan_date !== undefined && row.last_scan_date !== null) {
+            row.last_scan_date = new Date(row.last_scan_date.replace(' ', 'T'));
           }
         });
       }
@@ -743,8 +742,8 @@ device.prototype._updateMacAddressByAddress = function (address, mac_address) {
     _macAddress.last_presence_date = _macAddress.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
   }
 
-  if (_macAddress.last_discovery_date !== undefined && _macAddress.last_discovery_date !== null && _macAddress.last_discovery_date instanceof Date) {
-    _macAddress.last_discovery_date = _macAddress.last_discovery_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+  if (_macAddress.last_scan_date !== undefined && _macAddress.last_scan_date !== null && _macAddress.last_scan_date instanceof Date) {
+    _macAddress.last_scan_date = _macAddress.last_scan_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
   }
 
   var keys = _.keys(_macAddress);

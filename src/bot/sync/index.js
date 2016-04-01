@@ -479,7 +479,7 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
 
       logger.debug('sending ' + companyResource + ': %s', JSON.stringify(companyResourceObj));
 
-      val = _.omit(val, ['is_to_be_deleted', 'last_discovery_date']);
+      val = _.omit(val, ['is_to_be_deleted', 'last_scan_date']);
 
       if (companyResource == 'mac_addresses') {
         val = _.omit(val, ['is_present']);
