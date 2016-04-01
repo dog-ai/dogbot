@@ -348,8 +348,8 @@ mac_address.prototype._findByAddress = function (mac_address, callback) {
           row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
         }
 
-        if (row.last_discovery_date !== undefined && row.last_discovery_date !== null) {
-          row.last_discovery_date = new Date(row.last_discovery_date.replace(' ', 'T'));
+        if (row.last_scan_date !== undefined && row.last_scan_date !== null) {
+          row.last_scan_date = new Date(row.last_scan_date.replace(' ', 'T'));
         }
       }
 
@@ -430,8 +430,8 @@ mac_address.prototype._add = function (mac_address, callback) {
     mac_address.last_presence_date = mac_address.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
   }
 
-  if (mac_address.last_discovery_date !== undefined && mac_address.last_discovery_date !== null && mac_address.last_discovery_date instanceof Date) {
-    mac_address.last_discovery_date = mac_address.last_discovery_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+  if (mac_address.last_scan_date !== undefined && mac_address.last_scan_date !== null && mac_address.last_scan_date instanceof Date) {
+    mac_address.last_scan_date = mac_address.last_scan_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
   }
 
   var keys = _.keys(mac_address);
@@ -469,8 +469,8 @@ mac_address.prototype._updateByAddress = function (address, mac_address) {
     _macAddress.last_presence_date = _macAddress.last_presence_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
   }
 
-  if (_macAddress.last_discovery_date !== undefined && _macAddress.last_discovery_date !== null && _macAddress.last_discovery_date instanceof Date) {
-    _macAddress.last_discovery_date = _macAddress.last_discovery_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+  if (_macAddress.last_scan_date !== undefined && _macAddress.last_scan_date !== null && _macAddress.last_scan_date instanceof Date) {
+    _macAddress.last_scan_date = _macAddress.last_scan_date.toISOString().replace(/T/, ' ').replace(/\..+/, '');
   }
 
   var keys = _.keys(_macAddress);

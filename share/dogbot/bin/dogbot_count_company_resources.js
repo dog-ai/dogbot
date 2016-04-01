@@ -24,15 +24,18 @@ var _ = require('lodash'),
 function countResources(companyId, companyResource) {
     return new Promise(function (resolve, reject) {
         firebase.child('company_' + companyResource + '/' + companyId).once("value", function (snapshot) {
-            var resources = snapshot.val() && _.size(snapshot.val()) || 0;
+            var resources = snapshot.val();
+            var resourcesCount = resources && _.size(resources) || 0;
 
             firebase.child('companies/' + companyId + '/' + companyResource).once("value", function (snapshot) {
-                var companyResources = snapshot.val() && _.size(snapshot.val()) || 0;
+                var companyResources = snapshot.val();
+                var companyResourcesCount = companyResources && _.size(companyResources) || 0;
 
-                if (resources != companyResources) {
-                    reject(new Error(resources + " != " + companyResources));
+                if (resourcesCount != companyResourcesCount) {
+
+                    reject(new Error(_.difference(_.keys(resources), _.keys(companyResources))));
                 } else {
-                    resolve(companyResources);
+                    resolve(companyResourcesCount);
                 }
 
             }, reject);
@@ -59,7 +62,7 @@ firebase.authWithCustomToken(FIREBASE_CUSTOM_USER_ADMIN_TOKEN, function (error) 
                         console.log(resource + ': ' + count);
                     })
                     .catch(function (error) {
-                        console.error('Resource ' + resource + ' count mismatch: ' + error);
+                        console.error('Resource ' + resource + ' count mismatch: ' + error.message);
                     }));
             });
 
