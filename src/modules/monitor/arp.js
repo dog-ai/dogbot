@@ -116,14 +116,20 @@ arp.prototype._execArpScan = function (callback) {
     var _interface = process.platform === 'linux' ? "wlan0" : "en0";
 
     var spawn = require('child_process').spawn;
-    var _process = spawn('arp-scan', ['--interface=' + _interface, '-lqNg', '-t 500', '-r 4']);
+    var _process = spawn('arp-scan', [
+      '--interface=' + _interface,
+      '--localnet',
+      '--numeric', // IP addresses only, no hostnames.
+      '--quiet',
+      '--ignoredups', // Don't display duplicate packets.
+      '--timeout=1000', // Set initial per host timeout to ms.
+      '--retry=4',
+      '--plain', // Display plain output showing only responding hosts.
+      '-A aaaaaaaaaaaaaaaaaa' // Append data to the packet. Make routers/linux kernel happier?
+    ]);
 
     _process.stdout.setEncoding('utf8');
     _process.stdout.pipe(require('split')()).on('data', function (line) {
-        if (line.indexOf('\t') === -1) {
-            return;
-        }
-
         var values = line.split('\t');
 
         var arp = {
