@@ -2,8 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../../utils/logger.js'),
-  _ = require('lodash'),
+var _ = require('lodash'),
   moment = require('moment'),
   later = require('later'),
   Promise = require("bluebird");
@@ -37,7 +36,6 @@ presence.prototype._updateAllEmployeeStatsWithYesterday = function (params, call
       callback();
     })
     .catch(function (error) {
-      logger.error(error.stack);
       callback(error);
     });
 };
@@ -53,9 +51,7 @@ presence.prototype._updateAllEmployeeStatsForDate = function (date) {
             return self._updateEmployeePeriodStats(employee, date, period);
           });
         })
-        .catch(function (error) {
-          logger.error(error.stack);
-        });
+        .catch(function () {});
     });
 };
 
@@ -187,9 +183,7 @@ presence.prototype._updateEmployeePeriodStats = function (employee, date, period
             return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, _newStats);
           }
         })
-        .catch(function (error) {
-          logger.error(error.stack);
-        });
+        .catch(function () {});
     });
 };
 
