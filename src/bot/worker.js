@@ -26,87 +26,85 @@ var JobTypeTtlEnum = Object.freeze({
 function worker() {
 }
 
-worker.prototype.initialize = function (enqueue, dequeue, emit) {
+worker.prototype.initialize = function (enqueue, dequeue, emit, report) {
   return new Promise(function (resolve, reject) {
 
     if (!instance.databases) {
-      reject(new Error("Unable to initialize worker because no database available"));
-    } else {
-      instance.databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
-        .then(function (result) {
-
-          instance.queue = kue.createQueue(result);
-
-          var process = function (job, callback) {
-            var id = job.id;
-            var event = job.data.event;
-            var params = job.data.params;
-            var callbacks = job.data.callbacks || {};
-
-            logger.debug('Job ' + id + ' started' + (params ? ' with params ' + JSON.stringify(params) : ''));
-
-            emit(event, params)
-              .then(function (result) {
-                callback(null, result);
-
-                if (callbacks.resolve) {
-                  emit(callbacks.resolve, result);
-                }
-              })
-              .catch(function (error) {
-                callback(error);
-
-                if (callbacks.reject) {
-                  emit(callbacks.reject, error);
-                }
-              });
-          };
-
-          instance.queue.process(JobTypeEnum.FAST, process);
-          instance.queue.process(JobTypeEnum.NORMAL, process);
-          instance.queue.process(JobTypeEnum.SLOW, 2, process);
-
-          instance.queue.on('job enqueue', function (id, type) {
-            kue.Job.get(id, function (error, job) {
-              logger.debug('Job ' + id + ' queued with ' + job.data.event +
-                (job.data.params ? ' and params ' + JSON.stringify(job.data.params) : ''));
-            });
-          });
-          instance.queue.on('job complete', function (id, result) {
-            logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''));
-
-            kue.Job.get(id, function (error, job) {
-              if (!error) {
-                job.remove();
-              }
-            });
-          });
-          instance.queue.on('job failed', function (id, error) {
-            logger.debug('Job ' + id + ' failed because of ' + error.message);
-
-            logger.error(error.message, error);
-          });
-          instance.queue.on('job failed attempt', function (id, attempts) {
-            logger.debug('Job ' + id + ' failed ' + attempts + ' times');
-          });
-          instance.queue.on('schedule success', function (job) {
-            instance._schedules[job.data.event] = _.pick(job.data, ['expiryKey', 'dataKey']);
-          });
-          instance.queue.on('schedule error', function (error) {
-          });
-          instance.queue.on('already scheduled', function (job) {
-          });
-          instance.queue.on('scheduler unknown job expiry key', function (message) {
-          });
-          instance.queue.on('error', function (error) {
-          });
-
-          enqueue(instance._enqueue);
-          dequeue(instance._dequeue);
-
-        })
-        .then(resolve).catch(reject);
+      return reject(new Error("Unable to initialize worker because no database available"));
     }
+
+    return instance.databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
+      .then(function (database) {
+
+        instance.queue = kue.createQueue(database);
+
+        var process = function (job, callback) {
+          var id = job.id;
+          var event = job.data.event;
+          var params = job.data.params;
+          var callbacks = job.data.callbacks || {};
+
+          logger.debug('Job ' + id + ' started' + (params ? ' with params ' + JSON.stringify(params) : ''));
+
+          function success (result) {
+            callback(null, result);
+
+            if (callbacks.resolve) {
+              emit(callbacks.resolve, result);
+            }
+          }
+
+          function failure (error) {
+            logger.error(error.message, message);
+
+            callback(error);
+
+            if (callbacks.reject) {
+              emit(callbacks.reject, error);
+            }
+          }
+
+          emit(event, params)
+            .then(success)
+            .catch(failure);
+        };
+
+        instance.queue.process(JobTypeEnum.FAST, process);
+        instance.queue.process(JobTypeEnum.NORMAL, process);
+        instance.queue.process(JobTypeEnum.SLOW, 2, process);
+
+        instance.queue.on('job enqueue', function (id) {
+          kue.Job.get(id, function (error, job) {
+            logger.debug('Job ' + id + ' queued with ' + job.data.event +
+              (job.data.params ? ' and params ' + JSON.stringify(job.data.params) : ''));
+          });
+        });
+        instance.queue.on('job complete', function (id, result) {
+          logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''));
+
+          kue.Job.get(id, function (error, job) {
+            if (!error) {
+              job.remove();
+            }
+          });
+        });
+        instance.queue.on('job failed', function (id, error) {
+          logger.debug('Job ' + id + ' failed because of ' + error);
+        });
+        instance.queue.on('job failed attempt', function (id, attempts) {
+          logger.debug('Job ' + id + ' failed ' + attempts + ' times');
+        });
+        instance.queue.on('error', function (error) {
+        });
+
+        enqueue(instance._enqueue);
+        dequeue(instance._dequeue);
+      })
+      .then(function () {
+        return resolve();
+      })
+      .catch(reject);
+
   });
 };
 
