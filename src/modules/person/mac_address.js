@@ -310,6 +310,9 @@ mac_address.prototype._onMacAddressOutgoingSynchronization = function (params, c
           row.created_date = new Date(row.created_date.replace(' ', 'T'));
           row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
           row.last_presence_date = new Date(row.last_presence_date.replace(' ', 'T'));
+          if (row.last_scan_date !== undefined && row.last_scan_date !== null) {
+            row.last_scan_date = new Date(row.last_scan_date.replace(' ', 'T'));
+          }
           row.is_present = row.is_present == 1;
 
           callback(error, row, function (error, mac_address) {
