@@ -325,6 +325,10 @@ Sync.prototype._registerIncomingSynchronization = function (params, callback) {
               if (resource.last_presence_date !== undefined && resource.last_presence_date !== null) {
                 resource.last_presence_date = new Date(resource.last_presence_date);
               }
+
+              if (resource.last_scan_date !== undefined && resource.last_scan_date !== null) {
+                resource.last_scan_date = new Date(resource.last_scan_date);
+              }
             }
           }
 
