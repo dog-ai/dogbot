@@ -1,6 +1,5 @@
 node_modules
 var
-*.iml
-*.ipr
-*.iws
+share/dogbot/bin/.cache
+dogbot.iml
 .foreverignore
