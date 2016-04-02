@@ -21,7 +21,7 @@ var Bot = {
   start: function (callback) {
     var _this = this;
 
-    logger.info("Starting dogbot");
+    logger.info('Starting dogbot');
 
     this._configureWorker()
       .then(function () {
@@ -29,9 +29,8 @@ var Bot = {
         _this._configureDataSync()
           .then(_this._configureApps)
           .then(_this._configureTaskSync)
-          .catch(logger.error)
       })
-      .catch(logger.error)
+      .catch(_this.report)
       .finally(callback);
   },
 
@@ -42,7 +41,7 @@ var Bot = {
       .then(function () {
         logger.info('Stopped dogbot');
       })
-      .catch(logger.error)
+      .catch(this.report)
       .finally(callback);
   },
 
