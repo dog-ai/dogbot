@@ -86,7 +86,9 @@ switch (ENVIRONMENT) {
 
     RollbarLogger.prototype.log = function (level, msg, meta, callback) {
       if (level === 'error') {
-        rollbar.handleError(meta instanceof Error ? meta : msg, function (error) {
+        var error = meta instanceof Error ? meta : msg;
+
+        rollbar.handleError(error, function (error) {
           if (error) {
             return callback(error);
           } else {

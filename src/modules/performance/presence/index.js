@@ -2,8 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../../utils/logger.js'),
-  _ = require('lodash'),
+var _ = require('lodash'),
   moment = require('moment');
 
 var utils = require('../../utils.js');

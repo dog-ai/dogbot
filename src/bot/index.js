@@ -46,9 +46,14 @@ var Bot = {
       .finally(callback);
   },
 
-  error: function (error, callback) {
+  report: function (error, callback) {
+    if (!error) {
+      return;
+    }
+
     // https://github.com/winstonjs/winston/pull/838
     var _callback = callback == undefined ? null : callback;
+
     logger.error(error.message, error, _callback);
   },
 
@@ -80,7 +85,8 @@ var Bot = {
       },
       function (event, params) {
         return communication.emitAsync(event, params);
-      });
+      }
+    );
   },
 
   _configureDataSync: function () {
