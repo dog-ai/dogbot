@@ -19,7 +19,7 @@ presence.prototype.start = function () {
 
   utils.startListening.bind(this)({'performance:presence:stats:update:yesterday': this._updateAllEmployeeStatsWithYesterday.bind(this)});
 
-  this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 minute');
+  this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 hour');
 };
 
 presence.prototype.stop = function () {
