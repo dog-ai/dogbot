@@ -27,7 +27,7 @@ var mkdirSync = require("fs").mkdirSync,
 
 var performancePresence = require('../../../src/modules/performance/presence');
 
-var synchronization = require('../../../src/bot/synchronization');
+var synchronization = require('../../../src/bot/sync');
 
 var _computeAlltimeStats = function (companyId, employeeId, performanceName, performance) {
 
