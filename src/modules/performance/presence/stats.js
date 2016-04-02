@@ -19,7 +19,7 @@ presence.prototype.start = function () {
 
   utils.startListening.bind(this)({'performance:presence:stats:update:yesterday': this._updateAllEmployeeStatsWithYesterday.bind(this)});
 
-  this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 hour');
+  this.communication.emit('worker:job:enqueue', 'performance:presence:stats:update:yesterday', null, '1 minute');
 };
 
 presence.prototype.stop = function () {
@@ -69,8 +69,12 @@ presence.prototype._updateEmployeeDailyStats = function (employee, date) {
 
   return Promise.join(
     this._findAllPresencesByEmployeeIdAndBetweenDates(employee.id, startDate, endDate),
-    this._findStatsByEmployeeIdAndPeriod(employee.id, 'day'), function (performance, oldStats) {
-      return self._computeEmployeeDailyStats(employee, date, performance)
+    this._findStatsByEmployeeIdAndPeriod(employee.id, 'day'), function (presences, oldStats) {
+      if (!presences) {
+        return;
+      }
+
+      return self._computeEmployeeDailyStats(employee, date, presences)
         .then(function (newStats) {
           var metadata = ['is_synced', 'created_date', 'updated_date', 'name', 'employee_id'];
 
@@ -175,6 +179,10 @@ presence.prototype._updateEmployeePeriodStats = function (employee, date, period
 
           if (!_.isEqual(_.omit(oldStats, metadata), _.omit(newStats, metadata))) {
             var _newStats = _.extend(newStats, {is_synced: false});
+
+            if (oldStats) {
+              _newStats.created_date = oldStats.created_date;
+            }
 
             return self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, _newStats);
           }

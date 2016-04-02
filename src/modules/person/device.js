@@ -103,7 +103,7 @@ device.prototype._discover = function (macAddress, callback) {
             });
           })
           .then(function (result) {
-            logger.info('Scan result for ' + macAddress.address + ': ' + JSON.stringify(result, null, 2));
+            logger.debug('Scan result for ' + macAddress.address + ': ' + JSON.stringify(result, null, 2));
 
             var _device = device || {};
 

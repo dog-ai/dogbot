@@ -206,9 +206,19 @@ Sync.prototype._registerIncomingSynchronization = function (params, callback) {
             dateFormatPattern = 'YYYY/MM/DD';
             break;
           case 'month':
+            // if start of month retrieve previous month stats
+            if (date.date() === 1) {
+              date.subtract(1, 'days');
+            }
+
             dateFormatPattern = 'YYYY/MM';
             break;
           case 'year':
+            // if start of year retrieve previous month stats
+            if (date.dayOfYear() === 1) {
+              date.subtract(1, 'days');
+            }
+
             dateFormatPattern = 'YYYY';
             break;
           case 'all-time':
@@ -454,7 +464,6 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
 
             logger.debug('Outgoing employee performance day stats: %s', JSON.stringify(companyResourceObj));
         }
-        //val = _.omit(val, ['period']);
 
         isStats = true;
       } else {
