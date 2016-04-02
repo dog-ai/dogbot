@@ -407,6 +407,9 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
     if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
       val.last_presence_date = moment(val.last_presence_date).format();
     }
+    if (val.last_scan_date !== undefined && val.last_scan_date !== null) {
+      val.last_scan_date = moment(val.last_scan_date).format();
+    }
 
     if (companyResourceObj.is_manual) {
       val = _.omit(val, ['name', 'type', 'os']);
