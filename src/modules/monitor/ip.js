@@ -54,7 +54,7 @@ ip.prototype.stop = function () {
 ip.prototype._discover = function (params, callback) {
     return instance._execFping()
         .then(function (ips) {
-            return Promise.each(ips, function (ip) {
+            return Promise.mapSeries(ips, function (ip) {
                     return instance._createOrUpdate(ip);
                 })
                 .then(function () {
@@ -155,7 +155,7 @@ ip.prototype._execFping = function () {
             reject(error)
         });
 
-        process.on('exit', function () {
+        process.on('close', function () {
             resolve(ips);
         });
     });
