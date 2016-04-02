@@ -61,7 +61,7 @@ upnp.prototype._discover = function (params, callback) {
                 })
                 .value();
 
-            return Promise.each(urls, function (url) {
+            return Promise.mapSeries(urls, function (url) {
                     return instance._readUPnPDescription(url)
                         .then(function (description) {
                             var upnp = {

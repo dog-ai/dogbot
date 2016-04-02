@@ -103,6 +103,8 @@ device.prototype._discover = function (macAddress, callback) {
             });
           })
           .then(function (result) {
+            logger.info('Scan result for ' + macAddress.address + ': ' + JSON.stringify(result, null, 2));
+
             var _device = device || {};
 
             _device.manufacturer = macAddress.vendor || _device.manufacturer;
@@ -267,7 +269,7 @@ device.prototype._execDig = function (ip) {
     });
 
     _process.on('error', reject);
-    _process.on('exit', function () {
+    _process.on('close', function () {
       resolve(result);
     });
   })
@@ -293,7 +295,7 @@ device.prototype._execHost = function (ip) {
     });
 
     _process.on('error', reject);
-    _process.on('exit', function () {
+    _process.on('close', function () {
       resolve(result);
     });
   })
@@ -304,7 +306,7 @@ device.prototype._execNmap = function (ip) {
 
     var result = {};
 
-    if (ip.indexOf('10.172.160.1') == 0) {
+    if (ip === '10.172.160.1' || ip === '10.172.161.1') {
       return resolve(result);
     }
 
@@ -319,31 +321,132 @@ device.prototype._execNmap = function (ip) {
         ip
       ]);
 
+    function parsePorts (ports, line) {
+      // ie. 22/tcp open  ssh
+      // $1 := port, $2 := proto, $3 := state, $4 := service
+      var regex = /^([0-9]+)\/(tcp|udp)\s*(open|close|filter)\s*([\w\-]+)$/;
+
+      var state = line.replace(regex, '$3');
+
+      if (state !== 'open' && state !== 'close' && state !== 'filter') {
+        return ports;
+      }
+
+      if (!ports) {
+        ports = [];
+      }
+
+      var port = {
+        port: line.replace(regex, '$1'),
+        protocol: line.replace(regex, '$2'),
+        state: state,
+        service: line.replace(regex, '$4')
+      }
+
+      ports.push(port);
+
+      return ports;
+    }
+
+    function parseVendor (line) {
+      if (line.indexOf('MAC Address:') != 0) {
+        return;
+      }
+
+      // i.e. MAC Address: 68:64:4B:63:BA:33 (Apple)
+      // $1 := mac address, $2 := vendor
+      var regex = /^MAC Address:\s([\w:]+)\s\(([\w.\-\s]+)\)$/;
+
+      var vendor = line.replace(regex, '$2');
+
+      return vendor === 'Unknown' ? undefined : vendor;
+    }
+
+    function parseType (line) {
+      if (line.indexOf('Device type:') == 0) {
+
+        var type = line.split(': ')[1];
+
+        if (type.indexOf('|') !== -1) {
+          type = type.split('|');
+        }
+
+        return type;
+      }
+    }
+
+    function parseOs (line) {
+      if (line.indexOf('Running:') == 0) {
+
+        var os = line.split(': ')[1];
+        os = os.replace(/(\s)?[\w]+\.[\w]+(\.[\w]+)?/g, '').replace(/\|/g, '');
+
+        if (os.indexOf(', ') !== -1) {
+          os = os.split(', ');
+        }
+
+        return os;
+      }
+    }
+
+    function parseOsDetails (line) {
+      if (line.indexOf('OS details:') !== 0) {
+        return;
+      }
+
+      var _line = line.substring('OS details:'.length);
+
+      // i.e. OS details: Apple Mac OS X 10.7.0 (Lion) - 10.10 (Yosemite) or iOS 4.1 - 8.3 (Darwin 10.0.0 - 14.5.0)
+      // i.e. OS details: Linux 3.2 - 4.0
+      // $1 := OS name, $2 := OS version
+      var regex = /^([a-zA-Z\s]+)\s(\d[\d\w.\s\-\(\)]+)$/;
+
+      var name = _line.replace(regex, '$1');
+      var version = _line.replace(regex, '$2');
+
+      return {name: name, version: version};
+    }
+
+    function parseOsGuess (line) {
+      if (line.indexOf('Aggressive OS guesses:') !== 0) {
+        return;
+      }
+
+      var _line = line.substring('Aggressive OS guesses:'.length);
+
+      // i.e. Aggressive OS guesses: Apple iOS 5.0.1 (95%), Apple iOS 5.0.1 - 5.1.1 (95%),
+      // Apple iOS 6.1.4 (Darwin 13.0.0) (95%),
+      // Apple Mac OS X 10.10.3 (Yosemite) - 10.11.0 (El Capitan) (Darwin 14.3.0 - 15.0.0) (%95),
+      // Apple Mac OS X 10.7.0 (Lion) - 10.11 (El Capitan) or iOS 4.1 - 9 (Darwin 10.0.0 - 15.0.0) (95%)
+      var guesses = _line.split(', ');
+
+      // $1 := OS name, $2 := OS version, $3 := confidence percentage
+      var regex = /^([a-zA-Z\s]+)\s(.*)\s([\(\d\)\%]+)$/;
+
+      return _.map(guesses, function (guess) {
+        var name = guess.replace(regex, '$1');
+        var version = guess.replace(regex, '$2');
+        var confidence = guess.replace(regex, '$3');
+
+        return {name: name, version: version, confidence: confidence};
+      });
+    }
+
     _process.stdout.setEncoding('utf8');
     _process.stdout.pipe(require('split')()).on('data', function (line) {
-      if (line !== null && line.length === 0) {
+      if (line && line.length > 0) {
 
-      } else {
-
-        if (line.indexOf('Device type:') == 0) {
-          result.type = line.split(': ')[1];
-          if (result.type.indexOf('|') !== -1) {
-            result.type = result.type.split('|');
-          }
-        }
-
-        if (line.indexOf('Running:') == 0) {
-          result.os = line.split(': ')[1];
-          result.os = result.os.replace(/(\s)?[\w]+\.[\w]+(\.[\w]+)?/g, '').replace(/\|/g, '');
-          if (result.os.indexOf(', ') !== -1) {
-            result.os = result.os.split(', ');
-          }
-        }
+        result.ports = parsePorts(result.ports, line); // multi-line
+        result.vendor = result.vendor || parseVendor(line);
+        result.type = result.type || parseType(line);
+        result.os = result.os || parseOs(line);
+        result.os_details = result.os_details || parseOsDetails(line);
+        result.os_guess = result.os_guess || parseOsGuess(line);
       }
     });
 
     _process.on('error', reject);
-    _process.on('exit', function () {
+    _process.on('close', function () {
       resolve(result);
     });
   })
