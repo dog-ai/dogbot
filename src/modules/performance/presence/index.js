@@ -57,7 +57,7 @@ presence.prototype.name = "presence";
 
 presence.prototype.submodules = [
   './database',
-  './synchronization',
+  './sync',
   './stats'
 ];
 
