@@ -9,7 +9,7 @@ StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=dogbot
 EnvironmentFile=/etc/default/dogbot
-Environment="WATCHDOG_USEC=40" "AUDIODEV=hw:1,0" "AUDIODRIVER=alsa" "PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/opt/node/bin:/opt/redis/bin"
+Environment="WATCHDOG_USEC=40" "AUDIODEV=hw:1,0" "AUDIODRIVER=alsa" "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/arp-scan/bin:/opt/fping/sbin:/opt/minissdpd/bin:/opt/monit/bin:/opt/node/bin:/opt/redis/bin"
 WorkingDirectory=/opt/dogbot
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/db
 ExecStartPre=-/bin/mkdir -p /opt/dogbot/var/log

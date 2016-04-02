@@ -61,7 +61,7 @@ var Bot = {
         ])
       })
       .then(function (interval) {
-        logger.info('Sending a hearbeat every ' + interval + ' seconds');
+        logger.info('Sending a heartbeat every ' + interval + ' seconds');
       })
       .finally(callback);
   },
