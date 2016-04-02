@@ -55,7 +55,7 @@ worker.prototype.initialize = function (enqueue, dequeue, emit, report) {
           }
 
           function failure (error) {
-            logger.error(error.message, message);
+            logger.error(error.message, error);
 
             callback(error);
 
