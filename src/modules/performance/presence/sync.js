@@ -2,8 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../../utils/logger'),
-  _ = require('lodash'),
+var _ = require('lodash'),
   moment = require('moment'),
   Promise = require("bluebird");
 
@@ -95,9 +94,7 @@ presence.prototype._onIncomingPresenceSynchronization = function (syncingPresenc
       } else if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
         return self._createPresence(syncingPresence);
       }
-    }).catch(function (error) {
-      logger.error(error.stack);
-    });
+    }).catch(function () {});
   });
 };
 
@@ -106,25 +103,16 @@ presence.prototype._onOutgoingPresenceSynchronization = function (params, callba
 
   this.communication.emit('database:performance:retrieveOneByOne',
     'SELECT * FROM presence WHERE is_synced = 0', [], function (error, row) {
-      if (error) {
-        logger.error(error.stack);
-      } else {
-
+      if (!error) {
         if (row !== undefined) {
           row.created_date = new Date(row.created_date.replace(' ', 'T'));
           row.is_present = row.is_present == 1;
           row.name = self.name;
 
           callback(null, row, function (error) {
-            if (error) {
-              logger.error(error.stack)
-            } else {
+            if (!error) {
               self.communication.emit('database:performance:update',
-                'UPDATE presence SET is_synced = 1 WHERE id = ?', [row.id], function (error) {
-                  if (error) {
-                    logger.error(error.stack);
-                  }
-                });
+                'UPDATE presence SET is_synced = 1 WHERE id = ?', [row.id]);
             }
           });
         }
@@ -157,10 +145,7 @@ presence.prototype._onOutgoingStatsSynchronization = function (params, callback)
               var _stats = _.extend(stats, {employee_id: employee.id, name: self.name});
 
               callback(null, _stats, function (error) {
-                if (error) {
-                  logger.error(error.stack);
-                } else {
-
+                if (!error) {
                   stats.is_synced = true;
 
                   self._createOrUpdateStatsByEmployeeIdAndPeriod(employee.id, period, stats);
