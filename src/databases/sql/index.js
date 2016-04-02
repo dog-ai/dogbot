@@ -51,7 +51,9 @@ sql.prototype._run = function (query, parameters, callback) {
                 callback(error);
             }
         } else {
-            callback(null, this.lastID, this.changes);
+            if (callback) {
+                callback(null, this.lastID, this.changes);
+            }
         }
     };
 
@@ -69,7 +71,9 @@ sql.prototype._get = function (query, parameters, callback) {
                 callback(error);
             }
         } else {
+          if (callback) {
             callback(null, row);
+          }
         }
     };
 
@@ -87,7 +91,9 @@ sql.prototype._all = function (query, parameters, callback) {
                 callback(error);
             }
         } else {
+          if (callback) {
             callback(null, row);
+          }
         }
     };
 
@@ -105,7 +111,9 @@ sql.prototype._each = function (query, parameters, callback) {
                 callback(error);
             }
         } else {
+          if (callback) {
             callback(null, row);
+          }
         }
     };
 
