@@ -51,7 +51,7 @@ if (!SECRET) {
 } else {
   bot.start(function () {
     if (process.platform === 'linux') {
-      require('./utils/systemd').sdNotify(0, 'READY=1', bot.error)
+      require('./utils/systemd').sdNotify(0, 'READY=1', _error)
     }
 
     if (WATCHDOG_USEC) {
