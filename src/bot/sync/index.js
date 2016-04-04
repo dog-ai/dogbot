@@ -522,7 +522,7 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
           }
         });
 
-        companyResource.setPriority(-new Date().getTime());
+        companyResourceRef.setPriority(-new Date().getTime());
 
       } else {
         callback(null);
