@@ -511,18 +511,44 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
         instance.companyId + '/' +
         companyResourceObj.id);
 
+
+      function getPriority(companyResource, companyResourceObj) {
+        var priority;
+
+        switch (companyResource) {
+          case 'employees':
+          case 'devices':
+            if (companyResourceObj.last_presence_date) {
+              priority = -moment(companyResourceObj.last_presence_date).valueOf();
+            } else {
+              priority = null;
+            }
+            break;
+          default:
+            priority = null;
+        }
+
+        return priority;
+      }
+
       if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
-        console.log("AQUI 1");
 
         companyResourceRef.update(val, function (error) {
           if (error) {
             callback(error);
           } else {
-            console.log("AQUI 2");
-            instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).setWithPriority(true, -new Date().getTime(), function (error) {
 
-              callback(error);
-            });
+            var priority = getPriority(companyResource, companyResourceObj);
+
+            if (priority) {
+              instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).setWithPriority(true, priority, function (error) {
+                callback(error);
+              });
+            } else {
+              instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).set(true, function (error) {
+                callback(error);
+              });
+            }
           }
         });
 
