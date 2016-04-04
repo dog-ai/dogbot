@@ -512,14 +512,14 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
         companyResourceObj.id);
 
       if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+        console.log("AQUI 1");
+
         companyResourceRef.update(val, function (error) {
           if (error) {
             callback(error);
           } else {
-            instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).set(true, function (error) {
-              if (val.updated_date) {
-                instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).setPriority(-new Date(val.updated_date).getTime());
-              }
+            console.log("AQUI 2");
+            instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).setWithPriority(true, -new Date().getTime(), function (error) {
 
               callback(error);
             });
