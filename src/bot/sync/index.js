@@ -517,12 +517,14 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
             callback(error);
           } else {
             instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).set(true, function (error) {
+              if (val.updated_date) {
+                instance.companyRef.child(companyResource + '/' + companyResourceRef.key()).setPriority(-new Date(val.updated_date).getTime());
+              }
+
               callback(error);
             });
           }
         });
-
-        companyResourceRef.setPriority(-new Date().getTime());
 
       } else {
         callback(null);
