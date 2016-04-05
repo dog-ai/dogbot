@@ -520,6 +520,11 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
           case 'devices':
             if (companyResourceObj.last_presence_date) {
               priority = -moment(companyResourceObj.last_presence_date).valueOf();
+
+              // if the employee/device is not present lets make sure he drops 10 minutes
+              if (companyResourceObj.is_present !== undefined && !companyResourceObj.is_present) {
+                priority -= 600000;
+              }
             } else {
               priority = null;
             }
