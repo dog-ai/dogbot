@@ -1,0 +1,10 @@
+- hosts: '{{ hosts }}'
+  user: root
+  serial: 1
+
+  tasks:
+    - name: Pull latest dogbot code
+      git: repo=git@git.exec.sh:/var/cache/git/dogbot.git dest=/opt/dogbot accept_hostkey=true
+
+    - name: Restart dogbot service
+      service: name=dogbot state=restarted
