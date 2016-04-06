@@ -521,9 +521,9 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
             if (companyResourceObj.last_presence_date) {
               priority = -moment(companyResourceObj.last_presence_date).valueOf();
 
-              // if the employee/device is not present lets make sure he drops 10 minutes
+              // if the employee/device is not present lets make sure he drops 12 minutes
               if (companyResourceObj.is_present !== undefined && !companyResourceObj.is_present) {
-                priority += 600000;
+                priority += 720000;
               }
             } else {
               priority = null;
@@ -535,7 +535,7 @@ Sync.prototype._sendCompanyResource = function (companyResource, companyResource
 
         return priority;
       }
-
+      
       if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
 
         companyResourceRef.update(val, function (error) {

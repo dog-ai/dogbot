@@ -18,7 +18,9 @@ presence.prototype._createPresence = function (presence) {
     return this.communication.emitAsync('database:performance:create',
         "INSERT INTO presence (" + keys + ") VALUES (" + values.map(function () {
             return '?';
-        }) + ");", values);
+        }) + ");", values)
+      .catch(function (error) {
+      });
 };
 
 presence.prototype._findLatestPresenceByEmployeeId = function (id) {
