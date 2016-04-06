@@ -138,7 +138,7 @@ LinkedIn.prototype._autoImportProfile = function (params, callback) {
 
   return this._findAllEmployeesBeforeLinkedInLastImportDate(linkedInLastImportDate)
     .mapSeries(function (employee) {
-      _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {employee: employee});
+      _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {employee_id: employee.id, employee_linkedin_profile_url: employee.linkedin_profile_url});
     })
     .then(function () {
       callback();
