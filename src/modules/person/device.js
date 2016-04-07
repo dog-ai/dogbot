@@ -90,7 +90,6 @@ device.prototype._discover = function (macAddress, callback) {
         return instance._findIpAdressByMacAddress(macAddress.address)
           .then(function (row) {
             if (row === undefined || row === null) {
-              // TODO: need to convert arp.js to promises, we are trying to read before the write is finished?
               throw new Error('Unknown IP address for MAC address: ' + macAddress.address);
             }
 
