@@ -176,7 +176,7 @@ ip.prototype._createOrUpdate = function (ip) {
             if (row === undefined) {
                 return instance._create(ip)
                     .then(function () {
-                        return instance.communication.emitAsync('monitor:ip:create', ip);
+                        instance.communication.emit('monitor:ip:create', ip);
                     });
             } else {
                 ip.updated_date = new Date();
