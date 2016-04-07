@@ -112,8 +112,8 @@ mac_address.prototype._onDeviceDiscoverCreate = function (device, callback) {
     })
 };
 
-mac_address.prototype._onArpCreateOrUpdate = function (address) {
-  instance._findByAddress(address, function (error, row) {
+mac_address.prototype._onArpCreateOrUpdate = function (arp) {
+  instance._findByAddress(arp.mac_address, function (error, row) {
 
     if (error) {
       logger.error(error.stack);
