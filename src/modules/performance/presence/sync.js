@@ -15,7 +15,6 @@ presence.prototype.start = function () {
 
   utils.startListening.bind(this)({
     'sync:incoming:person:employee:create': this._onCreateEmployeeIncomingSynchronization.bind(this),
-    'sync:incoming:performance:presence': this._onIncomingPresenceSynchronization.bind(this),
     'sync:outgoing:performance:presence': this._onOutgoingPresenceSynchronization.bind(this),
     'sync:incoming:performance:presence:stats': this._onIncomingStatsSynchronization.bind(this),
     'sync:outgoing:performance:presence:stats': this._onOutgoingStatsSynchronization.bind(this)
@@ -48,17 +47,6 @@ presence.prototype.stop = function () {
 presence.prototype._onCreateEmployeeIncomingSynchronization = function (employee) {
   var self = this;
 
-  this.communication.emitAsync('sync:incoming:register:setup', {
-    companyResource: 'employee_performances',
-    employeeId: employee.id,
-    name: 'presence',
-    onCompanyResourceChangedCallback: function (performance) {
-      self.communication.emit('sync:incoming:performance:presence', performance);
-    },
-    onCompanyResourceRemovedCallback: function (performance) {
-    }
-  });
-
   _.forEach(['day', 'month', 'year', 'all-time'], function (period) {
     self.communication.emitAsync('sync:incoming:register:setup', {
       companyResource: 'employee_performances',
@@ -78,23 +66,6 @@ presence.prototype._onCreateEmployeeIncomingSynchronization = function (employee
         self.communication.emit('sync:incoming:performance:presence:stats', employee, period, _stats);
       }
     });
-  });
-};
-
-presence.prototype._onIncomingPresenceSynchronization = function (syncingPresence) {
-  var self = this;
-
-  this.communication.emit('database:performance:retrieveAll', 'PRAGMA table_info(presence)', [], function (error, rows) {
-
-    syncingPresence = _.pick(syncingPresence, _.pluck(rows, 'name'));
-
-    self._findLatestPresenceByEmployeeId(syncingPresence.employee_id).then(function (presence) {
-      if (presence === undefined) {
-        return self._createPresence(syncingPresence);
-      } else if (moment(syncingPresence.created_date).isAfter(presence.created_date)) {
-        return self._createPresence(syncingPresence);
-      }
-    }).catch(function () {});
   });
 };
 

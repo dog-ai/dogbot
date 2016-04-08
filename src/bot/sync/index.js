@@ -197,126 +197,51 @@ Sync.prototype._registerIncomingSynchronization = function (params, callback) {
   if (instance.companyRef) {
     if (params.companyResource == 'employee_performances') {
 
-      if (params.period) {
-        var date = moment();
-        var dateFormatPattern;
-        switch (params.period) {
-          case 'day':
-            date.subtract(1, 'day');
-            dateFormatPattern = 'YYYY/MM/DD';
-            break;
-          case 'month':
-            // if start of month retrieve previous month stats
-            if (date.date() === 1) {
-              date.subtract(1, 'days');
-            }
+      var date = moment();
+      var dateFormatPattern;
+      switch (params.period) {
+        case 'day':
+          date.subtract(1, 'day');
+          dateFormatPattern = 'YYYY/MM/DD';
+          break;
+        case 'month':
+          // if start of month retrieve previous month stats
+          if (date.date() === 1) {
+            date.subtract(1, 'days');
+          }
 
-            dateFormatPattern = 'YYYY/MM';
-            break;
-          case 'year':
-            // if start of year retrieve previous month stats
-            if (date.dayOfYear() === 1) {
-              date.subtract(1, 'days');
-            }
+          dateFormatPattern = 'YYYY/MM';
+          break;
+        case 'year':
+          // if start of year retrieve previous month stats
+          if (date.dayOfYear() === 1) {
+            date.subtract(1, 'days');
+          }
 
-            dateFormatPattern = 'YYYY';
-            break;
-          case 'all-time':
-          default:
-            date = null;
-        }
-
-        firebase.child('company_employee_performances/' +
-            instance.companyId + '/' +
-            params.employeeId + '/' +
-            params.name + '/' +
-            (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
-            '/_stats')
-          .once('value', function (snapshot) {
-            var stats = snapshot.val();
-            if (stats) {
-
-              logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(stats));
-
-              params.onCompanyResourceChangedCallback(stats, date);
-            }
-          });
-
-      } else {
-
-        function retrieveLastPerformance(date) {
-          return new Promise(function (resolve, reject) {
-            firebase.child(
-                'company_employee_performances/' +
-                instance.companyId + '/' +
-                params.employeeId + '/' +
-                params.name + '/' +
-                date.format('YYYY/MM/DD'))
-              .orderByChild('created_date')
-              .limitToLast(1)
-              .once("value", function (snapshot) {
-                _.forEach(snapshot.val(), function (performance) {
-                  resolve(performance);
-                });
-              }, function (error) {
-                reject(error);
-              });
-          });
-        }
-
-        var now = moment();
-
-        retrieveLastPerformance(now)
-          .then(function (performance) {
-            if (performance) {
-              if (performance.created_date !== undefined && performance.created_date !== null) {
-                performance.created_date = new Date(performance.created_date);
-              }
-
-              logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(performance));
-
-              params.onCompanyResourceChangedCallback(_.extend({
-                employee_id: params.employeeId,
-                is_synced: true
-              }, performance));
-            } else {
-              now.subtract(1, 'days');
-              return retrieveLastPerformance(now)
-                .then(function (performance) {
-                  if (performance) {
-                    if (performance.created_date !== undefined && performance.created_date !== null) {
-                      performance.created_date = new Date(performance.created_date);
-                    }
-
-                    logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(performance));
-
-                    params.onCompanyResourceChangedCallback(_.extend({
-                      employee_id: params.employeeId,
-                      is_synced: true
-                    }, performance));
-                  } else {
-                    now.subtract(1, 'days');
-                    return retrieveLastPerformance(now)
-                      .then(function (performance) {
-                        if (performance) {
-                          if (performance.created_date !== undefined && performance.created_date !== null) {
-                            performance.created_date = new Date(performance.created_date);
-                          }
-
-                          logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(performance));
-
-                          params.onCompanyResourceChangedCallback(_.extend({
-                            employee_id: params.employeeId,
-                            is_synced: true
-                          }, performance));
-                        }
-                      })
-                  }
-                })
-            }
-          })
-
+          dateFormatPattern = 'YYYY';
+          break;
+        case 'all-time':
+        default:
+          date = null;
       }
+
+      firebase.child('company_employee_performances/' +
+          instance.companyId + '/' +
+          params.employeeId + '/' +
+          params.name + '/' +
+          (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
+          '/_stats')
+        .once('value', function (snapshot) {
+          var stats = snapshot.val();
+          if (stats) {
+
+            logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(stats));
+
+            params.onCompanyResourceChangedCallback(stats, date);
+          }
+        });
+      
+      
     } else {
       instance.companyRef.child('/' + params.companyResource).on('child_added',
         function (snapshot) {
