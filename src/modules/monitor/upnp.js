@@ -38,7 +38,7 @@ upnp.prototype.unload = function () {
 upnp.prototype.start = function () {
     this.communication.on('monitor:upnp:discover', this._discover);
 
-    this.communication.emit('worker:job:enqueue', 'monitor:upnp:discover', null, '1 minute');
+    this.communication.emit('worker:job:enqueue', 'monitor:upnp:discover', null, {schedule: '1 minute'});
 };
 
 upnp.prototype.stop = function () {

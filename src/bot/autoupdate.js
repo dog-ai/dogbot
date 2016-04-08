@@ -18,9 +18,9 @@ autoupdate.prototype.initialize = function (branch, updateFn) {
     return new Promise(function (resolve) {
 
         instance.communication.on('autoupdate:check', instance._check);
-        instance.communication.emit('worker:job:enqueue', 'autoupdate:check', null, '10 minutes');
+        instance.communication.emit('worker:job:enqueue', 'autoupdate:check', null, {schedule: '10 minutes'});
 
-        instance.communication.emit('worker:job:enqueue', 'autoupdate:check', null, null, false);
+        instance.communication.emit('worker:job:enqueue', 'autoupdate:check');
 
         resolve();
     });

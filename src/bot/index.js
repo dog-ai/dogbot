@@ -93,7 +93,7 @@ var Bot = {
       function (callback) {
         // start an outgoing periodic sync job every 10 minutes
         communication.on('sync:outgoing:periodic', callback);
-        communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, '10 minutes');
+        communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, {schedule: '10 minutes'});
       },
       Bot._configureApps,
       function (callback) {
