@@ -169,7 +169,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (arp) {
       } else {
 
         row = {
-          address: address,
+          address: arp.mac_address,
           created_date: now,
           updated_date: now,
           last_presence_date: now,
