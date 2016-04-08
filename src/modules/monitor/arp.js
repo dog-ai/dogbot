@@ -175,7 +175,9 @@ ARP.prototype._execArpScan = function () {
       }
     });
 
-    _process.stderr.on('data', reject);
+    _process.stderr.on('data', function (data) {
+      reject(new Error(data));
+    });
 
     _process.on('error', reject);
     _process.on('close', function () {
@@ -233,7 +235,9 @@ ARP.prototype._execArp = function (ipAddress) {
       }
     });
 
-    _process.stderr.on('data', reject);
+    _process.stderr.on('data', function (data) {
+      reject(new Error(data));
+    });
 
     _process.on('error', reject);
     _process.on('close', function () {
