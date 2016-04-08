@@ -41,7 +41,7 @@ ARP.prototype.start = function () {
     'monitor:ip:update': this._onIPCreateOrUpdate.bind(this)
   });
 
-  this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, '1 minute');
+  this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, {schedule: '1 minute', retry: 3});
 };
 
 ARP.prototype.stop = function () {
