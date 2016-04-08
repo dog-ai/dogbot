@@ -128,9 +128,9 @@ ARP.prototype._resolve = function (ipAddress, callback) {
 ARP.prototype._clean = function () {
   var _this = this;
 
-  var currentDate = new Date();
+  var now = new Date();
 
-  return this._deleteAllBeforeDate(new Date(new Date().setMinutes(currentDate.getMinutes() - 5)))
+  return this._deleteAllBeforeDate(new Date(new Date().setMinutes(now.getMinutes() - 5)))
     .mapSeries(function (arp) {
       _this.communication.emit('monitor:arp:delete', arp);
     });
