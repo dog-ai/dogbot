@@ -145,7 +145,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (arp) {
 
               macvendor(row.address, function (error, vendor) {
                 if (error) {
-                  logger.error(error.stack);
+                  logger.warn(error.message, error);
                 } else {
                   if (vendor !== undefined && vendor !== null && vendor.length < 60) {
                     row.vendor = vendor.toLowerCase().replace(/(?:^|\s)\S/g, function (s) {
@@ -157,7 +157,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (arp) {
 
                     instance._updateByAddress(row.address, row)
                       .catch(function (error) {
-                        logger.error(error.stack);
+
                       });
                   }
                 }
@@ -187,7 +187,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (arp) {
             // lookup vendor
             macvendor(row.address, function (error, vendor) {
               if (error) {
-                logger.error(error.stack);
+                logger.warn(error.message, error);
               } else {
                 if (vendor !== undefined && vendor !== null && vendor.length < 60) {
                   row.vendor = vendor.replace(/(?:^|\s)\S/g, function (s) {
