@@ -36,7 +36,7 @@ bonjour.prototype.unload = function () {
 bonjour.prototype.start = function () {
     this.communication.on('monitor:bonjour:discover', this._discover);
 
-    this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, '1 minute');
+    this.communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, {schedule: '1 minute'});
 };
 
 bonjour.prototype.stop = function () {
