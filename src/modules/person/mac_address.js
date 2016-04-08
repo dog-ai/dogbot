@@ -42,7 +42,7 @@ mac_address.prototype.start = function () {
   this.communication.on('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
   this.communication.on('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 
-  this.communication.emit('worker:job:enqueue', 'person:macAddress:clean', null, '6 hours');
+  this.communication.emit('worker:job:enqueue', 'person:macAddress:clean', null, {schedule: '6 hours'});
 
   this.communication.emitAsync('sync:incoming:register:setup', {
     companyResource: 'mac_addresses',

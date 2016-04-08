@@ -43,6 +43,7 @@ worker.prototype.initialize = function (enqueue, dequeue, emit, report) {
           var event = job.data.event;
           var params = job.data.params;
           var callbacks = job.data.callbacks || {};
+          var retry = (job._max_attempts - (isNaN(job._attempts) ? 1 : job._attempts + 1)) > 0;
 
           logger.debug('Job ' + id + ' started' + (params ? ' with params ' + JSON.stringify(params) : ''));
 
@@ -55,7 +56,9 @@ worker.prototype.initialize = function (enqueue, dequeue, emit, report) {
           }
 
           function failure (error) {
-            logger.error(error.message, error);
+            if (!retry) {
+              logger.error(error.message, error);
+            }
 
             callback(error);
 
@@ -66,7 +69,9 @@ worker.prototype.initialize = function (enqueue, dequeue, emit, report) {
 
           emit(event, params)
             .then(success)
-            .catch(failure);
+            .catch(function (error) {
+              failure(error, job);
+            });
         };
 
         instance.queue.process(JobTypeEnum.FAST, process);
@@ -91,7 +96,7 @@ worker.prototype.initialize = function (enqueue, dequeue, emit, report) {
         instance.queue.on('job failed', function (id, error) {
           logger.debug('Job ' + id + ' failed because of ' + error);
         });
-        instance.queue.on('job failed attempt', function (id, attempts) {
+        instance.queue.on('job failed attempt', function (id, error, attempts) {
           logger.debug('Job ' + id + ' failed ' + attempts + ' times');
         });
         instance.queue.on('error', function (error) {
@@ -130,7 +135,10 @@ worker.prototype.terminate = function () {
     });
 };
 
-worker.prototype._enqueue = function (event, params, schedule, callbacks) {
+worker.prototype._enqueue = function (event, params, options, callbacks) {
+  
+  var _options = options || {};
+  
   var type;
   switch (event) {
     case 'social:linkedin:company:import':
@@ -146,9 +154,13 @@ worker.prototype._enqueue = function (event, params, schedule, callbacks) {
 
   var job = instance.queue.create(type, {event: event, params: params, callbacks: callbacks});
   job.ttl(JobTypeTtlEnum[type]);
-
-  if (schedule) {
-    instance.queue.every(schedule, job);
+  
+  if (_options.retry) {
+    job.attempts(_options.retry);
+  }
+  
+  if (_options.schedule) {
+    instance.queue.every(_options.schedule, job);
   } else {
     try {
       job.save(function (error) {

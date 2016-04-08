@@ -37,7 +37,7 @@ ip.prototype.start = function () {
     this.communication.on('monitor:upnp:create', this._onServiceDiscoveryCreateOrUpdate);
     this.communication.on('monitor:upnp:update', this._onServiceDiscoveryCreateOrUpdate);
 
-    this.communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, '1 minute', {priority: 'low'});
+    this.communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, {schedule: '1 minute', priority: 'low'});
 };
 
 ip.prototype.stop = function () {
