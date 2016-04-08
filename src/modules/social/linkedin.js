@@ -37,7 +37,7 @@ LinkedIn.prototype.start = function () {
     'social:linkedin:company:import': this._importCompany.bind(this)
   });
 
-  this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import:auto', null, '6 hours');
+  this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import:auto', null, {schedule: '6 hours'});
 };
 
 LinkedIn.prototype.stop = function () {

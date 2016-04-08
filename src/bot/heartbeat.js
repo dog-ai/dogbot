@@ -17,7 +17,7 @@ heartbeat.prototype.initialize = function (interval, heartbeatFn, healthCheckFn)
         instance._interval = interval / 2;
 
         instance.communication.on('bot:heartbeat', instance._sendHeartbeat);
-        instance.communication.emit('worker:job:enqueue', 'bot:heartbeat', null, instance._interval + ' seconds');
+        instance.communication.emit('worker:job:enqueue', 'bot:heartbeat', null, {schedule: instance._interval + ' seconds'});
 
         instance._initialized = true;
 
