@@ -102,7 +102,7 @@ Sync.prototype._authenticate = function (token) {
 
           var now = moment().format();
           if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
-            instance.dogRef.update({last_seen_date: now, updated_date: now});
+            instance.dogRef.update({last_authentication_date: now, last_seen_date: now, updated_date: now});
           }
 
           resolve(dog);
