@@ -51,7 +51,7 @@ bonjour.prototype._discover = function (params, callback) {
       return Promise.mapSeries(bonjours, function (bonjour) {
           return instance._createOrUpdate(bonjour)
             .catch(function (error) {
-              logger.warn(error.message, error);
+              logger.warn(error.message + ' with bonjour as ' + JSON.stringify(bonjour), error);
             });
         })
         .then(instance._clean);

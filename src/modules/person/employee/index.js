@@ -287,8 +287,8 @@ employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee
 };
 
 employee.prototype._onEmployeeOutgoingSynchronization = function (params, callback) {
-  return instance._findUnsynced(params ? params.id : undefined)
-    .then(function (employee) {
+  return instance._findAllNotSynced(params ? params.id : undefined)
+    .mapSeries(function (employee) {
       return instance._findDevicesByEmployeeId(employee.id)
         .then(function (devices) {
           employee.devices = {};
@@ -316,9 +316,9 @@ employee.prototype._onEmployeeOutgoingSynchronization = function (params, callba
     .catch(callback);
 };
 
-employee.prototype._findUnsynced = function (id) {
-  return instance.communication.emitAsync('database:person:retrieveOneByOne', 'SELECT * FROM employee WHERE is_synced = 0' + (id ? (' AND id = \'' + id + '\'') : ''), [])
-    .then(function (row) {
+employee.prototype._findAllNotSynced = function (id) {
+  return instance.communication.emitAsync('database:person:retrieveAll', 'SELECT * FROM employee WHERE is_synced = 0' + (id ? (' AND id = \'' + id + '\'') : ''), [])
+    .mapSeries(function (row) {
       if (row) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));
         row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
