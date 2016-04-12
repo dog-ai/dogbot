@@ -104,6 +104,9 @@ bonjour.prototype._execAvahiBrowse = function () {
         bonjour.port && bonjour.port.length > 0 &&
         bonjour.txt && bonjour.txt.length > 0) {
 
+        // TODO: need to do this in the avahi-browse itself
+        bonjour.txt = bonjour.txt.replace(/[^0-9a-z_:\/\s=\[\]+-\\"\(\)\'']/gi, '');
+        
         bonjours.push(bonjour);
 
       }
