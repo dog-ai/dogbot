@@ -102,7 +102,7 @@ Sync.prototype._authenticate = function (token) {
 
           if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
             instance.dogRef.update({updated_date: Firebase.ServerValue.TIMESTAMP, is_online: true, last_authentication_date: Firebase.ServerValue.TIMESTAMP, last_seen_date: Firebase.ServerValue.TIMESTAMP});
-            isntance.dogRef.onDisconnect().update({updated_date: Firebase.ServerValue.TIMESTAMP, is_online: false, last_seen_date: Firebase.ServerValue.TIMESTAMP});
+            instance.dogRef.onDisconnect().update({updated_date: Firebase.ServerValue.TIMESTAMP, is_online: false, last_seen_date: Firebase.ServerValue.TIMESTAMP});
           }
 
           resolve(dog);
