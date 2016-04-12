@@ -104,6 +104,10 @@ bonjour.prototype._execAvahiBrowse = function () {
         bonjour.port && bonjour.port.length > 0 &&
         bonjour.txt && bonjour.txt.length > 0) {
 
+        // TODO:
+        bonjour.name = bonjour.name.replace(/'/gi, '’');
+
+        //{"name":"Figure (Ferruccio's iPhone)","type":"_audiobus._udp","hostname":"Ferruccios-iPhone.local","ip_address":"172.16.2.168","port":"55059","txt":"\"displayName=Figure\" \"allowsMultipleInstances=0\" \"triggersExtraInfo[0]=\" \"launchURL=phfigure.1.6.2.audiobus://\" \"launchPeersOverAudiobus=1\" \"DBVersion=3\" \"remoteTriggers[1]=+\" \"appIconResourceID=2706529516\" \"triggers[0]=\" \"inForeground=0\" \"capabilities=1\" \"remoteTriggers[0]=+\" \"outputs[0]=\u000b\" \"version=3\" \"sequence=13\" \"deviceID=BA5259F8-5DC4-4152-A057-2F6B5E44D2A9\" \"SDK version=2.2.1\"","updated_date":"2016-04-12T09:27:01.328Z"}
         // TODO: need to do this in the avahi-browse itself
         bonjour.txt = bonjour.txt.replace(/[^0-9a-z_:\/\s=\[\]+-\\"\(\)\'']/gi, '');
         
