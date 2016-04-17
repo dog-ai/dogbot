@@ -8,7 +8,7 @@ var logger = require('../../utils/logger.js'),
 
 var utils = require('../utils.js');
 
-var DHCPRL_UNIX_SOCKET = "/Users/hfreire/Workspace/leased/socket";
+var DHCPRL_UNIX_SOCKET = "/var/run/dhcprl.sock";
 
 function DHCP() {
 }
