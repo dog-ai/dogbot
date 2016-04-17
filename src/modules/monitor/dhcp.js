@@ -198,7 +198,7 @@ DHCP.prototype._clean = function () {
 
   var now = new Date();
 
-  return this._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)))
+  return this._deleteAllBeforeDate(new Date(now.setHours(now.getHours() - 24)))
     .mapSeries(function (dhcp) {
       _this.communication.emit('monitor:dhcp:delete', dhcp);
     });

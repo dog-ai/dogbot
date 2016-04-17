@@ -176,7 +176,7 @@ upnp.prototype._execMiniSSDPd = function () {
 
 upnp.prototype._clean = function () {
     var now = new Date();
-    return instance._deleteAllBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
+    return instance._deleteAllBeforeDate(new Date(now.setHours(now.getHours() - 24)),
         function (upnp) {
             instance.communication.emit('monitor:upnp:delete', upnp.ip_address);
         });
