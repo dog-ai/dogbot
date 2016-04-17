@@ -38,7 +38,9 @@ ARP.prototype.start = function () {
     'monitor:arp:discover': this._discover.bind(this),
     'monitor:arp:resolve': this._resolve.bind(this),
     'monitor:ip:create': this._onIPCreateOrUpdate.bind(this),
-    'monitor:ip:update': this._onIPCreateOrUpdate.bind(this)
+    'monitor:ip:update': this._onIPCreateOrUpdate.bind(this),
+    'monitor:dhcp:create': this._onDHCPCreateOrUpdate.bind(this),
+    'monitor:dhcp:update': this._onDHCPCreateOrUpdate.bind(this)
   });
 
   this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, {schedule: '1 minute', retry: 3});
@@ -51,7 +53,9 @@ ARP.prototype.stop = function () {
     'monitor:arp:discover',
     'monitor:arp:resolve',
     'monitor:ip:create',
-    'monitor:ip:update'
+    'monitor:ip:update',
+    'monitor:dhcp:create',
+    'monitor:dhcp:update'
   ]);
 };
 
@@ -79,6 +83,28 @@ ARP.prototype._onIPCreateOrUpdate = function (ip) {
     });
 };
 
+ARP.prototype._onDHCPCreateOrUpdate = function (dhcp) {
+  var _this = this;
+
+  return this._findByMACAddress(dhcp.mac_address)
+    .then(function (arp) {
+
+      if (!arp) {
+
+        // create arp
+
+      } else {
+
+        arp.updated_date = new Date();
+
+        return _this._updateByIPAddressAndMACAddress(arp.ip_address, arp.mac_address, arp)
+          .then(function () {
+            _this.communication.emit('monitor:arp:update', arp);
+          });
+
+      }
+    });
+};
 
 ARP.prototype._discover = function (params, callback) {
   var _this = this;
@@ -92,7 +118,7 @@ ARP.prototype._discover = function (params, callback) {
           logger.warn(error.message, error);
         });
     })
-    .then(_this._clean.bind(this))
+    .then(this._clean.bind(this))
     .then(function () {
       callback();
     })
@@ -317,6 +343,17 @@ ARP.prototype._updateByIPAddressAndMACAddress = function (ipAddress, macAddress,
 
 ARP.prototype._findByIPAddress = function (ipAddress) {
   return this.communication.emitAsync('database:monitor:retrieveOne', 'SELECT * FROM arp WHERE ip_address = ?;', [ipAddress])
+    .then(function (row) {
+      if (row !== undefined) {
+        row.created_date = new Date(row.created_date.replace(' ', 'T'));
+        row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+      }
+      return row;
+    });
+};
+
+ARP.prototype._findByMACAddress = function (macAddress) {
+  return this.communication.emitAsync('database:monitor:retrieveOne', 'SELECT * FROM arp WHERE mac_address = ?;', [macAddress])
     .then(function (row) {
       if (row !== undefined) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));

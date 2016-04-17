@@ -98,7 +98,8 @@ device.prototype._discover = function (macAddress, callback) {
               nmap: instance._execNmap(row.ip_address),
               dns: instance._execHost(row.ip_address),
               bonjours: instance._findAllBonjoursByIpAddress(row.ip_address),
-              upnps: instance._findAllUPnPsByIpAddress(row.ip_address)
+              upnps: instance._findAllUPnPsByIpAddress(row.ip_address),
+              dhcps: instance._findAllDHCPsByMACAddress(macAddress.address)
             });
           })
           .then(function (result) {
@@ -120,6 +121,10 @@ device.prototype._discover = function (macAddress, callback) {
 
             if (result.dns.hostname && result.dns.hostname.length > 0) {
               _device.name = result.dns.hostname;
+            }
+            
+            if (result.dhcps && result.dhcps.length > 0 && result.dhcps[0].hostname) {
+              _device.name = result.dhcps[0].hostname;
             }
 
             if (result.mdns.hostname && result.mdns.hostname.length > 0) {
@@ -719,6 +724,21 @@ device.prototype._findAllBonjoursByIpAddress = function (ipAddress) {
 device.prototype._findAllUPnPsByIpAddress = function (ipAddress) {
   return instance.communication.emitAsync('database:monitor:retrieveAll',
     "SELECT * FROM upnp WHERE ip_address = ?;", [ipAddress])
+    .then(function (rows) {
+      if (rows !== undefined) {
+        _.forEach(rows, function (row) {
+          row.created_date = new Date(row.created_date.replace(' ', 'T'));
+          row.updated_date = new Date(row.updated_date.replace(' ', 'T'));
+        });
+      }
+
+      return rows;
+    });
+};
+
+device.prototype._findAllDHCPsByMACAddress = function (macAddress) {
+  return instance.communication.emitAsync('database:monitor:retrieveAll',
+    "SELECT * FROM dhcp WHERE mac_address = ?;", [macAddress])
     .then(function (rows) {
       if (rows !== undefined) {
         _.forEach(rows, function (row) {
