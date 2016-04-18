@@ -36,7 +36,6 @@ presence.prototype.stop = function () {
 
   utils.stopListening.bind(this)([
     'sync:incoming:person:employee:create',
-    'sync:incoming:performance:presence',
     'sync:outgoing:performance:presence',
     'sync:incoming:performance:presence:stats',
     'sync:outgoing:performance:presence:stats'
