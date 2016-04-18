@@ -37,13 +37,14 @@ ARP.prototype.start = function () {
   utils.startListening.bind(this)({
     'monitor:arp:discover': this._discover.bind(this),
     'monitor:arp:resolve': this._resolve.bind(this),
+    'monitor:arp:reverse': this._reverse.bind(this),
     'monitor:ip:create': this._onIPCreateOrUpdate.bind(this),
     'monitor:ip:update': this._onIPCreateOrUpdate.bind(this),
     'monitor:dhcp:create': this._onDHCPCreateOrUpdate.bind(this),
     'monitor:dhcp:update': this._onDHCPCreateOrUpdate.bind(this)
   });
 
-  this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, {schedule: '1 minute', retry: 3});
+  this.communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, {schedule: '1 minute', retry: 6});
 };
 
 ARP.prototype.stop = function () {
@@ -91,7 +92,7 @@ ARP.prototype._onDHCPCreateOrUpdate = function (dhcp) {
 
       if (!arp) {
 
-        // create arp
+        _this.communication.emit('worker:job:enqueue', 'monitor:arp:reverse', dhcp.mac_address);
 
       } else {
 
@@ -126,6 +127,29 @@ ARP.prototype._discover = function (params, callback) {
     .finally(function () {
       _this.communication.emit('monitor:arp:discover:finish');
     });
+};
+
+ARP.prototype._reverse = function (macAddress, callback) {
+  var _this = this;
+
+  return this._execReverseArp(macAddress)
+    .then(function (ipAddress) {
+
+      if (!ipAddress) {
+        return;
+      }
+
+      var arp = {
+        ip_address: ipAddress,
+        mac_address: macAddress
+      };
+
+      return _this._createOrUpdate(arp);
+    })
+    .then(function () {
+      callback();
+    })
+    .catch(callback)
 };
 
 ARP.prototype._resolve = function (ipAddress, callback) {
@@ -212,6 +236,44 @@ ARP.prototype._execArpScan = function () {
   });
 };
 
+ARP.prototype._execReverseArp = function (macAddress) {
+  return new Promise(function (resolve, reject) {
+
+    var result;
+
+    var spawn = require('child_process').spawn;
+    var arp = spawn('arp', ['-an']);
+    var _process = spawn('grep', [macAddress]);
+
+    arp.stdout.pipe(_process.stdin);
+
+    _process.stdout.setEncoding('utf8');
+    _process.stdout.pipe(require('split')()).on('data', function (line) {
+      if (!line || line.length === 0) {
+
+      } else {
+        var ipAddress = line.split(' ')[1].replace(/[\(\)]/g, '');
+
+        if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(ipAddress)) {
+          ipAddress = undefined;
+        }
+
+        result = ipAddress;
+      }
+    });
+
+    _process.stderr.on('data', function (data) {
+      reject(new Error(data));
+    });
+
+    _process.on('error', reject);
+    _process.on('close', function () {
+      resolve(result);
+    });
+
+  });
+};
+
 ARP.prototype._execArp = function (ipAddress) {
   return new Promise(function (resolve, reject) {
 
@@ -272,7 +334,6 @@ ARP.prototype._execArp = function (ipAddress) {
 
   });
 };
-
 
 ARP.prototype._createOrUpdate = function (arp) {
   var _this = this;
