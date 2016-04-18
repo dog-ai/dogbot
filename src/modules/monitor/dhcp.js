@@ -23,7 +23,7 @@ DHCP.prototype.load = function (communication) {
   this.communication = communication;
 
   if (!require('fs').existsSync(DHCPRL_UNIX_SOCKET)) {
-    throw new Error('leased unix socket not available');
+    throw new Error('dhcprl unix socket not available');
   }
 
   this.start();
