@@ -19,8 +19,9 @@ LinkedIn.prototype.name = "linkedin";
 
 LinkedIn.prototype.events = {};
 
-LinkedIn.prototype.load = function (communication) {
+LinkedIn.prototype.load = function (communication, config) {
   this.communication = communication;
+  this.config = config;
 
   this.start();
 };
@@ -34,10 +35,22 @@ LinkedIn.prototype.start = function () {
   utils.startListening.bind(this)({
     'social:linkedin:profile:import': this._importProfile.bind(this),
     'social:linkedin:profile:import:auto': this._autoImportProfile.bind(this),
-    'social:linkedin:company:import': this._importCompany.bind(this)
+    'social:linkedin:company:import': this._importCompany.bind(this),
+    'social:linkedin:company:import:auto': this._autoImportCompany.bind(this)
   });
 
+  /*this.communication.emit('sync:outgoing:quickshot:register', {
+    companyResource: 'apps',
+    registerEvents: ['social:linkedin:config:update'],
+    outgoingFunction: this._onConfigOutgoingSynchronization.bind(this)
+  });*/
+
   this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import:auto', null, {schedule: '6 hours'});
+  /*this.communication.emit('worker:job:enqueue', 'social:linkedin:company:import:auto', null, {schedule: '6 hours'});
+  
+  if (!this.config.last_import_date || moment(this.config.last_import_date).isBefore(moment().subtract(1, 'week'))) {
+    this.communication.emit('worker:job:enqueue', 'social:linkedin:company:import');
+  }*/
 };
 
 LinkedIn.prototype.stop = function () {
@@ -46,8 +59,15 @@ LinkedIn.prototype.stop = function () {
   utils.stopListening.bind(this)([
     'social:linkedin:profile:import',
     'social:linkedin:profile:import:auto',
-    'social:linkedin:company:import'
+    'social:linkedin:company:import',
+    'social:linkedin:company:import:auto'
   ]);
+};
+
+LinkedIn.prototype._onConfigOutgoingSynchronization = function (params, callback) {
+  this.config.updated_date = new Date();
+  
+  callback(this.config);  
 };
 
 LinkedIn.prototype._getLinkedInProfile = function (linkedInProfileUrl) {
@@ -149,7 +169,9 @@ LinkedIn.prototype._autoImportProfile = function (params, callback) {
 LinkedIn.prototype._importCompany = function (params, callback) {
   var _this = this;
 
-  var linkedInCompanyPageUrl = params.app.company_page_url;
+  params = params || {app: {}};
+
+  var linkedInCompanyPageUrl = params.app.company_page_url || this.config.company_page_url;
 
   if (!linkedInCompanyPageUrl) {
     return callback();
@@ -212,12 +234,22 @@ LinkedIn.prototype._importCompany = function (params, callback) {
           });
         })
         .then(function () {
+          /*_this.config.last_import_date = new Date();
+          
+          _this.communication.emit('social:linkedin:config:update');*/
+        })
+        .then(function () {
           return callback(null, employee_urls);
         })
         .catch(callback);
     }
   });
 
+};
+
+LinkedIn.prototype._autoImportCompany = function (params, callback) {
+
+  callback();
 };
 
 LinkedIn.prototype._findAllEmployeesBeforeLinkedInLastImportDate = function (linkedInLastImportDate) {
