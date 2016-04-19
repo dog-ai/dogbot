@@ -114,28 +114,65 @@ presence.prototype._computeEmployeeDailyStats = function (employee, date, sample
 presence.prototype._computeEmployeeDailyTotalDuration = function (date, presences) {
   var totalDuration = moment.duration();
 
-  if (presences) {
-    for (var i = 0; i < presences.length; i++) {
-      if (presences[i])
+  var _presences = [];
 
-        var diff;
-      if (presences[i].is_present) {
-        var next;
-        if (i + 1 < presences.length) {
-          next = moment(presences[i + 1].created_date);
-          diff = next.diff(moment(presences[i].created_date));
-        } else {
-          next = moment(presences[i].created_date).clone().endOf('day');
-          diff = next.diff(moment(presences[i].created_date));
+  var i;
+
+  for (i = 0; i < presences.length; i++) {
+    var cur = presences[i];
+
+    if (cur.is_present) {
+
+      if (_presences.length > 0) {
+        var prev = _presences[_presences.length-1];
+
+        if (!prev.is_present) {
+          _presences.push(cur);
         }
-        totalDuration = totalDuration.add(diff);
 
-      } else if (i == 0) {
-        var previous = moment(presences[i].created_date).clone().startOf('day');
-        diff = moment(presences[i].created_date).diff(previous);
-        totalDuration = totalDuration.add(diff);
+      } else {
+
+        _presences.push(cur);
       }
+
+    } else {
+
+      if (i > 0 && i + 1 < presences.length) {
+        var next = presences[i + 1];
+
+        if (moment(next.created_date).diff(moment(cur.created_date), 'minute') >= 90) {
+          _presences.push(cur);
+        }
+      } else {
+        _presences.push(cur);
+      }
+
     }
+  }
+
+  for (i = 0; i < _presences.length; i++) {
+
+    var diff;
+
+    if (_presences[i].is_present) {
+      var next;
+      if (i + 1 < _presences.length) {
+        next = moment(_presences[i + 1].created_date);
+        diff = next.diff(moment(_presences[i].created_date));
+      } else {
+        next = moment(_presences[i].created_date).clone().endOf('day');
+        diff = next.diff(moment(_presences[i].created_date));
+      }
+      totalDuration = totalDuration.add(diff);
+
+    } else if (i == 0) {
+      // first presence is not present...assume that the first presence is the beginning of the day
+      var previous = moment(_presences[i].created_date).clone().startOf('day');
+      diff = moment(_presences[i].created_date).diff(previous);
+
+      totalDuration = totalDuration.add(diff);
+    }
+
   }
 
   return totalDuration.asSeconds();
