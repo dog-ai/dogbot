@@ -101,7 +101,7 @@ Sync.prototype._authenticate = function (token) {
             moment.tz.setDefault(dog.timezone);
           }
 
-          //if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+          if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
 
             // https://www.firebase.com/docs/web/guide/offline-capabilities.html#section-connection-state
             firebase.child('.info/connected').on('value', function (snapshot) {
@@ -113,7 +113,7 @@ Sync.prototype._authenticate = function (token) {
                 instance.dogRef.update({updated_date: Firebase.ServerValue.TIMESTAMP, is_online: true, last_authentication_date: Firebase.ServerValue.TIMESTAMP, last_seen_date: Firebase.ServerValue.TIMESTAMP});
               }
             });
-          //}
+          }
 
           resolve(dog);
 
