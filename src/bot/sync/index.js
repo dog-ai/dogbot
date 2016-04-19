@@ -88,6 +88,7 @@ Sync.prototype.terminate = function () {
 Sync.prototype._authenticate = function (token) {
   return new Promise(function (resolve, reject) {
 
+    Firebase.goOnline();
     firebase.authWithCustomToken(token, function (error, authData) {
       if (error) {
         reject(error);
@@ -107,9 +108,9 @@ Sync.prototype._authenticate = function (token) {
               var connected = snapshot.val();
 
               if (connected) {
-                instance.dogRef.update({updated_date: Firebase.ServerValue.TIMESTAMP, is_online: true, last_authentication_date: Firebase.ServerValue.TIMESTAMP, last_seen_date: Firebase.ServerValue.TIMESTAMP});
-
                 instance.dogRef.onDisconnect().update({updated_date: Firebase.ServerValue.TIMESTAMP, is_online: false, last_seen_date: Firebase.ServerValue.TIMESTAMP});
+
+                instance.dogRef.update({updated_date: Firebase.ServerValue.TIMESTAMP, is_online: true, last_authentication_date: Firebase.ServerValue.TIMESTAMP, last_seen_date: Firebase.ServerValue.TIMESTAMP});
               }
             });
           }
@@ -126,19 +127,17 @@ Sync.prototype._authenticate = function (token) {
 };
 
 Sync.prototype._unauthenthicate = function () {
-  return new Promise(function (resolve) {
-    var now = moment().format();
-
-    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
-      instance.dogRef.update({last_seen_date: now, updated_date: now});
-    }
-
-    firebase.unauth();
-
-    delete instance.dogId;
-    delete instance.dogRef;
-
-    resolve();
+  return new Promise(function (resolve, reject) {
+    return firebase.unauth()
+      .then(function () {
+        return Firebase.goOffline();
+      })
+      .then(function () {
+        delete instance.dogId;
+        delete instance.dogRef;
+      })
+      .then(resolve)
+      .catch(reject);
   });
 };
 
