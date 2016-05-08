@@ -39,18 +39,14 @@ LinkedIn.prototype.start = function () {
     'social:linkedin:company:import:auto': this._autoImportCompany.bind(this)
   });
 
-  /*this.communication.emit('sync:outgoing:quickshot:register', {
+  this.communication.emit('sync:outgoing:quickshot:register', {
     companyResource: 'apps',
     registerEvents: ['social:linkedin:config:update'],
     outgoingFunction: this._onConfigOutgoingSynchronization.bind(this)
-  });*/
+  });
 
   this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import:auto', null, {schedule: '6 hours'});
-  /*this.communication.emit('worker:job:enqueue', 'social:linkedin:company:import:auto', null, {schedule: '6 hours'});
-  
-  if (!this.config.last_import_date || moment(this.config.last_import_date).isBefore(moment().subtract(1, 'week'))) {
-    this.communication.emit('worker:job:enqueue', 'social:linkedin:company:import');
-  }*/
+  this.communication.emit('worker:job:enqueue', 'social:linkedin:company:import:auto', null, {schedule: '6 hours'});
 };
 
 LinkedIn.prototype.stop = function () {
@@ -67,7 +63,7 @@ LinkedIn.prototype.stop = function () {
 LinkedIn.prototype._onConfigOutgoingSynchronization = function (params, callback) {
   this.config.updated_date = new Date();
   
-  callback(this.config);  
+  callback(null, this.config);
 };
 
 LinkedIn.prototype._getLinkedInProfile = function (linkedInProfileUrl) {
@@ -234,9 +230,9 @@ LinkedIn.prototype._importCompany = function (params, callback) {
           });
         })
         .then(function () {
-          /*_this.config.last_import_date = new Date();
+          _this.config.last_import_date = new Date();
           
-          _this.communication.emit('social:linkedin:config:update');*/
+          _this.communication.emit('social:linkedin:config:update');
         })
         .then(function () {
           return callback(null, employee_urls);
@@ -248,6 +244,9 @@ LinkedIn.prototype._importCompany = function (params, callback) {
 };
 
 LinkedIn.prototype._autoImportCompany = function (params, callback) {
+  if (!this.config.last_import_date || moment(this.config.last_import_date).isBefore(moment().subtract(1, 'week'))) {
+    this.communication.emit('worker:job:enqueue', 'social:linkedin:company:import');
+  }
 
   callback();
 };
