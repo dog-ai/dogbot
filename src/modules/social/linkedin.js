@@ -118,7 +118,7 @@ LinkedIn.prototype._importProfile = function (params, callback) {
           .then(function () {
             return profile;
           });
-      } else {
+      } else if (profile.canonicalurl) {
         return _this._findEmployeeByLinkedInProfileUrl(profile.canonicalurl)
           .then(function (employee) {
             if (employee) {
