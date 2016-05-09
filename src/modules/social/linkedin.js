@@ -62,7 +62,7 @@ LinkedIn.prototype.stop = function () {
 
 LinkedIn.prototype._onConfigOutgoingSynchronization = function (params, callback) {
   this.config.updated_date = new Date();
-  
+
   callback(null, this.config);
 };
 
@@ -154,7 +154,12 @@ LinkedIn.prototype._autoImportProfile = function (params, callback) {
 
   return this._findAllEmployeesBeforeLinkedInLastImportDate(linkedInLastImportDate)
     .mapSeries(function (employee) {
-      _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {employee_id: employee.id, employee_linkedin_profile_url: employee.linkedin_profile_url});
+      if (employee.linkedin_profile_url) {
+        _this.communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {
+          employee_id: employee.id,
+          employee_linkedin_profile_url: employee.linkedin_profile_url
+        });
+      }
     })
     .then(function () {
       callback();
@@ -201,20 +206,20 @@ LinkedIn.prototype._importCompany = function (params, callback) {
 
               return Promise.mapSeries(employee_related_urls, function (related_employee_url) {
 
-                if (!_.includes(employee_urls, related_employee_url)) {
-                  return _this._getLinkedInProfile(related_employee_url)
-                    .then(function (profile) {
+                  if (!_.includes(employee_urls, related_employee_url)) {
+                    return _this._getLinkedInProfile(related_employee_url)
+                      .then(function (profile) {
 
-                      if (profile.related) {
-                        for (var i = 0; i < profile.related.length; i++) {
-                          if (profile.related[i].headline.indexOf(company.name) != -1) {
-                            employee_related_related_urls.push(profile.related[i].url);
+                        if (profile.related) {
+                          for (var i = 0; i < profile.related.length; i++) {
+                            if (profile.related[i].headline.indexOf(company.name) != -1) {
+                              employee_related_related_urls.push(profile.related[i].url);
+                            }
                           }
                         }
-                      }
-                    }).delay(2000);
-                }
-              })
+                      }).delay(2000);
+                  }
+                })
                 .finally(function () {
                   employee_urls = _.union(employee_urls, employee_related_related_urls);
                 });
@@ -231,7 +236,7 @@ LinkedIn.prototype._importCompany = function (params, callback) {
         })
         .then(function () {
           _this.config.last_import_date = new Date();
-          
+
           _this.communication.emit('social:linkedin:config:update');
         })
         .then(function () {
