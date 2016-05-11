@@ -13,10 +13,11 @@ function Task() {
 Task.prototype.initialize = function (ref, companyId, onIncomingTaskCallback) {
   var refs = {
     tasksRef: ref.child('companies/' + companyId + '/tasks'),
-    specsRef: ref.child('job_specs')
+    specsRef: ref.child('queue/specs')
   };
 
   var options = {
+    'specId': 'default_spec',
     'numWorkers': 1,
     'suppressStack': true
   };
