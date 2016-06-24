@@ -25,9 +25,11 @@ Task.prototype.initialize = function (ref, companyId, onIncomingTaskCallback) {
   this._queue = new FirebaseQueue(refs, options, function (task, progress, resolve, reject) {
     logger.debug('Incoming task: ' + JSON.stringify(task));
 
-    if (task && task.event) {
-      onIncomingTaskCallback(task.event, task.data, progress, resolve, reject);
+    if (!task || !task.event) {
+      return reject('Invalid task');
     }
+
+    onIncomingTaskCallback(task.event, task.data, progress, resolve, reject);
   });
 };
 
