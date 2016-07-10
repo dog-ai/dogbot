@@ -217,14 +217,14 @@ LinkedIn.prototype._importCompany = function (params, callback) {
                             }
                           }
                         }
-                      }).delay(2000);
+                      }).delay(20000);
                   }
                 })
                 .finally(function () {
                   employee_urls = _.union(employee_urls, employee_related_related_urls);
                 });
             })
-            .delay(3000)
+            .delay(20000)
             .catch(function () {
             });
 
