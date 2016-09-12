@@ -310,7 +310,7 @@ device.prototype._execNmap = function (ip) {
 
     var result = {};
 
-    if (ip === '10.172.160.1' || ip === '10.172.161.1') {
+    if (ip === '10.172.160.1' || ip === '10.172.161.1' || ip === '172.16.2.194' || ip === '172.16.2.5' || ip === '172.16.2.3') {
       return resolve(result);
     }
 
