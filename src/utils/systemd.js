@@ -1,8 +1,12 @@
-var ffi = require('ffi');
+/*
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ */
 
-var libsystemd = ffi.Library('libsystemd', {
-    'sd_notify': ['int', ['int', 'string']]
-});
+const ffi = require('ffi')
 
-module.exports.sdNotifySync = libsystemd.sd_notify;
-module.exports.sdNotify = libsystemd.sd_notify.async;
+const libsystemd = ffi.Library('libsystemd', {
+  'sd_notify': [ 'int', [ 'int', 'string' ] ]
+})
+
+module.exports.sdNotifySync = libsystemd.sd_notify
+module.exports.sdNotify = libsystemd.sd_notify.async
