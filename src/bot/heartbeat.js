@@ -1,64 +1,55 @@
-var logger = require('../utils/logger.js'),
-    Promise = require('bluebird');
+/*
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ */
 
-function heartbeat() {
+const Promise = require('bluebird')
 
+const Communication = require('../utils/communication.js')
+
+class Heartbeat {
+  initialize (interval, heartbeatFn, healthCheckFn) {
+    return new Promise((resolve, reject) => {
+      if (!interval > 0) {
+        return reject(new Error('invalid interval'))
+      }
+
+      this._heartbeatFn = Promise.promisify(heartbeatFn)
+      this._healthCheckFn = healthCheckFn
+
+      this._interval = interval / 2
+
+      Communication.on('bot:heartbeat', this._sendHeartbeat)
+      Communication.emit('worker:job:enqueue', 'bot:heartbeat', null, { schedule: this._interval + ' seconds' })
+
+      this._initialized = true
+
+      resolve(this._interval)
+    })
+  }
+
+  terminate () {
+    return new Promise((resolve) => {
+      if (!this._initialized) {
+        return resolve()
+      }
+
+      Communication.emit('worker:job:dequeue', 'bot:heartbeat')
+      Communication.removeEventListener('bot:heartbeat', this._sendHeartbeat)
+
+      delete this._interval
+      delete this._heartbeatFn
+      delete this._initialized
+
+      resolve()
+    })
+  }
+
+  _sendHeartbeat (params, callback) {
+    this._healthCheckFn()
+      .then(() => this._heartbeatFn())
+      .then(callback)
+      .catch(error => callback(error))
+  }
 }
 
-heartbeat.prototype.initialize = function (interval, heartbeatFn, healthCheckFn) {
-    this._heartbeatFn = Promise.promisify(heartbeatFn);
-    this._healthCheckFn = healthCheckFn;
-
-    return new Promise(function (resolve, reject) {
-        if (!interval > 0) {
-            reject(new Error('invalid interval'));
-        }
-
-        instance._interval = interval / 2;
-
-        instance.communication.on('bot:heartbeat', instance._sendHeartbeat);
-        instance.communication.emit('worker:job:enqueue', 'bot:heartbeat', null, {schedule: instance._interval + ' seconds'});
-
-        instance._initialized = true;
-
-        resolve(instance._interval);
-    });
-};
-
-heartbeat.prototype.terminate = function () {
-    return new Promise(function (resolve, reject) {
-        if (!instance._initialized) {
-            reject('heartbeat not initialized');
-        }
-
-        instance.communication.emit('worker:job:dequeue', 'bot:heartbeat');
-        instance.communication.removeEventListener('bot:heartbeat', instance._sendHeartbeat);
-
-        delete instance._interval;
-        delete instance._heartbeatFn;
-        delete instance._initialized;
-
-        resolve();
-    });
-};
-
-heartbeat.prototype._sendHeartbeat = function (params, callback) {
-    instance._healthCheckFn()
-        .then(function () {
-            return instance._heartbeatFn();
-        })
-        .then(function () {
-            callback();
-        })
-        .catch(function (error) {
-            callback(error);
-        })
-};
-
-var instance = new heartbeat();
-
-module.exports = function (communication) {
-    instance.communication = communication;
-
-    return instance;
-};
+module.exports = new Heartbeat()

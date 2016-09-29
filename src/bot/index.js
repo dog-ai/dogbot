@@ -14,7 +14,7 @@ const databases = require('../databases')(communication)
 const apps = require('./apps')(communication, modules, databases)
 const Sync = require('./sync')
 const worker = require('./worker.js')(databases)
-const heartbeat = require('./heartbeat.js')(communication)
+const Heartbeat = require('./heartbeat.js')
 const autoupdate = require('./autoupdate.js')(communication)
 
 class Bot {
@@ -43,6 +43,7 @@ class Bot {
     return apps.disableAllApps()
       .then(Sync.terminate)
       .then(worker.terminate)
+      .then(Heartbeat.terminate)
       .then(() => Logger.info('Stopped dogbot'))
       .catch(this.report)
   }
@@ -53,13 +54,13 @@ class Bot {
     }
 
     // https://github.com/winstonjs/winston/pull/838
-    var _callback = callback === undefined ? null : callback
+    const _callback = callback === undefined ? null : callback
 
     Logger.error(error.message, error, _callback)
   }
 
   heartbeat (interval, heartbeatFn, callback) {
-    heartbeat.initialize(interval, heartbeatFn, () => Promise.all([
+    Heartbeat.initialize(interval, heartbeatFn, () => Promise.all([
       apps.healthCheck(),
       Sync.healthCheck(),
       worker.healthCheck()
@@ -98,14 +99,14 @@ class Bot {
       },
       callback => {
         // listen for outgoing quickshot sync callback registrations
-        communication.on('sync:outgoing:quickshot:register', function (registerParams) {
+        communication.on('sync:outgoing:quickshot:register', registerParams => {
           if (registerParams && registerParams.registerEvents) {
-            _.forEach(registerParams.registerEvents, function (registerEvent) {
+            _.forEach(registerParams.registerEvents, registerEvent => {
               // listen for outgoing quickshot events
-              communication.on(registerEvent, function (outgoingParams, outgoingCallback) {
+              communication.on(registerEvent, (outgoingParams, outgoingCallback) => {
                 // split quickshot event arguments
-                // var outgoingCallback = arguments.length > 1 && _.isFunction(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : undefined
-                // var outgoingParams = [].slice.call(arguments, 0, outgoingCallback ? arguments.length - 1 : arguments.length)
+                // let outgoingCallback = arguments.length > 1 && _.isFunction(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : undefined
+                // let outgoingParams = [].slice.call(arguments, 0, outgoingCallback ? arguments.length - 1 : arguments.length)
 
                 // sync module will take care of doing the quickshot
                 callback(registerParams, outgoingParams, outgoingCallback)
