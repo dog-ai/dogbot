@@ -4,9 +4,9 @@
 
 const ffi = require('ffi')
 
-const libsystemd = ffi.Library('libsystemd', {
-  'sd_notify': [ 'int', [ 'int', 'string' ] ]
-})
+const libsystemd = ffi.Library('libsystemd', { 'sd_notify': [ 'int', [ 'int', 'string' ] ] })
 
-module.exports.sdNotifySync = libsystemd.sd_notify
-module.exports.sdNotify = libsystemd.sd_notify.async
+module.exports = {
+  sdNotifySync: libsystemd.sd_notify,
+  sdNotify: libsystemd.sd_notify.async
+}

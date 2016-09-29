@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var events = require('events');
-var Promise = require('bluebird');
+const Promise = require('bluebird')
 
-function communication() {
-    events.EventEmitter.call(this);
+const EventEmitter = require('events').EventEmitter
+
+class Communication extends EventEmitter {
+  constructor () {
+    super()
+
+    Communication.prototype.emitAsync = Promise.promisify(EventEmitter.prototype.emit)
+
+    this.setMaxListeners(256)
+  }
 }
 
-communication.prototype.__proto__ = events.EventEmitter.prototype;
-
-communication.prototype.emitAsync = Promise.promisify(events.EventEmitter.prototype.emit);
-
-var instance = new communication();
-instance.setMaxListeners(256);
-
-module.exports = instance;
+module.exports = new Communication()
