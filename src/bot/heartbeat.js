@@ -20,10 +20,10 @@ class Heartbeat {
         return reject(new Error('invalid interval'))
       }
 
+      this.interval = interval / 2
+
       this.heartbeat = Promise.promisify(heartbeatFn)
       this.healthcheck = healthCheckFn
-
-      this.interval = interval / 2
 
       Communication.on('bot:heartbeat', heartbeat.bind(this))
       Communication.emit('worker:job:enqueue', 'bot:heartbeat', null, { schedule: this.interval + ' seconds' })
