@@ -81,7 +81,7 @@ class Bot {
   }
 
   _configureDataSync () {
-    return Sync.initialize(Bot.secret,
+    return Sync.initialize(this.secret,
       callback => {
         // start an outgoing periodic sync job every 10 minutes
         communication.on('sync:outgoing:periodic', callback)
