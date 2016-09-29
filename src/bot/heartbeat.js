@@ -9,7 +9,7 @@ const Communication = require('../utils/communication.js')
 function heartbeat (params, callback) {
   this._healthCheck()
     .then(() => this._heartbeat())
-    .then(callback)
+    .then(() => callback())
     .catch(error => callback(error))
 }
 

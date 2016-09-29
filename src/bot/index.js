@@ -59,12 +59,11 @@ class Bot {
     Logger.error(error.message, error, _callback)
   }
 
-  heartbeat (interval, heartbeat, callback) {
+  heartbeat (interval, heartbeat) {
     const healthChecks = [ apps.healthCheck(), Sync.healthCheck(), worker.healthCheck() ]
 
-    Heartbeat.initialize(interval, heartbeat, () => Promise.all(healthChecks))
+    return Heartbeat.initialize(interval, heartbeat, () => Promise.all(healthChecks))
       .then(interval => Logger.info('Sending a heartbeat every ' + interval + ' seconds'))
-      .finally(callback)
   }
 
   static autoupdate (branch, updateFn) {
