@@ -85,7 +85,7 @@ class Bot {
         communication.on('sync:outgoing:periodic', callback)
         communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
       },
-      Bot._configureApps,
+      this._configureApps,
       callback => {
         // listen for incoming sync callback registrations
         communication.on('sync:incoming:register:setup', callback)
