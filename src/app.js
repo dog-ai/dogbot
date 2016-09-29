@@ -8,7 +8,6 @@ const BRANCH = process.env.DOGBOT_BRANCH
 
 const Logger = require('./utils/logger.js')
 const Bot = require('./bot')
-const systemd = require('./utils/systemd')
 
 const logErrorAndExit = (error) => {
   Logger.error(error, () => {
@@ -31,13 +30,13 @@ try {
   bot.start()
     .then(() => {
       if (process.platform === 'linux') {
-        systemd.sdNotify(0, 'READY=1', logErrorAndExit)
+        require('./utils/systemd').sdNotify(0, 'READY=1', logErrorAndExit)
       }
 
       if (WATCHDOG_USEC) {
         bot.heartbeat(WATCHDOG_USEC, (callback) => {
           if (process.platform === 'linux') {
-            systemd.sdNotify(0, 'WATCHDOG=1', callback)
+            require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', callback)
           } else {
             if (callback) {
               callback()
