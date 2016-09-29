@@ -82,7 +82,7 @@ switch (ENVIRONMENT) {
       environment: ENVIRONMENT
     })
 
-    const RollbarLogger = (options) => {
+    const RollbarLogger = function (options) {
       this.name = 'rollbar'
       this.level = options && options.level || 'error'
       this.handleExceptions = true
