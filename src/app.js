@@ -2,74 +2,60 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var SECRET = process.env.DOGBOT_SECRET,
-  WATCHDOG_USEC = process.env.WATCHDOG_USEC,
-  REPO_BRANCH = process.env.DOGBOT_BRANCH
+const SECRET = process.env.DOGBOT_SECRET
+const WATCHDOG_USEC = process.env.WATCHDOG_USEC
+const BRANCH = process.env.DOGBOT_BRANCH
 
-var bot = require('./bot')(SECRET)
+const Logger = require('./utils/logger.js')
+const Bot = require('./bot')
+const systemd = require('./utils/systemd')
 
-// shutdown gracefully
-function _shutdown() {
-  bot.stop(function () {
-    process.exit(0)
-  })
-}
-
-function _error(error) {
-  bot.report(error)
-}
-
-process.on('SIGINT', _shutdown)
-process.on('SIGTERM', _shutdown)
-
-// force immediate shutdown, i.e. systemd watchdog?
-process.on('SIGABRT', function () {
-  process.exit(1)
-})
-
-process.on('SIGHUP', function () { // reload
-  _shutdown()
-})
-
-// stop and then shutdown, i.e. forever daemon
-process.once('SIGUSR2', function () {
-  bot.stop(function () {
-    process.kill(process.pid, 'SIGUSR2')
-  })
-})
-
-process.on('exit', function () {
-})
-
-process.on('uncaughtException', _error)
-process.on('unhandledRejection', _error)
-
-if (!SECRET) {
-  bot.error('Please provide a dog.ai secret.', function () {
+const logErrorAndExit = (error) => {
+  Logger.error(error, () => {
     process.exit(1)
   })
-} else {
-  bot.start(function () {
-    if (process.platform === 'linux') {
-      require('./utils/systemd').sdNotify(0, 'READY=1', _error)
-    }
-
-    if (WATCHDOG_USEC) {
-      bot.heartbeat(WATCHDOG_USEC, function (callback) {
-        if (process.platform === 'linux') {
-          require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', callback)
-        } else {
-          if (callback) {
-            callback()
-          }
-        }
-      })
-    }
-
-    if (REPO_BRANCH) {
-      bot.autoupdate(REPO_BRANCH, function (oldVer, newVer) {
-        _shutdown()
-      })
-    }
-  })
 }
+
+process.on('uncaughtException', logErrorAndExit)
+process.on('unhandledRejection', logErrorAndExit)
+
+try {
+  const bot = new Bot(SECRET)
+
+  // shutdown gracefully
+  const stopAndExit = () => {
+    bot.stop()
+      .finally(() => process.exit(0))
+  }
+
+  bot.start()
+    .then(() => {
+      if (process.platform === 'linux') {
+        systemd.sdNotify(0, 'READY=1', logErrorAndExit)
+      }
+
+      if (WATCHDOG_USEC) {
+        bot.heartbeat(WATCHDOG_USEC, (callback) => {
+          if (process.platform === 'linux') {
+            systemd.sdNotify(0, 'WATCHDOG=1', callback)
+          } else {
+            if (callback) {
+              callback()
+            }
+          }
+        })
+      }
+
+      if (BRANCH) {
+        bot.autoupdate(BRANCH, () => stopAndExit())
+      }
+    })
+
+  process.on('SIGINT', stopAndExit)
+  process.on('SIGTERM', stopAndExit)
+  process.on('SIGHUP', stopAndExit)
+  process.on('SIGABRT', () => process.exit(1)) // force immediate exit, i.e. systemd watchdog?
+} catch (error) {
+  logErrorAndExit(error)
+}
+
