@@ -6,6 +6,13 @@ const Promise = require('bluebird')
 
 const Communication = require('../utils/communication.js')
 
+const heartbeat = (params, callback) => {
+  this.healthcheck()
+    .then(() => this.heartbeat())
+    .then(callback)
+    .catch(error => callback(error))
+}
+
 class Heartbeat {
   initialize (interval, heartbeatFn, healthCheckFn) {
     return new Promise((resolve, reject) => {
@@ -13,42 +20,35 @@ class Heartbeat {
         return reject(new Error('invalid interval'))
       }
 
-      this._heartbeatFn = Promise.promisify(heartbeatFn)
-      this._healthCheckFn = healthCheckFn
+      this.heartbeat = Promise.promisify(heartbeatFn)
+      this.healthcheck = healthCheckFn
 
-      this._interval = interval / 2
+      this.interval = interval / 2
 
-      Communication.on('bot:heartbeat', this._sendHeartbeat)
-      Communication.emit('worker:job:enqueue', 'bot:heartbeat', null, { schedule: this._interval + ' seconds' })
+      Communication.on('bot:heartbeat', heartbeat.bind(this))
+      Communication.emit('worker:job:enqueue', 'bot:heartbeat', null, { schedule: this.interval + ' seconds' })
 
-      this._initialized = true
+      this.isInitialized = true
 
-      resolve(this._interval)
+      resolve(this.interval)
     })
   }
 
   terminate () {
     return new Promise((resolve) => {
-      if (!this._initialized) {
+      if (!this.isInitialized) {
         return resolve()
       }
 
       Communication.emit('worker:job:dequeue', 'bot:heartbeat')
-      Communication.removeEventListener('bot:heartbeat', this._sendHeartbeat)
+      Communication.removeEventListener('bot:heartbeat', heartbeat.bind(this))
 
-      delete this._interval
-      delete this._heartbeatFn
-      delete this._initialized
+      delete this.interval
+      delete this.heartbeat
+      delete this.isInitialized
 
       resolve()
     })
-  }
-
-  _sendHeartbeat (params, callback) {
-    this._healthCheckFn()
-      .then(() => this._heartbeatFn())
-      .then(callback)
-      .catch(error => callback(error))
   }
 }
 
