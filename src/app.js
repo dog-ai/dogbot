@@ -10,7 +10,7 @@ const Logger = require('./utils/logger.js')
 const Bot = require('./bot')
 
 const logErrorAndExit = (error) => {
-  Logger.error(error, () => {
+  Logger.error(error.message, error, () => {
     process.exit(1)
   })
 }
@@ -30,7 +30,11 @@ try {
   bot.start()
     .then(() => {
       if (process.platform === 'linux') {
-        require('./utils/systemd').sdNotify(0, 'READY=1', logErrorAndExit)
+        require('./utils/systemd').sdNotify(0, 'READY=1', (error) => {
+          if (error) {
+            Logger.error(error.message, error)
+          }
+        })
       }
 
       if (WATCHDOG_USEC) {
