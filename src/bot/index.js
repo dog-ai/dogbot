@@ -59,16 +59,12 @@ class Bot {
   }
 
   heartbeat (interval, heartbeatFn, callback) {
-    heartbeat.initialize(interval, heartbeatFn, function () {
-      return Promise.all([
-        apps.healthCheck(),
-        Sync.healthCheck(),
-        worker.healthCheck()
-      ])
-    })
-      .then(function (interval) {
-        Logger.info('Sending a heartbeat every ' + interval + ' seconds')
-      })
+    heartbeat.initialize(interval, heartbeatFn, () => Promise.all([
+      apps.healthCheck(),
+      Sync.healthCheck(),
+      worker.healthCheck()
+    ]))
+      .then(interval => Logger.info('Sending a heartbeat every ' + interval + ' seconds'))
       .finally(callback)
   }
 
@@ -78,35 +74,29 @@ class Bot {
 
   _configureWorker () {
     return worker.initialize(
-      function (callback) {
-        communication.on('worker:job:enqueue', callback)
-      },
-      function (callback) {
-        communication.on('worker:job:dequeue', callback)
-      },
-      function (event, params) {
-        return communication.emitAsync(event, params)
-      }
+      callback => communication.on('worker:job:enqueue', callback),
+      callback => communication.on('worker:job:dequeue', callback),
+      (event, params) => communication.emitAsync(event, params)
     )
   }
 
   _configureDataSync () {
     return Sync.initialize(Bot.secret,
-      function (callback) {
+      callback => {
         // start an outgoing periodic sync job every 10 minutes
         communication.on('sync:outgoing:periodic', callback)
         communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
       },
       Bot._configureApps,
-      function (callback) {
+      callback => {
         // listen for incoming sync callback registrations
         communication.on('sync:incoming:register:setup', callback)
       },
-      function (callback) {
+      callback => {
         // listen for outgoing periodic sync callback registrations
         communication.on('sync:outgoing:periodic:register', callback)
       },
-      function (callback) {
+      callback => {
         // listen for outgoing quickshot sync callback registrations
         communication.on('sync:outgoing:quickshot:register', function (registerParams) {
           if (registerParams && registerParams.registerEvents) {
@@ -124,11 +114,11 @@ class Bot {
           }
         })
       },
-      function (event, params, callback) {
+      (event, params, callback) => {
         // trigger incoming sync data events
         communication.emit(event, params, callback)
       }
-    ).spread(function (dogId, apps) {
+    ).spread((dogId, apps) => {
       Logger.info('Authenticated as ' + dogId)
 
       return apps
@@ -137,24 +127,24 @@ class Bot {
 
   _configureTaskSync () {
     return Sync.initializeTask(
-      function (event, params, progress, resolve, reject) {
+      (event, params, progress, resolve, reject) => {
         // trigger incoming sync task events
 
-        var now = _.now()
-        var callbacks = {
+        const now = _.now()
+        const callbacks = {
           'progress': event + ':progress:' + now,
           'resolve': event + ':resolve:' + now,
           'reject': event + ':reject:' + now
         }
 
-        function onResolve (result) {
+        const onResolve = (result) => {
           resolve(result)
 
           communication.removeListener(callbacks.progress, progress)
           communication.removeListener(callbacks.reject, onReject)
         }
 
-        function onReject (error) {
+        const onReject = (error) => {
           reject(error)
 
           communication.removeListener(callbacks.progress, progress)
@@ -172,9 +162,7 @@ class Bot {
 
   _configureApps (_apps) {
     return Promise.all(
-      _.map(_apps, function (appConfig, appName) {
-        return appConfig.is_enabled ? apps.enableApp(appName, appConfig) : apps.disableApp(appName)
-      }))
+      _.map(_apps, (appConfig, appName) => appConfig.is_enabled ? apps.enableApp(appName, appConfig) : apps.disableApp(appName)))
   }
 }
 
