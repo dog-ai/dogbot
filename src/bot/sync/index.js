@@ -2,6 +2,8 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID
+
 const _ = require('lodash')
 const Promise = require('bluebird')
 
@@ -9,9 +11,9 @@ const Logger = require('../../utils/logger.js')
 const moment = require('moment-timezone')
 
 const Firebase = require('firebase')
-const firebase = new Firebase('https://dazzling-torch-7723.firebaseIO.com')
+const firebase = new Firebase(`https://${FIREBASE_PROJECT_ID}.firebaseio.com`)
 
-var Task = require('./task.js')
+const Task = require('./task.js')
 
 class Sync {
   initialize (token,
@@ -488,7 +490,6 @@ class Sync {
               }
             }
           })
-
         } else {
           callback(null)
         }
