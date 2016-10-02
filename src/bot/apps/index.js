@@ -2,134 +2,121 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js'),
-  _ = require('lodash'),
-  path = require('path'),
-  fs = require('fs'),
-  Promise = require('bluebird');
+const _ = require('lodash')
+const Promise = require('bluebird')
 
-var APPS_DIR = path.join(__dirname, '/');
+const Logger = require('../../utils/logger.js')
 
-function apps() {
-}
+const Databases = require('../../databases')
+const Modules = require('../../modules')
 
-apps.prototype.enableApp = function (id, config) {
-  var self = this;
+const path = require('path')
+const fs = require('fs')
 
-  if (_.find(this.enabled, {id: id}) || !_.contains(this.available, id)) {
-    // reload
-    return this.disableApp(id)
+class Apps {
+  constructor () {
+    this.appsDir = path.join(__dirname, '/')
+
+    this.enabled = []
+    this.available = (fs.readdirSync(this.appsDir) || [])
+      .filter(file => file.indexOf('index') === -1)
+      .map(file => file.replace('.js', ''))
+  }
+
+  enableApp (id, config) {
+    if (_.find(this.enabled, { id: id }) || !_.contains(this.available, id)) {
+      // reload
+      return this.disableApp(id)
+        .then(() => this.enableApp(id, config))
+    }
+
+    const app = require(this.appsDir + id)
+    let promises = []
+
+    _.forEach(app.databases, (database) => {
+      promises.push(Databases.startDatabase(database.type, database.name))
+    })
+
+    return Promise.all(promises)
       .then(function () {
-        return self.enableApp(id, config);
+        promises = []
+
+        _.forEach(app.modules, (module) => {
+          promises.push(Modules.loadModule(module.type, module.name, module.optional, config))
+        })
+
+        return Promise.all(promises)
+      })
+      .then(() => {
+        this.enabled.push(app)
+
+        Logger.info('Enabled app: ' + app.id)
+      })
+      .catch((error) => {
+        promises = []
+
+        _.forEach(app.databases, (database) => {
+          promises.push(Databases.stopDatabase(database.type, database.name))
+        })
+
+        _.forEach(app.modules, (module) => {
+          promises.push(Modules.unloadModule(module.name))
+        })
+
+        Logger.error('Unable to enable app ' + id + ' because ' + error.message)
+
+        return Promise.all(promises)
       })
   }
 
-  var app = require(APPS_DIR + id);
-  var promises = [];
+  disableApp (id) {
+    const app = _.find(this.enabled, { id: id })
 
-  _.forEach(app.databases, function (database) {
-    promises.push(self.databases.startDatabase(database.type, database.name));
-  });
+    if (!app) {
+      return
+    }
 
-  return Promise.all(promises)
-    .then(function () {
+    let promises = []
 
-      promises = [];
-
-      _.forEach(app.modules, function (module) {
-        promises.push(self.modules.loadModule(module.type, module.name, module.optional, config));
-      });
-
-      return Promise.all(promises);
+    _.forEach(app.modules, (module) => {
+      promises.push(Modules.unloadModule(module.name))
     })
-    .then(function () {
-      self.enabled.push(app);
 
-      logger.info('Enabled app: ' + app.id);
-    })
-    .catch(function (error) {
+    return Promise.all(promises)
+      .then(() => {
+        promises = []
 
-      promises = [];
+        _.forEach(app.databases, (database) => {
+          promises.push(Databases.stopDatabase(database.type, database.name))
+        })
 
-      _.forEach(app.databases, function (database) {
-        promises.push(self.databases.stopDatabase(database.type, database.name));
-      });
+        return Promise.all(promises)
+      })
+      .then(() => {
+        _.remove(this.enabled, { id: id })
 
-      _.forEach(app.modules, function (module) {
-        promises.push(self.modules.unloadModule(module.name));
-      });
+        Logger.info('Disabled app: ' + id)
 
-      logger.error('Unable to enable app ' + id + ' because ' + error.message);
-
-      return Promise.all(promises);
-    });
-};
-
-apps.prototype.disableApp = function (id) {
-  var self = this;
-
-  var app = _.find(this.enabled, {id: id});
-
-  if (!app) {
-    return;
+      })
+      .catch((error) => {
+        Logger.info('Unable to disable app ' + id + ' because ' + error.message)
+      })
   }
 
-  var promises = [];
+  disableAllApps () {
+    const promises = []
 
-  _.forEach(app.modules, function (module) {
-    promises.push(self.modules.unloadModule(module.name));
-  });
-
-  return Promise.all(promises)
-    .then(function () {
-      promises = [];
-
-      _.forEach(app.databases, function (database) {
-        promises.push(self.databases.stopDatabase(database.type, database.name));
-      });
-
-      return Promise.all(promises);
+    _.forEach(this.enabled, (app) => {
+      promises.push(this.disableApp(app.id))
     })
-    .then(function () {
-      _.remove(self.enabled, {id: id});
 
-      logger.info('Disabled app: ' + id);
+    return Promise.all(promises)
+  }
 
-    }).catch(function (error) {
-      logger.info('Unable to disable app ' + id + ' because ' + error.message);
-    });
-};
+  healthCheck () {
+    return Promise.resolve()
+  }
+}
 
-apps.prototype.disableAllApps = function () {
-  var self = this;
+module.exports = new Apps()
 
-  var promises = [];
-
-  _.forEach(this.enabled, function (app) {
-    promises.push(self.disableApp(app.id));
-  });
-
-  return Promise.all(promises);
-};
-
-apps.prototype.healthCheck = function () {
-  return Promise.resolve();
-};
-
-module.exports = function (communication, modules, databases) {
-  var instance = new apps();
-
-  instance.communication = communication;
-  instance.modules = modules;
-  instance.databases = databases;
-  instance.enabled = [];
-  instance.available = (fs.readdirSync(APPS_DIR) || [])
-    .filter(function (file) {
-      return (file.indexOf('index') == -1);
-    })
-    .map(function (file) {
-      return file.replace('.js', '');
-    });
-
-  return instance;
-};
