@@ -4,7 +4,6 @@
 
 const SECRET = process.env.DOGBOT_SECRET
 const WATCHDOG_USEC = process.env.WATCHDOG_USEC
-const BRANCH = process.env.DOGBOT_BRANCH
 
 const Logger = require('./utils/logger.js')
 const Bot = require('./bot')
@@ -47,10 +46,6 @@ try {
             }
           }
         })
-      }
-
-      if (BRANCH) {
-        bot.autoupdate(BRANCH, () => stopAndExit())
       }
     })
 
