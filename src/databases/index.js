@@ -2,93 +2,81 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../utils/logger.js'),
-    _ = require('lodash'),
-    Promise = require('bluebird');
+const _ = require('lodash')
+const Promise = require('bluebird')
 
-var path = require('path'),
-    fs = require("fs");
+const Logger = require('../utils/logger.js')
+const Communication = require('../utils/communication.js')
 
-var DATABASES_DIR = path.join(__dirname, '/');
+const path = require('path')
+const fs = require('fs')
 
-function databases() {
-}
+class Databases {
+  constructor () {
+    this.databasesDir = path.join(__dirname, '/')
 
-databases.prototype.startDatabase = function (type, name) {
+    this.started = []
+    this.types = (fs.readdirSync(this.databasesDir) || []).filter((type) => {
+      return type.indexOf('.') <= -1
+    }).map((type) => {
+      return type.toUpperCase()
+    })
+  }
 
-    if (_.find(this.started, {type: type, name: name})) {
-        return;
+  startDatabase (type, name) {
+    if (_.find(this.started, { type: type, name: name })) {
+      return
     }
 
-    return this._start(type, name);
-};
+    return this._start(type, name)
+  }
 
-databases.prototype.stopDatabase = function (type, name) {
-
-    var database = _.find(this.started, {type: type, name: name});
+  stopDatabase (type, name) {
+    const database = _.find(this.started, { type: type, name: name })
 
     if (!database) {
-        return;
+      return
     }
 
-    return this._stop(database);
-};
+    return this._stop(database)
+  }
 
-databases.prototype._start = function (type, name) {
-    var self = this;
+  _start (type, name) {
+    return new Promise((resolve, reject) => {
+      const file = `${name}.js`
 
-    return new Promise(function (resolve, reject) {
+      try {
+        const database = require(this.databasesDir + type.toLowerCase() + '/' + file)
 
-        var file = name + '.js';
+        return database.start(Communication)
+          .then((result) => {
+            this.started.push(database)
 
-        try {
-            var database = require(DATABASES_DIR + type.toLowerCase() + '/' + file);
+            Logger.debug('Started ' + type.toLowerCase() + ' database: ' + database.name)
 
-            return database.start(self.communication)
-                .then(function (result) {
-                    self.started.push(database);
+            resolve(result)
+          })
+          .catch((error) => reject(error))
+      } catch (error) {
+        Logger.error('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message)
 
-                    logger.debug('Started ' + type.toLowerCase() + ' database: ' + database.name);
+        reject(new Error('unable to start ' + type.toLowerCase() + ' database ' + file))
+      }
+    })
+  }
 
-                    resolve(result);
-                })
-                .catch(function (error) {
-                    reject(error);
-                });
-
-        } catch (error) {
-            logger.debug('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message);
-
-            reject(new Error('unable to start ' + type.toLowerCase() + ' database ' + file));
-        }
-    });
-};
-
-databases.prototype._stop = function (database) {
-    var self = this;
-
+  _stop (database) {
     return database.stop()
-        .then(function () {
-            _.remove(self.started, {name: database.name});
+      .then(() => {
+        _.remove(this.started, { name: database.name })
 
-            logger.debug('Stopped database: ' + database.name);
-        })
-        .catch(function (error) {
-            logger.debug('Unable to stop database ' + database.name + ' because ' + error.message);
-            throw new Error('unable to stop ' + type.toLowerCase() + ' database ' + file);
-        });
-};
+        Logger.debug('Stopped database: ' + database.name)
+      })
+      .catch((error) => {
+        Logger.debug('Unable to stop database ' + database.name + ' because ' + error.message)
+        throw new Error('Unable to stop database ' + database.name)
+      })
+  }
+}
 
-module.exports = function (communication) {
-    var instance = new databases();
-
-    instance.communication = communication;
-    instance.started = [];
-    instance.types = (fs.readdirSync(DATABASES_DIR) || []).filter(function (type) {
-        return type.indexOf('.') <= -1;
-    }).map(function (type) {
-        return type.toUpperCase();
-    });
-
-    return instance;
-};
+module.exports = new Databases()
