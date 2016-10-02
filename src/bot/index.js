@@ -36,7 +36,7 @@ class Bot {
   }
 
   stop () {
-    return apps.disableAllApps()
+    return Apps.disableAllApps()
       .then(Sync.terminate)
       .then(Worker.terminate)
       .then(Heartbeat.terminate)
