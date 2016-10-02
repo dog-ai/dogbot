@@ -9,11 +9,11 @@ const Logger = require('../utils/logger.js')
 const communication = require('../utils/communication.js')
 
 const modules = require('../modules')(communication)
-const databases = require('../databases')(communication)
+const Databases = require('../databases')
 
-const apps = require('./apps')(communication, modules, databases)
+const apps = require('./apps')(communication, modules, Databases)
 const Sync = require('./sync')
-const worker = require('./worker.js')(databases)
+const worker = require('./worker.js')
 const Heartbeat = require('./heartbeat.js')
 const autoupdate = require('./autoupdate.js')(communication)
 
