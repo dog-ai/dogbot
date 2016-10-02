@@ -2,130 +2,116 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../utils/logger.js'),
-  _ = require('lodash'),
-  path = require('path'),
-  fs = require('fs'),
-  Promise = require('bluebird')
+const _ = require('lodash')
+const Promise = require('bluebird')
 
-var MODULES_DIR = path.join(__dirname, '/')
+const Logger = require('../utils/logger.js')
+const Communication = require('../utils/communication')
 
-function modules() {
-}
+const path = require('path')
+const fs = require('fs')
 
-modules.prototype.loadModule = function (type, name, optional, config, reload) {
-  var self = this
+class Modules {
+  constructor () {
+    this.modulesDir = path.join(__dirname, '/')
 
-  reload = reload || false
+    this.loaded = []
+    this.available = []
+    this.types = (fs.readdirSync(this.modulesDir) || []).map(type => type.toUpperCase())
+  }
 
-  var module = _.find(this.loaded, {name: name})
+  loadModule (type, name, optional, config, reload) {
+    reload = reload || false
 
-  if (module) {
-    if (!reload) {
+    const module = _.find(this.loaded, { name: name })
+
+    if (module) {
+      if (!reload) {
+        return
+      }
+
+      return this._unload(module)
+        .then(() => this._load(type, name, optional, config))
+    } else {
+      return this._load(type, name, optional, config)
+    }
+  }
+
+  unloadModule (name) {
+    const module = _.find(this.loaded, { name: name })
+
+    if (!module) {
       return
     }
 
-    return this._unload(module)
-      .then(function () {
-        return self._load(type, name, optional, config)
-      })
-  } else {
-    return this._load(type, name, optional, config)
-  }
-}
-
-modules.prototype.unloadModule = function (name) {
-  var module = _.find(this.loaded, {name: name})
-
-  if (!module) {
-    return
+    this._unload(module)
   }
 
-  this._unload(module)
-}
+  _load (type, name, optional, config) {
+    return new Promise((resolve, reject) => {
+      if (config && !config.is_enabled) {
+        return
+      }
 
-modules.prototype._load = function (type, name, optional, config) {
-  var self = this
-
-  return new Promise(function (resolve, reject) {
-    if (config && !config.is_enabled) {
-      return
-    }
-
-    // TODO: need to rewrite with promises instead
-    _.defer(function () {
-      try {
-        var module
+      // TODO: need to rewrite with promises instead
+      _.defer(() => {
         try {
-          module = require('./' + type.toLowerCase() + '/' + name + '.js')
+          var module
+          try {
+            module = require('./' + type.toLowerCase() + '/' + name + '.js')
+          } catch (error) {
+            module = require('./' + type.toLowerCase() + '/' + name)
+          }
+
+          module.load(Communication, config)
+
+          this.loaded.push(module)
+
+          Logger.debug('Loaded ' + type.toLowerCase() + ' module: ' + module.name)
+
+          resolve()
         } catch (error) {
-          module = require('./' + type.toLowerCase() + '/' + name)
+          if (!(error.message.indexOf('platform is not supported') > -1 ||
+            error.message.indexOf('invalid configuration') > -1 ||
+            error.message.indexOf('unix socket not available') > -1)) {
+            Logger.error(error.stack)
+          }
+
+          if (optional) {
+            Logger.debug('Unable to load optional ' + type.toLowerCase() + ' module ' + name + ' because ' + error.message)
+
+            resolve()
+          } else {
+            reject(new Error('unable to load' + type.toLowerCase() + ' module ' + name))
+          }
+        }
+      })
+    })
+  }
+
+  _unload (module) {
+    return new Promise((resolve, reject) => {
+      try {
+        module.unload()
+
+        try {
+          delete require.cache[ require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js') ]
+        } catch (error) {
+          delete require.cache[ require.resolve('./' + module.type.toLowerCase() + '/' + module.name) ]
         }
 
-        module.load(self.communication, config)
+        _.remove(this.loaded, (_module) => _module.name === module.name)
 
-        self.loaded.push(module)
-
-        logger.debug('Loaded ' + type.toLowerCase() + ' module: ' + module.name)
+        Logger.debug('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name)
 
         resolve()
       } catch (error) {
-        if (!(error.message.indexOf('platform is not supported') > -1 ||
-          error.message.indexOf('invalid configuration') > -1 ||
-          error.message.indexOf('unix socket not available') > -1)) {
-          logger.error(error.stack)
-        }
+        Logger.debug('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + error.message)
 
-        if (optional) {
-          logger.debug('Unable to load optional ' + type.toLowerCase() + ' module ' + name + ' because ' + error.message)
-
-          resolve()
-        } else {
-          reject(new Error('unable to load' + type.toLowerCase() + ' module ' + name))
-        }
+        reject('unable to unload ' + module.type.toLowerCase() + ' module ' + module.name)
       }
     })
-  })
+  }
 }
 
-modules.prototype._unload = function (module) {
-  var self = this
-
-  return new Promise(function (resolve, reject) {
-    try {
-      module.unload()
-
-      try {
-        delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js')]
-      } catch (error) {
-        delete require.cache[require.resolve('./' + module.type.toLowerCase() + '/' + module.name)]
-      }
-
-      _.remove(self.loaded, function (_module) {
-        return _module.name == module.name
-      })
-
-      logger.debug('Unloaded ' + module.type.toLowerCase() + ' module: ' + module.name)
-
-      resolve()
-    } catch (error) {
-      logger.debug('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + error.message)
-
-      reject('unable to unload ' + module.type.toLowerCase() + ' module ' + module.name)
-    }
-  })
-}
-
-module.exports = function (communication) {
-  var instance = new modules()
-
-  instance.communication = communication
-  instance.loaded = []
-  instance.available = []
-
-  instance.types = (fs.readdirSync(MODULES_DIR) || []).map(function (type) {
-    return type.toUpperCase()
-  })
-
-  return instance
-}
+module.exports = new Modules()
