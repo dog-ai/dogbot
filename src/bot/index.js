@@ -13,9 +13,8 @@ const Databases = require('../databases')
 
 const apps = require('./apps')(communication, modules, Databases)
 const Sync = require('./sync')
-const worker = require('./worker.js')
+const Worker = require('./worker.js')
 const Heartbeat = require('./heartbeat.js')
-const autoupdate = require('./autoupdate.js')(communication)
 
 class Bot {
   constructor (secret) {
@@ -42,7 +41,7 @@ class Bot {
   stop () {
     return apps.disableAllApps()
       .then(Sync.terminate)
-      .then(worker.terminate)
+      .then(Worker.terminate)
       .then(Heartbeat.terminate)
       .then(() => Logger.info('Stopped dogbot'))
       .catch(this.report)
@@ -60,7 +59,7 @@ class Bot {
   }
 
   heartbeat (interval, heartbeat) {
-    const healthChecks = [ apps.healthCheck(), Sync.healthCheck(), worker.healthCheck() ]
+    const healthChecks = [ apps.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
 
     return Heartbeat.initialize(interval, heartbeat, () => Promise.all(healthChecks))
       .then(interval => Logger.info('Sending a heartbeat every ' + interval + ' seconds'))
@@ -71,9 +70,9 @@ class Bot {
   }
 
   _configureWorker () {
-    return worker.initialize(
-      callback => communication.on('worker:job:enqueue', callback),
-      callback => communication.on('worker:job:dequeue', callback),
+    return Worker.initialize(
+      callback => communication.on('Worker:job:enqueue', callback),
+      callback => communication.on('Worker:job:dequeue', callback),
       (event, params) => communication.emitAsync(event, params)
     )
   }
@@ -83,7 +82,7 @@ class Bot {
       callback => {
         // start an outgoing periodic sync job every 10 minutes
         communication.on('sync:outgoing:periodic', callback)
-        communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
+        communication.emit('Worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
       },
       this._configureApps,
       callback => {
@@ -153,7 +152,7 @@ class Bot {
         communication.once(callbacks.resolve, onResolve)
         communication.once(callbacks.reject, onReject)
 
-        communication.emit('worker:job:enqueue', event, params, null, callbacks)
+        communication.emit('Worker:job:enqueue', event, params, null, callbacks)
       }
     )
   }
