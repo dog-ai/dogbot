@@ -6,12 +6,9 @@ const _ = require('lodash')
 const Promise = require('bluebird')
 
 const Logger = require('../utils/logger.js')
-const communication = require('../utils/communication.js')
+const Communication = require('../utils/communication.js')
 
-const modules = require('../modules')(communication)
-const Databases = require('../databases')
-
-const apps = require('./apps')(communication, modules, Databases)
+const Apps = require('./apps')
 const Sync = require('./sync')
 const Worker = require('./worker.js')
 const Heartbeat = require('./heartbeat.js')
@@ -59,21 +56,17 @@ class Bot {
   }
 
   heartbeat (interval, heartbeat) {
-    const healthChecks = [ apps.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
+    const healthChecks = [ Apps.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
 
     return Heartbeat.initialize(interval, heartbeat, () => Promise.all(healthChecks))
       .then(interval => Logger.info('Sending a heartbeat every ' + interval + ' seconds'))
   }
 
-  static autoupdate (branch, updateFn) {
-    autoupdate.initialize(branch, updateFn)
-  }
-
   _configureWorker () {
     return Worker.initialize(
-      callback => communication.on('Worker:job:enqueue', callback),
-      callback => communication.on('Worker:job:dequeue', callback),
-      (event, params) => communication.emitAsync(event, params)
+      callback => Communication.on('Worker:job:enqueue', callback),
+      callback => Communication.on('Worker:job:dequeue', callback),
+      (event, params) => Communication.emitAsync(event, params)
     )
   }
 
@@ -81,25 +74,25 @@ class Bot {
     return Sync.initialize(this.secret,
       callback => {
         // start an outgoing periodic sync job every 10 minutes
-        communication.on('sync:outgoing:periodic', callback)
-        communication.emit('Worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
+        Communication.on('sync:outgoing:periodic', callback)
+        Communication.emit('Worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
       },
       this._configureApps,
       callback => {
         // listen for incoming sync callback registrations
-        communication.on('sync:incoming:register:setup', callback)
+        Communication.on('sync:incoming:register:setup', callback)
       },
       callback => {
         // listen for outgoing periodic sync callback registrations
-        communication.on('sync:outgoing:periodic:register', callback)
+        Communication.on('sync:outgoing:periodic:register', callback)
       },
       callback => {
         // listen for outgoing quickshot sync callback registrations
-        communication.on('sync:outgoing:quickshot:register', registerParams => {
+        Communication.on('sync:outgoing:quickshot:register', registerParams => {
           if (registerParams && registerParams.registerEvents) {
             _.forEach(registerParams.registerEvents, registerEvent => {
               // listen for outgoing quickshot events
-              communication.on(registerEvent, (outgoingParams, outgoingCallback) => {
+              Communication.on(registerEvent, (outgoingParams, outgoingCallback) => {
                 // split quickshot event arguments
                 // let outgoingCallback = arguments.length > 1 && _.isFunction(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : undefined
                 // let outgoingParams = [].slice.call(arguments, 0, outgoingCallback ? arguments.length - 1 : arguments.length)
@@ -113,7 +106,7 @@ class Bot {
       },
       (event, params, callback) => {
         // trigger incoming sync data events
-        communication.emit(event, params, callback)
+        Communication.emit(event, params, callback)
       }
     ).spread((dogId, apps) => {
       Logger.info('Authenticated as ' + dogId)
@@ -137,29 +130,29 @@ class Bot {
         const onResolve = (result) => {
           resolve(result)
 
-          communication.removeListener(callbacks.progress, progress)
-          communication.removeListener(callbacks.reject, onReject)
+          Communication.removeListener(callbacks.progress, progress)
+          Communication.removeListener(callbacks.reject, onReject)
         }
 
         const onReject = (error) => {
           reject(error)
 
-          communication.removeListener(callbacks.progress, progress)
-          communication.removeListener(callbacks.resolve, onResolve)
+          Communication.removeListener(callbacks.progress, progress)
+          Communication.removeListener(callbacks.resolve, onResolve)
         }
 
-        communication.on(callbacks.progress, progress)
-        communication.once(callbacks.resolve, onResolve)
-        communication.once(callbacks.reject, onReject)
+        Communication.on(callbacks.progress, progress)
+        Communication.once(callbacks.resolve, onResolve)
+        Communication.once(callbacks.reject, onReject)
 
-        communication.emit('Worker:job:enqueue', event, params, null, callbacks)
+        Communication.emit('Worker:job:enqueue', event, params, null, callbacks)
       }
     )
   }
 
   _configureApps (_apps) {
     return Promise.all(
-      _.map(_apps, (appConfig, appName) => appConfig.is_enabled ? apps.enableApp(appName, appConfig) : apps.disableApp(appName)))
+      _.map(_apps, (appConfig, appName) => appConfig.is_enabled ? Apps.enableApp(appName, appConfig) : Apps.disableApp(appName)))
   }
 }
 
