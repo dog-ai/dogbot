@@ -64,8 +64,8 @@ class Bot {
 
   _configureWorker () {
     return Worker.initialize(
-      callback => Communication.on('Worker:job:enqueue', callback),
-      callback => Communication.on('Worker:job:dequeue', callback),
+      callback => Communication.on('worker:job:enqueue', callback),
+      callback => Communication.on('worker:job:dequeue', callback),
       (event, params) => Communication.emitAsync(event, params)
     )
   }
@@ -75,7 +75,7 @@ class Bot {
       callback => {
         // start an outgoing periodic sync job every 10 minutes
         Communication.on('sync:outgoing:periodic', callback)
-        Communication.emit('Worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
+        Communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
       },
       this._configureApps,
       callback => {
@@ -145,7 +145,7 @@ class Bot {
         Communication.once(callbacks.resolve, onResolve)
         Communication.once(callbacks.reject, onReject)
 
-        Communication.emit('Worker:job:enqueue', event, params, null, callbacks)
+        Communication.emit('worker:job:enqueue', event, params, null, callbacks)
       }
     )
   }
