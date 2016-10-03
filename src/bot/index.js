@@ -32,7 +32,7 @@ class Bot {
           .then(this._configureApps)
           .then(this._configureTaskSync)
       })
-      .catch(this.report)
+      .catch(Logger.error)
   }
 
   stop () {
@@ -41,18 +41,7 @@ class Bot {
       .then(Worker.terminate)
       .then(Heartbeat.terminate)
       .then(() => Logger.info('Stopped dogbot'))
-      .catch(this.report)
-  }
-
-  static report (error, callback) {
-    if (!error) {
-      return
-    }
-
-    // https://github.com/winstonjs/winston/pull/838
-    const _callback = callback === undefined ? null : callback
-
-    Logger.error(error.message, error, _callback)
+      .catch(Logger.error)
   }
 
   heartbeat (interval, heartbeat) {
