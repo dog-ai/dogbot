@@ -32,27 +32,16 @@ class Bot {
           .then(this._configureApps)
           .then(this._configureTaskSync)
       })
-      .catch(this.report)
+      .catch(Logger.error)
   }
 
   stop () {
-    return apps.disableAllApps()
+    return Apps.disableAllApps()
       .then(Sync.terminate)
       .then(Worker.terminate)
       .then(Heartbeat.terminate)
       .then(() => Logger.info('Stopped dogbot'))
-      .catch(this.report)
-  }
-
-  static report (error, callback) {
-    if (!error) {
-      return
-    }
-
-    // https://github.com/winstonjs/winston/pull/838
-    const _callback = callback === undefined ? null : callback
-
-    Logger.error(error.message, error, _callback)
+      .catch(Logger.error)
   }
 
   heartbeat (interval, heartbeat) {
@@ -64,8 +53,8 @@ class Bot {
 
   _configureWorker () {
     return Worker.initialize(
-      callback => Communication.on('Worker:job:enqueue', callback),
-      callback => Communication.on('Worker:job:dequeue', callback),
+      callback => Communication.on('worker:job:enqueue', callback),
+      callback => Communication.on('worker:job:dequeue', callback),
       (event, params) => Communication.emitAsync(event, params)
     )
   }
@@ -75,7 +64,7 @@ class Bot {
       callback => {
         // start an outgoing periodic sync job every 10 minutes
         Communication.on('sync:outgoing:periodic', callback)
-        Communication.emit('Worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
+        Communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
       },
       this._configureApps,
       callback => {
@@ -145,7 +134,7 @@ class Bot {
         Communication.once(callbacks.resolve, onResolve)
         Communication.once(callbacks.reject, onReject)
 
-        Communication.emit('Worker:job:enqueue', event, params, null, callbacks)
+        Communication.emit('worker:job:enqueue', event, params, null, callbacks)
       }
     )
   }
