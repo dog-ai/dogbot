@@ -6,6 +6,7 @@ const LOG_TYPE = process.env.DOGBOT_LOG_TYPE || 'console'
 const LOG_LEVEL = process.env.DOGBOT_LOG_LEVEL || 'info'
 const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'development'
 const BRANCH = process.env.DOGBOT_REPO_BRANCH || 'develop'
+const ROLLBAR_API_KEY = process.env.ROLLBAR_API_KEY
 
 const util = require('util')
 const fs = require('fs')
@@ -77,7 +78,7 @@ switch (ENVIRONMENT) {
   case 'production':
 
     const rollbar = require('rollbar')
-    rollbar.init('0e93b088a46f4376bc4c4d2fe871f832', {
+    rollbar.init(ROLLBAR_API_KEY, {
       branch: BRANCH,
       environment: ENVIRONMENT
     })
@@ -93,22 +94,7 @@ switch (ENVIRONMENT) {
 
     RollbarLogger.prototype.log = function (level, msg, meta, callback) {
       if (level === 'error') {
-        let error
-        let payload = { level }
-        if (msg !== '' && meta) {
-          error = new Error()
-          error.stack = msg
-
-          if (msg.indexOf('\n') > -1) {
-            error.message = msg.substring(7, msg.indexOf('\n'))
-          }
-
-          payload.session = meta
-        } else {
-          error = meta
-        }
-
-        rollbar.handleErrorWithPayloadData(error, payload, function (error) {
+        rollbar.handleErrorWithPayloadData(meta, { level }, function (error) {
           if (error) {
             return callback(error)
           } else {
