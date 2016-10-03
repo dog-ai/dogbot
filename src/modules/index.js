@@ -82,7 +82,7 @@ class Modules {
 
             resolve()
           } else {
-            reject(new Error('unable to load' + type.toLowerCase() + ' module ' + name))
+            reject(new Error('unable to load ' + type.toLowerCase() + ' module ' + name))
           }
         }
       })
