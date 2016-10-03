@@ -2,6 +2,8 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+const SENDGRIND_API_KEY = process.env.SENDGRID_API_KEY
+
 var utils = require('../utils.js');
 
 function SendGrid() {
@@ -16,7 +18,7 @@ SendGrid.prototype.events = {};
 SendGrid.prototype.load = function (communication) {
   this.communication = communication;
 
-  this._client = require('sendgrid')('***REMOVED***');
+  this._client = require('sendgrid')(SENDGRIND_API_KEY);
 
   this.start();
 };
