@@ -93,22 +93,7 @@ switch (ENVIRONMENT) {
 
     RollbarLogger.prototype.log = function (level, msg, meta, callback) {
       if (level === 'error') {
-        let error
-        let payload = { level }
-        if (msg !== '' && meta) {
-          error = new Error()
-          error.stack = msg
-
-          if (msg.indexOf('\n') > -1) {
-            error.message = msg.substring(7, msg.indexOf('\n'))
-          }
-
-          payload.session = meta
-        } else {
-          error = meta
-        }
-
-        rollbar.handleErrorWithPayloadData(error, payload, function (error) {
+        rollbar.handleErrorWithPayloadData(meta, { level }, function (error) {
           if (error) {
             return callback(error)
           } else {
