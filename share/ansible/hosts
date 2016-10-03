@@ -1,0 +1,9 @@
+[localhost]
+127.0.0.1 ansible_connection=local
+
+[development]
+10.172.161.197 ansible_ssh_user=root ansible_ssh_private_key_file=~/.key/root_home_rsa.pem
+
+[production]
+172.16.2.239 ansible_ssh_user=root ansible_ssh_private_key_file=~/.key/root_home_rsa.pem
+172.16.2.211 ansible_ssh_user=root ansible_ssh_private_key_file=~/.key/root_home_rsa.pem
