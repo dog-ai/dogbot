@@ -14,6 +14,7 @@
   "dependencies": {
     "async": "1.4.2",
     "bluebird": "3.3.3",
+    "bluebird-retry": "^0.8.0",
     "cron": "1.0.9",
     "express": "4.13.0",
     "ffi": "2.0.0",
