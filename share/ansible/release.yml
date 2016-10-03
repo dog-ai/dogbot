@@ -1,6 +1,0 @@
-- hosts: localhost
-  user: root
-
-  tasks:
-    - name: Merge develop into master
-      local_action: shell git checkout master && git merge develop && git push && git checkout develop
