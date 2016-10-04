@@ -2,10 +2,10 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+const MonitorModule = require('./monitor-module')
+
 const Promise = require('bluebird')
 const retry = require('bluebird-retry')
-
-const MonitorModule = require('./monitor-module')
 
 const Logger = require('../../utils/logger')
 const Communication = require('../../utils/communication')

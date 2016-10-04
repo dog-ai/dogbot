@@ -2,202 +2,80 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js'),
-  _ = require('lodash'),
-  Promise = require('bluebird');
+const IOModule = require('./io-module')
 
-var RtmClient = require('slack-client').RtmClient,
-  MemoryDataStore = require('slack-client').MemoryDataStore;
+const Promise = require('bluebird')
 
-function slack() {
-}
+const Logger = require('../../utils/logger')
 
-slack.prototype.type = "IO";
+const Botkit = require('botkit')
+const slackbot = Botkit.slackbot({ log: false })
 
-slack.prototype.name = "slack";
-
-slack.prototype.info = function () {
-  return "*" + this.name + "* - " +
-    "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
-};
-
-slack.prototype.load = function (communication, config) {
-  this.communication = communication;
-
-  this._apiToken = (config && config.api_token || undefined);
-  if (!this._apiToken || this._apiToken.trim() === '') {
-    throw new Error('invalid configuration: no API token available');
+class Slack extends IOModule {
+  constructor () {
+    super('slack')
   }
 
-  this.defaultChannel = (config && config.default_channel || undefined);
-
-  this._dataStore = new MemoryDataStore({'logger': logger});
-
-  this._client = new RtmClient(this._apiToken, {autoReconnect: true, dataStore: this._dataStore});
-
-  return this.start();
-};
-
-slack.prototype.unload = function () {
-  return this.stop();
-};
-
-slack.prototype.start = function () {
-  return new Promise(function (resolve, reject) {
-    instance._client.once('open', resolve);
-    instance._client.once('unable_to_rtm_start', reject);
-
-    instance._client.start();
-  })
-    .then(function () {
-
-      instance._client.on('message', instance._onIncomingMessage);
-      instance._client.on('presence_change', instance._onPresenceChange);
-
-      instance.communication.on('io:slack:text:outgoing', instance._onOutgoingTextMessage);
-    });
-};
-
-slack.prototype.stop = function () {
-  return new Promise(function (resolve) {
-    instance.communication.removeListener('io:slack:text:outgoing', instance._onOutgoingTextMessage);
-
-    instance._client.removeListener('message', instance._onIncomingMessage);
-    instance._client.removeListener('presence_change', instance._onPresenceChange);
-
-    instance._client.once('disconnect', resolve);
-
-    instance._client.disconnect();
-  })
-};
-
-function replaceSlackIdsWithNames(text) {
-  var _text = text;
-  var ids = _text.match(/<@\w+>/g);
-
-  _.forEach(ids, function (id) {
-    var user = instance._dataStore.getUserById(id.substring(2, id.length - 1));
-    if (user) {
-      _text = _text.replace(id, user.real_name || user.name);
+  load (communication, config) { // TODO: remove communication
+    if (!config.api_token) {
+      throw new Error('missing required API token')
     }
-  });
 
-  return _text
-}
+    this._client = slackbot.spawn({ token: config.api_token })
 
-function removeBotName(text, botName) {
-  var _text = text;
+    slackbot.on([ 'direct_message', 'mention', 'direct_mention' ], (bot, message) => {
+      const reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
+      bot.api.reactions.add(reaction, (error) => {
+        if (error) {
+          Logger.error(error)
 
-  if (botName.test(_text)) {
-    if (_text.replace(botName, '').indexOf(': ') === 0) {
-      _text = _text.replace(botName, '');
-      _text = _text.substring(2)
-    } else {
-      _text = _text.replace(botName, 'you');
-    }
+          return
+        }
+
+        bot.reply(message, `Not now! I'm busy learning new tricks.`)
+      })
+    })
+
+    super.load()
   }
 
-  return _text;
-}
+  unload () {
+    super.unload()
 
-function findSlackUserFromEntities(entities) {
-  var user;
-
-  if (entities) {
-    if (entities.contact && entities.contact.length > 0) {
-      user = _.find(instance._dataStore.users, {real_name: entities.contact[0].value}) ||
-        _.find(instance._dataStore.users, {name: entities.contact[0].value})
-    }
+    this._client.destroy()
   }
 
-  return user;
+  start () {
+    return new Promise((resolve, reject) => {
+      slackbot.on('rtm_open', () => {})
+
+      this._client.startRTM((error, bot, payload) => {
+        if (error) {
+          return reject(error)
+        }
+
+        return resolve(bot, payload)
+      })
+    })
+      .then(() => {
+        super.start()
+      })
+  }
+
+  stop () {
+    return new Promise((resolve, reject) => {
+      slackbot.on('rtm_close', () => {
+        resolve()
+      })
+
+      this._client.closeRTM()
+
+      setTimeout(reject, 5000)
+    })
+      .then(() => {
+        super.stop()
+      })
+  }
 }
 
-slack.prototype._onIncomingMessage = function (message) {
-  var type = message.type,
-    channel = instance._dataStore.getChannelById(message.channel) ||
-      instance._dataStore.getDMById(message.channel) ||
-      instance._dataStore.getGroupById(message.channel),
-    user = instance._dataStore.getUserById(message.user),
-    time = message.ts,
-    text = message.text;
-
-  if (type === 'message' && text) {
-    // replace slack ids with proper user names
-    text = replaceSlackIdsWithNames(text);
-
-    var bot = instance._dataStore.getUserById(instance._client.activeUserId);
-    var botName = new RegExp('(' + bot.name + '|' + bot.real_name + ')', "i");
-
-    // am i the message recipient or mentioned in it?
-    if (channel.is_im || text.charAt(0) === '!' || botName.test(text)) {
-
-      // normalize message by removing the bot name
-      text = removeBotName(text, botName);
-
-      instance._client.send({channel: channel.id, type: 'typing'});
-
-      instance.communication.emitAsync('nlp:intent:text', text)
-        .timeout(3000)
-        .then(function (intent) {
-          return instance.communication.emitAsync(intent.event, intent.entities)
-            .timeout(1000)
-            .then(function (response) {
-              var text = response.text,
-                user = findSlackUserFromEntities(response.entities);
-
-              var channelId = user && instance._dataStore.getDMByName(user.name).id || channel.id;
-
-              instance._client.sendMessage(text, channelId);
-              instance._client.sendMessage(':+1:', channel.id);
-            })
-        })
-        .catch(function (error) {
-          instance._client.sendMessage('Not now! I\'m busy learning new tricks.', channel.id);
-        });
-    }
-  }
-};
-
-slack.prototype._onPresenceChange = function (message) {
-  logger.debug(message);
-};
-
-slack.prototype._onOutgoingTextMessage = function (message) {
-  var channelId = message.channelId,
-    text = message.text;
-
-  instance._client.sendMessage(text, channelId);
-};
-/*
- slack.prototype._discoverUsers = function () {
- var self = this;
-
- var channel = this.client.getChannelByName(this.defaultChannel.substring(1));
- var users = this._getUsersInChannel(channel);
- users.forEach(function (user) {
- if (user.presence === 'active') {
- self.communication.emit('io:slack:userIsAlreadyActive', user);
- } else {
- self.communication.emit('io:slack:userIsAlreadyAway', user);
- }
- });
- };
-
- slack.prototype._listenUserPresence = function (user, presence) {
- var channel = this._client.getChannelByName(this.defaultChannel.substring(1));
- if (this._isUserInChannel(user, channel)) {
- switch (presence) {
- case 'active':
- this.communication.emit('io:slack:userIsNowActive', user);
- break;
- case 'away':
- this.communication.emit('io:slack:userIsNowAway', user);
- break;
- }
- }
- };*/
-
-var instance = new slack();
-
-module.exports = instance;
+module.exports = new Slack()
