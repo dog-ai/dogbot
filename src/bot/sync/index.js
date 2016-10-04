@@ -69,9 +69,8 @@ class Sync {
 
   terminate () {
     return new Promise((resolve, reject) => {
-
       return Task.terminate()
-        .then(this._unauthenthicate)
+        .then(() => this._unauthenthicate())
         .then(() => {
           delete this.companyId
           delete this.companyRef

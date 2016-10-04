@@ -37,9 +37,9 @@ class Bot {
 
   stop () {
     return Apps.disableAllApps()
-      .then(Sync.terminate)
-      .then(Worker.terminate)
-      .then(Heartbeat.terminate)
+      .then(() => Sync.terminate())
+      .then(() => Worker.terminate())
+      .then(() => Heartbeat.terminate())
       .then(() => Logger.info('Stopped dogbot'))
       .catch(Logger.error)
   }

@@ -41,7 +41,7 @@ class Heartbeat {
       }
 
       Communication.emit('worker:job:dequeue', 'bot:heartbeat')
-      Communication.removeEventListener('bot:heartbeat', heartbeat.bind(this))
+      Communication.removeListener('bot:heartbeat', heartbeat.bind(this))
 
       delete this._interval
       delete this._heartbeat
