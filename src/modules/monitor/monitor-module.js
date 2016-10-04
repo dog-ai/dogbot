@@ -208,6 +208,97 @@ class MonitorModule extends Module {
           })
       })
   }
+
+  _createOrUpdateDHCP (dhcp) {
+    return this._findDHCPByMACAddressAndHostname(dhcp.mac_address, dhcp.hostname)
+      .then((row) => {
+        if (row === undefined) {
+          return this._createDHCP(dhcp)
+            .then(() => {
+              Communication.emit('monitor:dhcp:create', dhcp)
+            })
+        } else {
+          dhcp.updated_date = new Date()
+
+          return this._updateDHCPByMACAddressAndHostname(dhcp.mac_address, dhcp.hostname, dhcp)
+            .then(() => {
+              Communication.emit('monitor:dhcp:update', dhcp)
+            })
+        }
+      })
+  }
+
+  _createDHCP (dhcp) {
+    var _dhcp = _.clone(dhcp)
+
+    if (_dhcp.created_date && _dhcp.created_date instanceof Date) {
+      _dhcp.created_date = _dhcp.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    if (_dhcp.updated_date && _dhcp.updated_date instanceof Date) {
+      _dhcp.updated_date = _dhcp.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    var keys = _.keys(_dhcp)
+    var values = _.values(_dhcp)
+
+    return Communication.emitAsync('database:monitor:create',
+      'INSERT INTO dhcp (' + keys + ') VALUES (' + values.map(() => {
+        return '?'
+      }) + ')',
+      values).then(() => _dhcp)
+  }
+
+  _findDHCPByMACAddressAndHostname (macAddress, hostname) {
+    return Communication.emitAsync('database:monitor:retrieveOne',
+      'SELECT * FROM dhcp WHERE mac_address = ? AND hostname = ?', [ macAddress, hostname ])
+      .then((row) => {
+        if (row !== undefined) {
+          row.created_date = new Date(row.created_date.replace(' ', 'T'))
+          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
+        }
+        return row
+      })
+  }
+
+  _updateDHCPByMACAddressAndHostname (macAddress, hostname, dhcp) {
+    var _dhcp = _.clone(dhcp)
+
+    if (_dhcp.created_date && _dhcp.created_date instanceof Date) {
+      _dhcp.created_date = _dhcp.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    if (_dhcp.updated_date && _dhcp.updated_date instanceof Date) {
+      _dhcp.updated_date = _dhcp.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    var keys = _.keys(_dhcp)
+    var values = _.values(_dhcp)
+
+    // TODO: Fix this query by http://stackoverflow.com/questions/603572/how-to-properly-escape-a-single-quote-for-a-sqlite-database
+    return Communication.emitAsync('database:monitor:update',
+      'UPDATE dhcp SET ' + keys.map((key) => {
+        return key + ' = ?'
+      }) + ' WHERE mac_address = \'' + macAddress + '\' AND hostname = \'' + hostname + '\'',
+      values)
+  }
+
+  _deleteAllDHCPBeforeDate (oldestDate) {
+    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+
+    return Communication.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM dhcp WHERE updated_date < Datetime(?)', [ updatedDate ])
+      .then((rows) => {
+        return Promise.mapSeries(rows, (row) => {
+          row.created_date = new Date(row.created_date.replace(' ', 'T'))
+          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
+
+          return Communication.emitAsync('database:monitor:delete', 'DELETE FROM dhcp WHERE id = ?', [ row.id ])
+        })
+          .then(() => {
+            return rows
+          })
+      })
+  }
 }
 
 module.exports = MonitorModule
