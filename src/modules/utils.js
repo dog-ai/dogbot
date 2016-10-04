@@ -8,7 +8,7 @@ const Communication = require('../utils/communication')
 
 module.exports = {
 
-  startListening: (events) => {
+  startListening: function (events) {
     var _this = this
 
     _.forEach(events, function (fn, event) {
