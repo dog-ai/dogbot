@@ -117,6 +117,99 @@ class MonitorModule extends Module {
           })
       })
   }
+
+  _createOrUpdateBonjour (bonjour) {
+    return this._findBonjourByTypeAndName(bonjour.type, bonjour.name)
+      .then((row) => {
+        if (row === undefined) {
+          return this._createBonjour(bonjour)
+            .then(() => {
+              return this.communication.emitAsync('monitor:bonjour:create', bonjour)
+            })
+        } else {
+          bonjour.updated_date = new Date()
+          return this._updateBonjourByTypeAndName(bonjour.type, bonjour.name, bonjour)
+            .then(() => {
+              return this.communication.emitAsync('monitor:bonjour:update', bonjour)
+            })
+        }
+      })
+  }
+
+  _createBonjour (bonjour) {
+    var _bonjour = _.clone(bonjour)
+
+    if (_bonjour.created_date !== undefined && _bonjour.created_date !== null && _bonjour.created_date instanceof Date) {
+      _bonjour.created_date = _bonjour.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    if (_bonjour.updated_date !== undefined && _bonjour.updated_date !== null && _bonjour.updated_date instanceof Date) {
+      _bonjour.updated_date = _bonjour.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    var keys = _.keys(_bonjour)
+    var values = _.values(_bonjour)
+
+    return this.communication.emitAsync('database:monitor:create',
+      'INSERT INTO bonjour (' + keys + ') VALUES (' + values.map(() => {
+        return '?'
+      }) + ')',
+      values)
+      .then(() => {
+        return _bonjour
+      })
+  }
+
+  _findBonjourByTypeAndName (type, name) {
+    return this.communication.emitAsync('database:monitor:retrieveOne',
+      'SELECT * FROM bonjour WHERE type = ? AND name = ?', [ type, name ])
+      .then((row) => {
+        if (row !== undefined) {
+          row.created_date = new Date(row.created_date.replace(' ', 'T'))
+          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
+        }
+        return row
+      })
+  }
+
+  _updateBonjourByTypeAndName (type, name, bonjour) {
+    var _bonjour = _.clone(bonjour)
+
+    if (_bonjour.created_date !== undefined && _bonjour.created_date !== null && _bonjour.created_date instanceof Date) {
+      _bonjour.created_date = _bonjour.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    if (_bonjour.updated_date !== undefined && _bonjour.updated_date !== null && _bonjour.updated_date instanceof Date) {
+      _bonjour.updated_date = _bonjour.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    var keys = _.keys(_bonjour)
+    var values = _.values(_bonjour)
+
+    // TODO: Fix this query by http://stackoverflow.com/questions/603572/how-to-properly-escape-a-single-quote-for-a-sqlite-database
+    return this.communication.emitAsync('database:monitor:update',
+      'UPDATE bonjour SET ' + keys.map((key) => {
+        return key + ' = ?'
+      }) + ' WHERE type = \'' + type + '\' AND name = \'' + name + '\'',
+      values)
+  }
+
+  _deleteAllBonjourBeforeDate (oldestDate) {
+    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+
+    return this.communication.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM bonjour WHERE updated_date < Datetime(?)', [ updatedDate ])
+      .then((rows) => {
+        return Promise.mapSeries(rows, (row) => {
+          row.created_date = new Date(row.created_date.replace(' ', 'T'))
+          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
+
+          return this.communication.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?', [ row.id ])
+        })
+          .then(() => {
+            return rows
+          })
+      })
+  }
 }
 
 module.exports = MonitorModule
