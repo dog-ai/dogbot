@@ -2,27 +2,27 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-'use strict'
+const _ = require('lodash')
 
-var _ = require('lodash');
+const Communication = require('../utils/communication')
 
 module.exports = {
 
-  startListening: function (events) {
-    var _this = this;
+  startListening: (events) => {
+    var _this = this
 
     _.forEach(events, function (fn, event) {
-      _this.communication.on(event, fn);
-      _.extend(_this.events, events);
-    });
+      Communication.on(event, fn)
+      _.extend(_this.events, events)
+    })
   },
 
   stopListening: function (events) {
-    var _this = this;
+    var _this = this
 
     _.forEach(events, function (event) {
-      _this.communication.removeListener(event, _this.events[event]);
-      delete _this.events[event];
-    });
+      Communication.removeListener(event, _this.events[ event ])
+      delete _this.events[ event ]
+    })
   }
 }
