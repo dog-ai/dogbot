@@ -124,13 +124,13 @@ class MonitorModule extends Module {
         if (row === undefined) {
           return this._createBonjour(bonjour)
             .then(() => {
-              return this.communication.emitAsync('monitor:bonjour:create', bonjour)
+              return Communication.emitAsync('monitor:bonjour:create', bonjour)
             })
         } else {
           bonjour.updated_date = new Date()
           return this._updateBonjourByTypeAndName(bonjour.type, bonjour.name, bonjour)
             .then(() => {
-              return this.communication.emitAsync('monitor:bonjour:update', bonjour)
+              return Communication.emitAsync('monitor:bonjour:update', bonjour)
             })
         }
       })
@@ -150,7 +150,7 @@ class MonitorModule extends Module {
     var keys = _.keys(_bonjour)
     var values = _.values(_bonjour)
 
-    return this.communication.emitAsync('database:monitor:create',
+    return Communication.emitAsync('database:monitor:create',
       'INSERT INTO bonjour (' + keys + ') VALUES (' + values.map(() => {
         return '?'
       }) + ')',
@@ -161,7 +161,7 @@ class MonitorModule extends Module {
   }
 
   _findBonjourByTypeAndName (type, name) {
-    return this.communication.emitAsync('database:monitor:retrieveOne',
+    return Communication.emitAsync('database:monitor:retrieveOne',
       'SELECT * FROM bonjour WHERE type = ? AND name = ?', [ type, name ])
       .then((row) => {
         if (row !== undefined) {
@@ -187,7 +187,7 @@ class MonitorModule extends Module {
     var values = _.values(_bonjour)
 
     // TODO: Fix this query by http://stackoverflow.com/questions/603572/how-to-properly-escape-a-single-quote-for-a-sqlite-database
-    return this.communication.emitAsync('database:monitor:update',
+    return Communication.emitAsync('database:monitor:update',
       'UPDATE bonjour SET ' + keys.map((key) => {
         return key + ' = ?'
       }) + ' WHERE type = \'' + type + '\' AND name = \'' + name + '\'',
@@ -197,13 +197,13 @@ class MonitorModule extends Module {
   _deleteAllBonjourBeforeDate (oldestDate) {
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return this.communication.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM bonjour WHERE updated_date < Datetime(?)', [ updatedDate ])
+    return Communication.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM bonjour WHERE updated_date < Datetime(?)', [ updatedDate ])
       .then((rows) => {
         return Promise.mapSeries(rows, (row) => {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
           row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
 
-          return this.communication.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?', [ row.id ])
+          return Communication.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?', [ row.id ])
         })
           .then(() => {
             return rows
