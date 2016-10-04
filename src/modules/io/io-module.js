@@ -7,8 +7,6 @@ const Module = require('../module')
 class IOModule extends Module {
   constructor (name) {
     super('io', name)
-
-    this.events = {}
   }
 }
 

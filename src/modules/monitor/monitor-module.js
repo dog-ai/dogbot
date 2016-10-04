@@ -12,8 +12,6 @@ const Communication = require('../../utils/communication')
 class MonitorModule extends Module {
   constructor (name) {
     super('monitor', name)
-
-    this.events = {}
   }
 
   _createOrUpdateARP (arp) {
