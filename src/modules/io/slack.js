@@ -27,7 +27,7 @@ class Slack extends IOModule {
       const reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
       bot.api.reactions.add(reaction, (error) => {
         if (error) {
-          Logger.error(error)
+          Logger.warn(error)
 
           return
         }
