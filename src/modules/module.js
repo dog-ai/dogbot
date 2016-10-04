@@ -10,6 +10,7 @@ class Module {
   constructor (type, name) {
     this.type = type
     this.name = name
+    this.events = {}
   }
 
   info () {
