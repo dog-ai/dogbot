@@ -40,11 +40,9 @@ class Bonjour extends MonitorModule {
       .then((bonjours) => {
         return Promise.mapSeries(bonjours, (bonjour) => {
           return this._createOrUpdateBonjour(bonjour)
-            .catch((error) => {
-              Logger.warn(error)
-            })
+            .catch((error) => Logger.warn(error))
         })
-          .then(this._clean)
+          .then(() => this._clean())
       })
       .then(() => {
         callback()
