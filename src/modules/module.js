@@ -26,6 +26,12 @@ class Module {
     this.stop()
   }
 
+  start () {
+  }
+
+  stop () {
+  }
+
   _startListening (events) {
     _.forEach(events, (fn, event) => {
       Communication.on(event, fn)
