@@ -73,7 +73,7 @@ class Bonjour extends MonitorModule {
           return
         }
 
-        var values = line.split('')
+        var values = line.split(';')
 
         var bonjour = {
           name: values[ 3 ],

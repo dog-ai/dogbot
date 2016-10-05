@@ -75,7 +75,7 @@ class DHCP extends MonitorModule {
         clearTimeout(timeout)
 
         if (line && line.length > 0) {
-          var values = line.split('')
+          var values = line.split(';')
 
           var dhcp = {
             mac_address: values[ 1 ],
