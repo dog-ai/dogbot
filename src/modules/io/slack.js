@@ -11,6 +11,21 @@ const Logger = require('../../utils/logger')
 const Botkit = require('botkit')
 const slackbot = Botkit.slackbot({ log: false })
 
+slackbot.on([ 'direct_message', 'mention', 'direct_mention' ], (bot, message) => {
+  const reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
+  bot.api.reactions.add(reaction, (error) => {
+    if (error) {
+      Logger.warn(error)
+
+      return
+    }
+
+    bot.reply(message, `Not now! I'm busy learning new tricks.`)
+  })
+})
+
+slackbot.on('rtm_open', () => {})
+
 class Slack extends IOModule {
   constructor () {
     super('slack')
@@ -18,23 +33,10 @@ class Slack extends IOModule {
 
   load (communication, config) { // TODO: remove communication
     if (!config.api_token) {
-      throw new Error('missing required API token')
+      throw new Error('Missing required API token')
     }
 
-    this._client = slackbot.spawn({ token: config.api_token })
-
-    slackbot.on([ 'direct_message', 'mention', 'direct_mention' ], (bot, message) => {
-      const reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
-      bot.api.reactions.add(reaction, (error) => {
-        if (error) {
-          Logger.warn(error)
-
-          return
-        }
-
-        bot.reply(message, `Not now! I'm busy learning new tricks.`)
-      })
-    })
+    this._client = slackbot.spawn({ token: config.api_token, retry: Infinity })
 
     super.load()
   }
@@ -47,8 +49,6 @@ class Slack extends IOModule {
 
   start () {
     return new Promise((resolve, reject) => {
-      slackbot.on('rtm_open', () => {})
-
       this._client.startRTM((error, bot, payload) => {
         if (error) {
           return reject(error)
@@ -63,16 +63,10 @@ class Slack extends IOModule {
   }
 
   stop () {
-    return new Promise((resolve, reject) => {
-      slackbot.on('rtm_close', () => {
-        resolve()
-      })
-
-      this._client.closeRTM()
-
-      setTimeout(reject, 5000)
-    })
+    return Promise.resolve()
       .then(() => {
+        this._client.closeRTM()
+
         super.stop()
       })
   }
