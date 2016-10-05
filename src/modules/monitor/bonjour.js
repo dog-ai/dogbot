@@ -24,15 +24,17 @@ class Bonjour extends MonitorModule {
   }
 
   start () {
-    Communication.on('monitor:bonjour:discover', this._discover.bind(this))
+    super.start({
+      'monitor:bonjour:discover': this._discover.bind(this)
+    })
 
     Communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, { schedule: '1 minute' })
   }
 
   stop () {
-    Communication.removeListener('monitor:bonjour:discover', this._discover.bind(this))
-
     Communication.emit('worker:job:dequeue', 'monitor:bonjour:discover')
+
+    super.stop()
   }
 
   _discover (params, callback) {

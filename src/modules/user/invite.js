@@ -14,7 +14,7 @@ class Invite extends Module {
   }
 
   start () {
-    this._startListening.bind(this)({
+    super.start({
       'user:invite': this._invite.bind(this)
     })
 
@@ -23,12 +23,6 @@ class Invite extends Module {
       registerEvents: [ 'user:invite:sent' ],
       outgoingFunction: this._onInviteSent.bind(this)
     })
-  }
-
-  stop () {
-    this._stopListening.bind(this)([
-      'user:invite'
-    ])
   }
 
   _invite (params, callback) {
