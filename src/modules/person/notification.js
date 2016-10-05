@@ -63,7 +63,7 @@ class Notification extends PersonModule {
   }
 
   start () {
-    this._startListening.bind(this)({
+    super.start({
       'person:employee:nearby': this._onEmployeeNearby.bind(this),
       'person:employee:faraway': this._onEmployeeFaraway.bind(this)
     })
@@ -73,13 +73,6 @@ class Notification extends PersonModule {
       registerEvents: [ 'person:device:discover:create' ],
       outgoingFunction: this._onDeviceDiscoverCreate.bind(this)
     })
-  }
-
-  stop () {
-    this._stopListening.bind(this)([
-      'person:employee:nearby',
-      'person:employee:faraway'
-    ])
   }
 
   _onEmployeeNearby (employee) {

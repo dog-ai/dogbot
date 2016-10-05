@@ -25,7 +25,7 @@ class DHCP extends MonitorModule {
   }
 
   start () {
-    this._startListening.bind(this)({
+    super.start({
       'monitor:dhcp:discover': this._discover.bind(this)
     })
 
@@ -35,9 +35,7 @@ class DHCP extends MonitorModule {
   stop () {
     Communication.emit('worker:job:dequeue', 'monitor:dhcp:discover')
 
-    this._stopListening.bind(this)([
-      'monitor:dhcp:discover'
-    ])
+    super.stop()
   }
 
   _discover (params, callback) {

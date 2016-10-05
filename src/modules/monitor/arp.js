@@ -16,7 +16,7 @@ class ARP extends MonitorModule {
   }
 
   start () {
-    this._startListening.bind(this)({
+    super.start({
       'monitor:arp:discover': this._discover.bind(this),
       'monitor:arp:resolve': this._resolve.bind(this),
       'monitor:arp:reverse': this._reverse.bind(this),
@@ -35,14 +35,7 @@ class ARP extends MonitorModule {
   stop () {
     Communication.emit('worker:job:dequeue', 'monitor:arp:discover')
 
-    this._stopListening.bind(this)([
-      'monitor:arp:discover',
-      'monitor:arp:resolve',
-      'monitor:ip:create',
-      'monitor:ip:update',
-      'monitor:dhcp:create',
-      'monitor:dhcp:update'
-    ])
+    super.stop()
   }
 
   _onIPCreateOrUpdate (ip) {

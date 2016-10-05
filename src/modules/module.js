@@ -27,22 +27,29 @@ class Module {
     this.stop()
   }
 
-  start () {
+  start (events) {
+    if (events) {
+      this.events = events
+
+      this._startListening(events)
+    }
   }
 
   stop () {
+    this._stopListening()
   }
 
-  _startListening (events) {
-    _.forEach(events, (fn, event) => {
-      Communication.on(event, fn)
-      _.extend(this.events, events)
-    })
+  _startListening (events = {}) {
+    _.forEach(events, (fn, event) => Communication.on(event, fn))
   }
 
-  _stopListening (events) {
-    _.forEach(events, (event) => {
-      Communication.removeListener(event, this.events[ event ])
+  _stopListening () {
+    if (!this.events || this.events === {}) {
+      return
+    }
+
+    _.forEach(this.events, (fn, event) => {
+      Communication.removeListener(event, fn)
       delete this.events[ event ]
     })
   }
