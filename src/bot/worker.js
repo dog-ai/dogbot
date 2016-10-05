@@ -53,7 +53,7 @@ class Worker {
 
             const failure = (error) => {
               if (!retry) {
-                Logger.error(error.message, error)
+                Logger.error(error)
               }
 
               callback(error)
