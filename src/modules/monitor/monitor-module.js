@@ -299,6 +299,98 @@ class MonitorModule extends Module {
           })
       })
   }
+
+  _createOrUpdateIP (ip) {
+    return this._findIPByIpAddress(ip.ip_address)
+      .then((row) => {
+        if (row === undefined) {
+          return this._createIP(ip)
+            .then(() => {
+              Communication.emit('monitor:ip:create', ip)
+            })
+        } else {
+          ip.updated_date = new Date()
+          this._updateIPByIpAddress(ip.ip_address, ip)
+            .then(() => {
+              return Communication.emitAsync('monitor:ip:update', ip)
+            })
+        }
+      })
+  }
+
+  _createIP (ip) {
+    var _ip = _.clone(ip)
+
+    if (_ip.created_date !== undefined && _ip.created_date !== null && _ip.created_date instanceof Date
+    ) {
+      _ip.created_date = _ip.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    if (_ip.updated_date !== undefined && _ip.updated_date !== null && _ip.updated_date instanceof Date
+    ) {
+      _ip.updated_date = _ip.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    var keys = _.keys(_ip)
+    var values = _.values(_ip)
+
+    return Communication.emitAsync('database:monitor:create',
+      'INSERT INTO ip (' + keys + ') VALUES (' + values.map(() => {
+        return '?'
+      }) + ')',
+      values)
+      .then(() => _ip)
+  }
+
+  _updateIPByIpAddress (ipAddress, ip) {
+    var _ip = _.clone(ip)
+
+    if (_ip.created_date !== undefined && _ip.created_date !== null && _ip.created_date instanceof Date
+    ) {
+      _ip.created_date = _ip.created_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    if (_ip.updated_date !== undefined && _ip.updated_date !== null && _ip.updated_date instanceof Date
+    ) {
+      _ip.updated_date = _ip.updated_date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    }
+
+    var keys = _.keys(_ip)
+    var values = _.values(_ip)
+
+    return Communication.emitAsync('database:monitor:update',
+      'UPDATE ip SET ' + keys.map((key) => {
+        return key + ' = ?';
+      }) + ' WHERE ip_address = \'' + ipAddress + '\';',
+      values)
+  }
+
+  _findIPByIpAddress (ipAddress) {
+    return Communication.emitAsync('database:monitor:retrieveOne',
+      'SELECT * FROM ip WHERE ip_address = ?;', [ ipAddress ])
+      .then((row) => {
+        if (row !== undefined) {
+          row.created_date = new Date(row.created_date.replace(' ', 'T'))
+          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
+        }
+        return row
+      })
+  }
+
+  _deleteAllIPBeforeDate (oldestDate, callback) {
+    var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
+
+    return Communication.emitAsync('database:monitor:retrieveAll',
+      'SELECT * FROM ip WHERE updated_date < Datetime(?)', [ updatedDate ])
+      .then((rows) => {
+        return Promise.each(rows, (row) => {
+          return Communication.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?;', [ row.id ])
+            .then(() => {
+              return callback(row)
+            })
+        })
+      })
+  }
 }
 
 module.exports = MonitorModule
