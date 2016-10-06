@@ -9,9 +9,7 @@ const Logger = require('./utils/logger.js')
 const Bot = require('./bot')
 
 const logErrorAndExit = (error) => {
-  Logger.error(error.message, error, () => {
-    process.exit(1)
-  })
+  Logger.error(error.message, error, () => process.exit(1))
 }
 
 process.on('uncaughtException', logErrorAndExit)
