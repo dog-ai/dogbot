@@ -12,6 +12,7 @@
     "clean": "rm -rf {var}"
   },
   "dependencies": {
+    "apiai": "^2.0.7",
     "async": "1.4.2",
     "bluebird": "3.3.3",
     "bluebird-retry": "^0.8.0",
