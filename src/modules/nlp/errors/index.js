@@ -3,6 +3,5 @@
  */
 
 module.exports = {
-  LowConfidenceError: require('./low-confidence-error'),
   UnknownIntentError: require('./unknown-intent-error')
 }
