@@ -130,7 +130,7 @@ class Bonjour extends MonitorModule {
 
     return this._deleteAllBonjourBeforeDate(new Date(now.setHours(now.getHours() - 24)))
       .mapSeries((bonjour) => {
-        this.communication.emit('monitor:bonjour:delete', bonjour.ip_address)
+        Communication.emit('monitor:bonjour:delete', bonjour.ip_address)
       })
   }
 }
