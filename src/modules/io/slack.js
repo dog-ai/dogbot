@@ -19,7 +19,7 @@ class Slack extends IOModule {
       let reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
       bot.api.reactions.add(reaction)
 
-      super.onTextMessage(message.text)
+      super._onTextMessage(message.text)
         .then((reply) => {
           reaction.name = '+1'
           bot.api.reactions.add(reaction, () => {
