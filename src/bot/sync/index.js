@@ -82,7 +82,6 @@ class Sync {
 
   _authenticate (token) {
     return new Promise((resolve, reject) => {
-
       Firebase.goOnline()
       firebase.authWithCustomToken(token, (error, authData) => {
         if (error) {
@@ -97,7 +96,6 @@ class Sync {
             }
 
             if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
-
               // https://www.firebase.com/docs/web/guide/offline-capabilities.html#section-connection-state
               firebase.child('.info/connected').on('value', (snapshot) => {
                 var connected = snapshot.val()
@@ -120,13 +118,11 @@ class Sync {
             }
 
             resolve(dog)
-
           }, (error) => {
             reject(error)
           })
         }
       })
-
     })
   }
 
@@ -142,7 +138,6 @@ class Sync {
   }
 
   _periodicOutgoingSynchronization (params, callback) {
-
     if (this.companyRef) {
       _.forEach(this.outgoingSynchronizeEvents, (outgoing) => {
         this.onOutgoingSynchronizeCallback(outgoing.event, null, (error, companyResourceObj, callback) => {
@@ -167,7 +162,6 @@ class Sync {
   }
 
   _quickshotOutgoingSynchronization (registerParams, outgoingParams, callback) {
-
     const quickshot = (error, companyResourceObj, callback) => {
       if (error) {
         if (callback) {
@@ -203,8 +197,7 @@ class Sync {
 
   _registerIncomingSynchronization (params, callback) {
     if (this.companyRef) {
-      if (params.companyResource == 'employee_performances') {
-
+      if (params.companyResource === 'employee_performances') {
         var date = moment()
         var dateFormatPattern
         switch (params.period) {
@@ -242,13 +235,11 @@ class Sync {
           .once('value', (snapshot) => {
             var stats = snapshot.val()
             if (stats) {
-
               Logger.debug('Incoming ' + params.companyResource + ': %s', JSON.stringify(stats))
 
               params.onCompanyResourceChangedCallback(stats, date)
             }
           })
-
       } else {
         this.companyRef.child('/' + params.companyResource).on('child_added',
           snapshot => {
@@ -297,9 +288,7 @@ class Sync {
 
               addedCallback(resource)
               changedCallback(resource)
-
             })
-
           })
 
         this.companyRef.child('/' + params.companyResource).on('child_removed',
@@ -332,7 +321,6 @@ class Sync {
     }
 
     if (companyResourceObj.is_to_be_deleted) {
-
       this.companyRef.child(companyResource + '/' + companyResourceObj.id).remove((error) => {
         if (error) {
           Logger.error(error.stack)
@@ -348,7 +336,6 @@ class Sync {
           }
         }
       })
-
     } else {
       var val = _.omit(companyResourceObj, [ 'id', 'is_synced' ])
       val.created_date = moment(val.created_date).format()
@@ -365,7 +352,7 @@ class Sync {
       }
 
       var companyResourceRef
-      if (companyResource == 'employee_performances') {
+      if (companyResource === 'employee_performances') {
         val = _.omit(val, [ 'name', 'employee_id' ])
 
         var date
@@ -425,9 +412,7 @@ class Sync {
         } else {
           callback(null)
         }
-
       } else {
-
         Logger.debug('sending ' + companyResource + ': %s', JSON.stringify(companyResourceObj))
 
         val = _.omit(val, [ 'is_to_be_deleted' ])
@@ -471,7 +456,6 @@ class Sync {
         }
 
         if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
-
           companyResourceRef.update(val, (error) => {
             if (error) {
               callback(error)
@@ -494,7 +478,6 @@ class Sync {
         }
       }
     }
-
   }
 
   healthCheck () {
