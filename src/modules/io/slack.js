@@ -6,29 +6,33 @@ const IOModule = require('./io-module')
 
 const Promise = require('bluebird')
 
-const Logger = require('../../utils/logger')
-
 const Botkit = require('botkit')
 const slackbot = Botkit.slackbot({ log: false })
-
-slackbot.on([ 'direct_message', 'mention', 'direct_mention' ], (bot, message) => {
-  const reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
-  bot.api.reactions.add(reaction, (error) => {
-    if (error) {
-      Logger.warn(error)
-
-      return
-    }
-
-    bot.reply(message, `Not now! I'm busy learning new tricks.`)
-  })
-})
-
-slackbot.on('rtm_open', () => {})
 
 class Slack extends IOModule {
   constructor () {
     super('slack')
+
+    slackbot.on([ 'direct_message', 'mention', 'direct_mention' ], (bot, message) => {
+      bot.startTyping(message)
+
+      let reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
+      bot.api.reactions.add(reaction)
+
+      super.onTextMessage(message.text)
+        .then((reply) => {
+          reaction.name = '+1'
+          bot.api.reactions.add(reaction, () => {
+            bot.reply(message, reply)
+          })
+        })
+        .catch(() => {
+          reaction.name = '-1'
+          bot.api.reactions.add(reaction)
+        })
+    })
+
+    slackbot.on('rtm_open', () => {})
   }
 
   load (communication, config) { // TODO: remove communication
@@ -58,7 +62,9 @@ class Slack extends IOModule {
       })
     })
       .then(() => {
-        super.start()
+        super.start({
+          'io:slack:text': this._sendTextMessage.bind(this)
+        })
       })
   }
 
@@ -69,6 +75,10 @@ class Slack extends IOModule {
 
         super.stop()
       })
+  }
+
+  _sendTextMessage (message, callback) {
+    callback()
   }
 }
 
