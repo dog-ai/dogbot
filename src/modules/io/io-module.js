@@ -14,7 +14,7 @@ class IOModule extends Module {
     super('io', name)
   }
 
-  onTextMessage (text) {
+  _onTextMessage (text) {
     return new Promise((resolve, reject) => {
       Communication.emitAsync('nlp:intent:text', text)
         .timeout(5000)
