@@ -50,7 +50,7 @@ class Api extends NLPModule {
           return callback(new UnknownIntentError(), { params })
         }
 
-        if (action.indexOf('smalltalk') !== -1) {
+        if (/^\w+\.\w+$/.test(action)) { // api.ai domains that return text (i.e. smalltalk.person)
           event = 'io:text'
         }
 
