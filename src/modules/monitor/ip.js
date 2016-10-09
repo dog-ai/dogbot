@@ -129,9 +129,10 @@ class IP extends MonitorModule {
       process.stderr.pipe(require('split')()).on('data', (line) => {
         if (line === undefined ||
           line.length === 0 ||
-          line.indexOf('ICMP Host') === 0 ||
+          line.indexOf('ICMP Host') !== -1 ||
           line.indexOf('duplicate') !== -1 ||
-          line.indexOf('ICMP Redirect') === 0) {
+          line.indexOf('ICMP Redirect') !== -1 ||
+          line.indexOf('ICMP Time Exceeded ') !== -1) {
           return
         }
 
