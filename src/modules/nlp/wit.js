@@ -2,63 +2,49 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js'),
-    _ = require('lodash');
+const NLPModule = require('./nlp-module')
 
-var LowConfidence = require('./errors/low-confidence'),
-    UnknownIntent = require('./errors/unknown-intent');
+const _ = require('lodash')
+const Promise = require('bluebird')
 
-var client = require('node-wit');
+const { LowConfidenceError, UnknownIntentError } = require('./errors')
 
-function wit() {
-}
+const wit = Promise.promisifyAll(require('node-wit'))
 
-wit.prototype.type = "NLP";
+class Wit extends NLPModule {
+  constructor () {
+    super('wit')
+  }
 
-wit.prototype.name = "wit";
+  load (communication, config) { // TODO: remove communication
+    super.load({
+      'nlp:intent:text': this._extractTextIntent.bind(this)
+    })
 
-wit.prototype.info = function () {
-    return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " NLP module_";
-};
+    this._apiToken = config && config.api_token
 
-wit.prototype.load = function (communication, config) {
-    this.communication = communication;
-
-    this._apiToken = config && config.api_token;
-    if (!this._apiToken || this._apiToken.trim() === '') {
-        throw new Error('invalid configuration: no api token available');
+    if (!this._apiToken) {
+      throw new Error('invalid configuration: no api token available')
     }
+  }
 
-    this.communication.on('nlp:intent:text', this._extractTextIntent);
-};
+  _extractTextIntent (text, callback) {
+    wit.captureTextIntentAsync(this._apiToken, text)
+      .then((response) => {
+        const outcome = _.head(_.sortBy(response.outcomes, [ 'confidence' ]))
 
-wit.prototype.unload = function () {
-    this.communication.removeListener('nlp:intent:text', this._extractTextIntent);
-};
-
-wit.prototype._extractTextIntent = function (text, callback) {
-    client.captureTextIntent(instance._apiToken, text, function (error, response) {
-        if (error) {
-            callback(error);
-        } else {
-            var outcome = _.head(_.sortBy(response.outcomes, ['confidence']));
-
-            if (outcome.intent === 'UNKNOWN') {
-                callback(new UnknownIntent());
-            } else if (outcome.confidence < 0.8) {
-                callback(new LowConfidence(outcome.confidence));
-            } else {
-                callback(null, {
-                    event: outcome.metadata,
-                    entities: outcome.entities
-                });
-            }
+        if (outcome.intent === 'UNKNOWN') {
+          return callback(new UnknownIntentError())
         }
 
-    });
-};
+        if (outcome.confidence < 0.8) {
+          return callback(new LowConfidenceError(outcome.confidence))
+        }
 
-var instance = new wit();
+        callback(null, { event: outcome.metadata, entities: outcome.entities })
+      })
+      .catch(callback)
+  }
+}
 
-module.exports = instance;
+module.exports = new Wit()
