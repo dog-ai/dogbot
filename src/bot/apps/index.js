@@ -96,7 +96,6 @@ class Apps {
         _.remove(this.enabled, { id: id })
 
         Logger.info('Disabled app: ' + id)
-
       })
       .catch((error) => {
         Logger.info('Unable to disable app ' + id + ' because ' + error.message)
