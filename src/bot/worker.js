@@ -101,9 +101,6 @@ class Worker {
           this.queue.on('job failed attempt', (id, error, attempts) => {
             Logger.debug('Job ' + id + ' failed ' + attempts + ' times')
           })
-          this.queue.on('error', (error) => {
-            // Logger.error(error)
-          })
 
           enqueue(this._enqueue.bind(this))
           dequeue(this._dequeue.bind(this))
