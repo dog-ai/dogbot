@@ -4,3 +4,7 @@ node_modules
 
 share
 var
+
+test
+src/databases
+src/modules
