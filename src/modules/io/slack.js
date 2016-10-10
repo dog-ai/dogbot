@@ -6,6 +6,8 @@ const IOModule = require('./io-module')
 
 const Promise = require('bluebird')
 
+const Locale = require
+
 const Botkit = require('botkit')
 const slackbot = Botkit.slackbot({ log: false })
 
@@ -28,7 +30,9 @@ class Slack extends IOModule {
         })
         .catch(() => {
           reaction.name = '-1'
-          bot.api.reactions.add(reaction)
+          bot.api.reactions.add(reaction, () => {
+            bot.reply(message, Locale.get('error'))
+          })
         })
     })
 
