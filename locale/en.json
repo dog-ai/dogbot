@@ -1,0 +1,14 @@
+{
+  "error": "Oops! I ran into a problem, but I've called our engineers to fix it. Could you try it again later?",
+  "unable_to_understand": [
+    "I'm sorry. I'm having trouble understanding the question.",
+    "I think I may have misunderstood your last statement.",
+    "I'm sorry. I didn't quite grasp what you just said.",
+    "I don't think I'm qualified to answer that yet.",
+    "I'm a bit confused by that last part.",
+    "I'm not totally sure about that.",
+    "I'm not sure I follow.",
+    "I'm afraid I don't understand.",
+    "I'm a bit confused."
+  ]
+}

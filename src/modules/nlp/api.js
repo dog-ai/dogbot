@@ -46,7 +46,7 @@ class Api extends NLPModule {
         const params = metadata
         params.text = speech
 
-        if (action === 'input.unknown') {
+        if (action === 'unable_to_understand') {
           return callback(new UnknownIntentError(), { params })
         }
 
