@@ -54,7 +54,7 @@ class Voice extends IOModule {
     this._models = new Models()
     this._models.add({
       file: this._modelFile,
-      sensitivity: '0.5',
+      sensitivity: '0.3',
       hotwords: 'dog'
     })
 
@@ -120,7 +120,7 @@ class Voice extends IOModule {
     return new Promise((resolve, reject) => {
       const _process = spawn('aplay', [ file ])
       _process.stderr.on('data', (data) => reject(new Error(data)))
-      _process.on('error', (error) => Logger.error(error))
+      _process.on('error', reject)
       _process.on('close', () => resolve())
     })
   }
