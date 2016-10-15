@@ -27,12 +27,15 @@ class Voice extends IOModule {
       case 'linux':
         this._doSpeak = this._execPico2Wav
 
-        this._modelFile = path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl')
+        //this._modelFile = path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl')
+        this._modelFile = path.join(__dirname, '/../../../node_modules/snowboy/resources/snowboy.umdl')
         break
       case 'darwin':
         this._doSpeak = this._execSay
 
-        this._modelFile = path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl')
+        //this._modelFile = path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl')
+        this._modelFile = path.join(__dirname, '/../../../node_modules/snowboy/resources/snowboy.umdl')
+
         break
       default:
         throw new Error(process.platform + ' platform is not supported')
