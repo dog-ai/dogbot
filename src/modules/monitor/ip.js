@@ -39,7 +39,7 @@ class IP extends MonitorModule {
   }
 
   _discover (params, callback) {
-    return retry(() => this._execFping(), { max_tries: 3, interval: 1000 })
+    return retry(() => this._execFping(), { max_tries: 10, interval: 1000 })
       .then((ips) => {
         return Promise.mapSeries(ips, (ip) => {
           return this._createOrUpdateIP(ip)
