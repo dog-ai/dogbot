@@ -25,16 +25,15 @@ class Voice extends IOModule {
   load () {
     switch (process.platform) {
       case 'linux':
-        this._doSpeak = this._execPico2Wav
+        this._doSpeak = this._execPico2Wave
 
-        //this._modelFile = path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl')
-        this._modelFile = path.join(__dirname, '/../../../node_modules/snowboy/resources/snowboy.umdl')
+        this._modelFile = path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl')
+
         break
       case 'darwin':
         this._doSpeak = this._execSay
 
-        //this._modelFile = path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl')
-        this._modelFile = path.join(__dirname, '/../../../node_modules/snowboy/resources/snowboy.umdl')
+        this._modelFile = path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl')
 
         break
       default:
@@ -102,11 +101,11 @@ class Voice extends IOModule {
       .finally(() => this._listenMutex.unlock())
   }
 
-  _execPico2Wav (text) {
+  _execPico2Wave (text) {
     const file = path.join(__dirname, '/../../../var/tmp/voice.wav')
 
     return new Promise((resolve, reject) => {
-      const _process = spawn('pico2wav', [
+      const _process = spawn('pico2wave', [
         '--wave=' + file,
         text
       ])
@@ -121,7 +120,7 @@ class Voice extends IOModule {
     return new Promise((resolve, reject) => {
       const _process = spawn('aplay', [ file ])
       _process.stderr.on('data', (data) => reject(new Error(data)))
-      _process.on('error', reject)
+      _process.on('error', (error) => Logger.error(error))
       _process.on('close', () => resolve())
     })
   }
