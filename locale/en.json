@@ -10,5 +10,11 @@
     "I'm not sure I follow.",
     "I'm afraid I don't understand.",
     "I'm a bit confused."
+  ],
+  "yes": [
+    "Yes, sir!",
+    "Yes.",
+    "I'm listening.",
+    "What's up?"
   ]
 }

@@ -11,6 +11,22 @@ const { UnknownIntentError } = require('./errors')
 
 const Apiai = require('apiai')
 
+const responseHandler = ({ result: { action, metadata, fulfillment: { speech } } }, callback) => {
+  let event = action
+  const params = metadata
+  params.text = speech
+
+  if (action === 'unable_to_understand') {
+    return callback(new UnknownIntentError(), { params })
+  }
+
+  if (/^\w+\.\w+$/.test(action)) { // api.ai domains that return text (i.e. smalltalk.person)
+    event = 'io:text'
+  }
+
+  return callback(null, { event, params })
+}
+
 class Api extends NLPModule {
   constructor () {
     super('api')
@@ -28,7 +44,8 @@ class Api extends NLPModule {
 
   start () {
     super.start({
-      'nlp:intent:text': this._extractTextIntent.bind(this)
+      'nlp:intent:text': this._extractTextIntent.bind(this),
+      'nlp:intent:voice': this._extractVoiceIntent.bind(this)
     })
 
     this._client = new Apiai(this._apiToken)
@@ -39,24 +56,28 @@ class Api extends NLPModule {
       const request = this._client.textRequest(text)
       request.on('response', (response) => resolve(response))
       request.on('error', reject)
+
       request.end()
     }), { max_tries: 3, interval: 500 })
-      .then(({ result: { action, metadata, fulfillment: { speech } } }) => {
-        let event = action
-        const params = metadata
-        params.text = speech
-
-        if (action === 'unable_to_understand') {
-          return callback(new UnknownIntentError(), { params })
-        }
-
-        if (/^\w+\.\w+$/.test(action)) { // api.ai domains that return text (i.e. smalltalk.person)
-          event = 'io:text'
-        }
-
-        return callback(null, { event, params })
-      })
+      .then((response) => responseHandler(response, callback))
       .catch(callback)
+  }
+
+  _extractVoiceIntent (voice, callback) {
+    callback(null, { params: { text: 'Awesome!' } })
+    /*
+     return retry(() => new Promise((resolve, reject) => {
+     const request = this._client.voiceRequest()
+     request.on('response', (response) => resolve(response))
+     request.on('error', reject)
+
+     request.write(voice)
+
+     request.end()
+     }), { max_tries: 3, interval: 500 })
+     .then((response) => responseHandler(response, callback))
+      .catch(callback)
+     */
   }
 }
 

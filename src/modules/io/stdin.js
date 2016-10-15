@@ -1,62 +1,41 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const IOModule = require('./io-module')
 
-var events = require('events');
-var readline = require('readline');
+const Locale = require('../../utils/locale')
 
-function stdin() {
-    events.EventEmitter.call(this);
+const readline = require('readline')
+
+class STDIn extends IOModule {
+  constructor () {
+    super('stdin')
+  }
+
+  start () {
+    super.start()
+
+    this._interface = readline.createInterface({ input: process.stdin, terminal: false })
+
+    this._interface.on('line', (text) => {
+      super._onTextInput(text)
+        .then((reply) => console.log(reply))
+        .catch(() => {
+          const reply = Locale.get('error')
+
+          console.log(reply)
+        })
+    })
+  }
+
+  stop () {
+    if (this._interface) {
+      this._interface.close()
+    }
+
+    super.stop()
+  }
 }
 
-stdin.prototype.__proto__ = events.EventEmitter.prototype;
-
-stdin.prototype.type = "IO";
-
-stdin.prototype.name = "stdin";
-
-stdin.prototype.info = function() {
-    return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
-};
-
-stdin.prototype.load = function(moduleManager) {
-    var self = this;
-
-    this.moduleManager = moduleManager;
-
-    var rl = readline.createInterface({
-        input: process.stdin,
-        terminal: false
-    });
-
-    rl.on('line', function (message) {
-
-        if (message.charAt(0) === '!') {
-
-
-            self.moduleManager.findAllLoadedModulesByType('PROCESS').forEach(function (module) {
-                try {
-                    module.process(message, function (data) {
-                        logger.info(data);
-                    });
-                } catch (exception) {
-                    logger.info("Oops! Something went wrong...please call the maintenance team!");
-                    logger.info(exception);
-                }
-            });
-
-        }
-    })
-
-};
-
-stdin.prototype.unload = function() {
-};
-
-stdin.prototype.send = function(recipient, message) {
-};
-
-module.exports = new stdin();
+module.exports = new STDIn()
