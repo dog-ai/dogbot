@@ -157,7 +157,7 @@ class Voice extends IOModule {
 
       this._mic.pipe(_stream)
 
-      const timeout = setTimeout(() => stop, 8000)
+      const timeout = setTimeout(() => stop(), 8000)
 
       setTimeout(() => {
         this._detector.once('silence', () => {
