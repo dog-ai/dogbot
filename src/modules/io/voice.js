@@ -27,13 +27,23 @@ class Voice extends IOModule {
       case 'linux':
         this._doSpeak = this._execPico2Wave
 
-        this._modelFile = path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl')
+        this._models = new Models()
+        this._models.add({
+          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/feedeobot.pmdl'),
+          sensitivity: '0.5',
+          hotwords: 'dog'
+        })
 
         break
       case 'darwin':
         this._doSpeak = this._execSay
 
-        this._modelFile = path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl')
+        this._models = new Models()
+        this._models.add({
+          file: path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl'),
+          sensitivity: '0.5',
+          hotwords: 'dog'
+        })
 
         break
       default:
@@ -49,13 +59,6 @@ class Voice extends IOModule {
 
     super.start({
       'io:voice:speak': this._speak.bind(this)
-    })
-
-    this._models = new Models()
-    this._models.add({
-      file: this._modelFile,
-      sensitivity: '0.3',
-      hotwords: 'dog'
     })
 
     this._detector = new Detector({
