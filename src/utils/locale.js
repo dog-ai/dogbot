@@ -37,7 +37,7 @@ class Locale {
 
     const message = i18n.__(name, ...args)
 
-    return message instanceof Array ? message[ _.random(0, message.length) ] : message
+    return message instanceof Array ? message[ _.random(0, message.length - 1) ] : message
   }
 }
 

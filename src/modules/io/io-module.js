@@ -7,7 +7,6 @@ const Module = require('../module')
 const UnknownIntentError = require('../nlp/errors/unknown-intent-error')
 
 const Locale = require('../../utils/locale')
-const Logger = require('../../utils/logger')
 const Communication = require('../../utils/communication')
 
 class IOModule extends Module {
@@ -15,23 +14,32 @@ class IOModule extends Module {
     super('io', name)
   }
 
-  _onTextMessage (text) {
-    return Communication.emitAsync('nlp:intent:text', text)
+  _onVoiceInput (voice) {
+    return Communication.emitAsync('nlp:intent:voice', voice)
       .timeout(5000)
       .then(({ event, params }) => {
         if (params.text) {
-          return resolve(params.text)
+          return params.text
         }
 
         return Communication.emitAsync(event, params)
           .then((text) => text)
       })
       .catch(UnknownIntentError, () => Locale.get('unable_to_understand'))
-      .catch((error) => {
-        Logger.error(error)
+  }
 
-        throw error
+  _onTextInput (text) {
+    return Communication.emitAsync('nlp:intent:text', text)
+      .timeout(5000)
+      .then(({ event, params }) => {
+        if (params.text) {
+          return params.text
+        }
+
+        return Communication.emitAsync(event, params)
+          .then((text) => text)
       })
+      .catch(UnknownIntentError, () => Locale.get('unable_to_understand'))
   }
 }
 

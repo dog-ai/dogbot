@@ -7,6 +7,8 @@ const App = require('./app')
 class Brain extends App {
   constructor () {
     super('brain', [], [
+      { type: 'io', name: 'stdin' },
+      { type: 'io', name: 'voice' },
       { type: 'nlp', name: 'api' },
       { type: 'action', name: 'slap' },
       { type: 'email', name: 'sendgrid' },

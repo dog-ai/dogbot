@@ -1,111 +1,171 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const IOModule = require('./io-module')
 
-var child_process = require('child_process');
-var events = require('events');
-var querystring = require('querystring');
+const Promise = require('bluebird')
+const locks = Promise.promisifyAll(require('locks'))
 
-function voice() {
-    events.EventEmitter.call(this);
+const Locale = require('../../utils/locale')
+const Logger = require('../../utils/logger')
+
+const path = require('path')
+const stream = require('stream')
+const spawn = require('child_process').spawn
+
+const record = require('node-record-lpcm16')
+const { Detector, Models } = require('snowboy')
+
+class Voice extends IOModule {
+  constructor () {
+    super('voice')
+  }
+
+  load () {
+    switch (process.platform) {
+      case 'linux':
+        this._doSpeak = this._execPico2Wav
+
+        this._modelFile = path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl')
+        break
+      case 'darwin':
+        this._doSpeak = this._execSay
+
+        this._modelFile = path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl')
+        break
+      default:
+        throw new Error(process.platform + ' platform is not supported')
+    }
+
+    super.load()
+  }
+
+  start () {
+    this._speakMutex = locks.createMutex()
+    this._listenMutex = locks.createMutex()
+
+    super.start({
+      'io:voice:speak': this._speak.bind(this)
+    })
+
+    this._models = new Models()
+    this._models.add({
+      file: this._modelFile,
+      sensitivity: '0.5',
+      hotwords: 'dog'
+    })
+
+    this._detector = new Detector({
+      resource: path.join(__dirname, '/../../../node_modules/snowboy/resources/common.res'),
+      models: this._models,
+      audioGain: 2.0
+    })
+
+    this._detector.on('hotword', () => this._listen())
+
+    this._mic = record.start({ threshold: 0 })
+    this._mic.pipe(this._detector)
+  }
+
+  stop () {
+    record.stop()
+
+    super.stop()
+  }
+
+  _speak (text, callback = () => {}) {
+    return this._speakMutex.lockAsync()
+      .then(() => this._doSpeak(text))
+      .then(() => callback())
+      .catch(callback)
+      .finally(() => this._speakMutex.unlock())
+  }
+
+  _listen () {
+    if (this._listenMutex.isLocked) {
+      return
+    }
+
+    return this._listenMutex.lockAsync()
+      .then(() => this._speak(Locale.get('yes')))
+      .then(() => this._doListen())
+      .then((text) => this._speak(text))
+      .catch((error) => {
+        Logger.error(error)
+
+        return this._speak(Locale.get('error'))
+      })
+      .finally(() => this._listenMutex.unlock())
+  }
+
+  _execPico2Wav (text) {
+    const file = path.join(__dirname, '/../../../var/tmp/voice.wav')
+
+    return new Promise((resolve, reject) => {
+      const _process = spawn('pico2wav', [
+        '--wave=' + file,
+        text
+      ])
+      _process.stderr.on('data', (data) => reject(new Error(data)))
+      _process.on('error', reject)
+      _process.on('close', () => resolve())
+    })
+      .then(() => this._execAplay(file))
+  }
+
+  _execAplay (file) {
+    return new Promise((resolve, reject) => {
+      const _process = spawn('aplay', [ file ])
+      _process.stderr.on('data', (data) => reject(new Error(data)))
+      _process.on('error', reject)
+      _process.on('close', () => resolve())
+    })
+  }
+
+  _execSay (text) {
+    return new Promise((resolve, reject) => {
+      const _process = spawn('say', [ text ])
+      _process.stderr.on('data', (data) => reject(new Error(data)))
+      _process.on('error', reject)
+      _process.on('close', () => resolve())
+    })
+  }
+
+  _doListen () {
+    return new Promise((resolve, reject) => {
+      const data = []
+      const _stream = new stream.Writable({
+        write: (chunk, encoding, next) => {
+          data.push(chunk)
+
+          next()
+        }
+      })
+
+      const stop = () => {
+        this._mic.unpipe(_stream)
+
+        const buffer = Buffer.concat(data)
+
+        super._onVoiceInput(buffer)
+          .then((text) => resolve(text))
+          .catch(reject)
+      }
+
+      this._mic.pipe(_stream)
+
+      const timeout = setTimeout(() => stop, 8000)
+
+      setTimeout(() => {
+        this._detector.once('silence', () => {
+          clearTimeout(timeout)
+
+          stop()
+        })
+      }, 1000)
+    })
+  }
 }
 
-voice.prototype.__proto__ = events.EventEmitter.prototype;
-
-voice.prototype.type = "IO";
-
-voice.prototype.name = "voice";
-
-voice.prototype.info = function() {
-    return "*" + this.name + "* - " +
-        "_" + this.name.charAt(0).toUpperCase() + this.name.slice(1) + " I/O module_";
-};
-
-voice.prototype.MAX_LENGTH = 100;
-
-voice.prototype.load = function(moduleManager) {
-    this.moduleManager = moduleManager;
-};
-
-voice.prototype.unload = function () {
-};
-
-voice.prototype.send = function(recipient, message, language, callback) {
-    if (language === undefined) {
-        language = 'en-us';
-    }
-
-    var texts = [];
-    if (message.length > this.MAX_LENGTH) {
-        texts = this._split_text(message);
-    } else {
-        texts[0] = message;
-    }
-
-    this._synthesize(texts, language, function() {
-        if (callback !== undefined) {
-            callback();
-        }
-    });
-};
-
-voice.prototype._split_text = function(text) {
-    var texts =   [];
-
-    for (var p = i = 0; i < text.length; p++) {
-        texts[p] = text.substr(i, this.MAX_LENGTH);
-        if (texts[p].length == this.MAX_LENGTH) {
-            texts[p] = texts[p].substr(0, Math.min(texts[p].length, texts[p].lastIndexOf(" ")));
-            i++;
-        } else if (texts[p].length == 0) {
-            break;
-        }
-        i += texts[p].length;
-    }
-
-    return texts;
-};
-
-voice.prototype._synthesize = function(texts, language, callback) {
-    var self = this;
-
-    var urls = [];
-    for (var i = 0; i < texts.length; i++) {
-        //http://translate.google.com/translate_tts?ie=UTF-8&q=hello%20world&tl=en&total=1&idx=0&textlen=11&prev=input
-        urls[i] = 'http://translate.google.com/translate_tts?';
-        urls[i] += querystring.stringify({
-            ie: 'UTF-8',
-            textlen: texts[i].length,
-            tl: language,
-            total: texts.length,
-            idx: i,
-            q: texts[i]
-        });
-    }
-
-    this._play(urls, 0, texts.length, callback);
-};
-
-voice.prototype._play = function(urls, current, total, callback) {
-    var self = this;
-
-    try {
-        child_process.exec('curl --silent -A "Mozilla" "' + urls[current] + '" | play -q -t mp3 -',
-            function(error, stdout, stderr) {
-                if (error !== undefined && error !== null) {} else {
-                    current++;
-                    if (current < total) {
-                        self._play(urls, current, total, callback);
-                    } else {
-                        callback();
-                    }
-                }
-            });
-    } catch (error) {
-        logger.error(error.stack);
-    }
-};
-
-module.exports = new voice();
+module.exports = new Voice()

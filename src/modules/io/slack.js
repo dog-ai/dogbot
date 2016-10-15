@@ -6,7 +6,8 @@ const IOModule = require('./io-module')
 
 const Promise = require('bluebird')
 
-const Locale = require
+const Logger = require('../../utils/logger')
+const Locale = require('../../utils/locale')
 
 const Botkit = require('botkit')
 const slackbot = Botkit.slackbot({ log: false })
@@ -21,14 +22,16 @@ class Slack extends IOModule {
       let reaction = { timestamp: message.ts, channel: message.channel, name: 'robot_face' }
       bot.api.reactions.add(reaction)
 
-      super._onTextMessage(message.text)
+      super._onTextInput(message.text)
         .then((reply) => {
           reaction.name = '+1'
           bot.api.reactions.add(reaction, () => {
             bot.reply(message, reply)
           })
         })
-        .catch(() => {
+        .catch((error) => {
+          Logger.error(error)
+
           reaction.name = '-1'
           bot.api.reactions.add(reaction, () => {
             bot.reply(message, Locale.get('error'))

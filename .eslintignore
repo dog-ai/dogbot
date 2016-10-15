@@ -7,4 +7,10 @@ var
 
 test
 src/databases
-src/modules
+src/modules/action
+src/modules/auth
+src/modules/monitor
+src/modules/performance
+src/modules/person
+src/modules/schedule
+src/modules/social
