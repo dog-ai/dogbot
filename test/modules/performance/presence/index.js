@@ -8,21 +8,22 @@ var Presence, communication
 
 describe('Presence', function () {
   before(function () {
+    // communication = require(SRC_PATH + 'utils/communication')
   })
 
   beforeEach(function () {
-    Presence = require(SRC_PATH + 'modules/performance/presence')
-    communication = require(SRC_PATH + 'utils/communication')
+    // Presence = require(SRC_PATH + 'modules/performance/presence')
   })
 
   afterEach(function () {
-    delete require.cache[require.resolve(SRC_PATH + 'utils/communication')];
-    delete require.cache[require.resolve(SRC_PATH + 'modules/performance/presence')]
+    // delete require.cache[require.resolve(SRC_PATH + 'modules/performance/presence')]
   })
 
   after(function () {
+    // delete require.cache[require.resolve(SRC_PATH + 'utils/communication')];
   })
 
+  /*
   describe('#load()', function () {
     it('should start listening to events', function () {
 
@@ -32,7 +33,9 @@ describe('Presence', function () {
 
     })
   })
+   */
 
+  /*
   describe('#unload()', function () {
     it('should stop listening to events', function () {
       Presence.load(communication)
@@ -41,8 +44,10 @@ describe('Presence', function () {
       expect(communication._eventsCount).to.equal(0)
     })
   })
+   */
 
-  /*describe('#emit()', function() {
+  /*
+   describe('#emit()', function() {
    it('should invoke the callback', function (done) {
    var mock = sinon.mockEvents(communicati4on, 'foo');
    mock.once().withArgs({id: 1}).returns('test')
@@ -54,8 +59,10 @@ describe('Presence', function () {
    })
    .catch(done)
    })
-   })*/
+   })
+   */
 
+  /*
   describe('^person:employee:nearby', function () {
     it('should create presence when employee is nearby', sinon.test(function (done) {
       var employee = {id: 1, is_present: true}
@@ -135,6 +142,9 @@ describe('Presence', function () {
     }))
   })
 
+   */
+
+  /*
   describe('^performance:presence:stats:update:yesterday', function () {
     it('should compute employee stats for day', function () {
       var date = moment('2016-03-08T00:00:00+01:00:00')
@@ -229,11 +239,6 @@ describe('Presence', function () {
         minimum_start_time: 18000,
         minimum_end_time: 82800,
         minimum_total_duration: 21600,
-        /*
-         start_time_by_day: {'1457391600': 18000, '1457478000': 18000},
-         end_time_by_day: {'1457391600': 82800, '1457478000': 82800},
-         total_duration_by_day: {'1457391600': 21600, '1457478000': 21600}
-         */
       }).and.have.all.keys(['created_date', 'updated_date'])
     })
 
@@ -393,4 +398,5 @@ describe('Presence', function () {
       }).and.have.all.keys(['created_date', 'updated_date'])
     })
   })
+   */
 })

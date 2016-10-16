@@ -10,6 +10,7 @@ class Brain extends App {
       { type: 'io', name: 'stdin' },
       { type: 'io', name: 'voice' },
       { type: 'nlp', name: 'api' },
+      { type: 'tts', name: 'google' },
       { type: 'action', name: 'slap' },
       { type: 'email', name: 'sendgrid' },
       { type: 'user', name: 'invite' }
@@ -18,3 +19,4 @@ class Brain extends App {
 }
 
 module.exports = new Brain()
+
