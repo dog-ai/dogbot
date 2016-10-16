@@ -106,31 +106,25 @@ class Voice extends IOModule {
 
   _googleTTS (text) {
     return Communication.emitAsync('tts:stream', { text })
-      .then((stream) => {
+      .then((mp3Stream) => {
         return new Promise((resolve, reject) => {
-          const fileStream = require('fs')
-            .createWriteStream(path.join(__dirname, '/../../../var/tmp/voice.mp3'))
-
-          fileStream.on('finish', () => resolve())
-
-          stream.on('error', (error) => {
-            stream.end()
+          mp3Stream.on('error', (error) => {
+            mp3Stream.end()
 
             reject(error)
           })
 
-          stream.pipe(fileStream)
-        })
-      })
-      .then(() => {
-        const stream = new Decoder()
-          .on('format', function (format) {
-            this.pipe(new Speaker(format))
-          })
+          const decoderStream = new Decoder()
+            .on('format', (format) => {
+              const speakerStream = new Speaker(format)
 
-        const fileStream = require('fs')
-          .createReadStream(path.join(__dirname, '/../../../var/tmp/voice.mp3'))
-        fileStream.pipe(stream)
+              speakerStream.on('finish', () => resolve())
+
+              decoderStream.pipe(speakerStream)
+            })
+
+          mp3Stream.pipe(decoderStream)
+        })
       })
   }
 
