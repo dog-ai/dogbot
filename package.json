@@ -31,7 +31,6 @@
     "ip": "0.3.3",
     "kue": "0.10.5",
     "kue-scheduler": "git://github.com/lykmapipo/kue-scheduler#c637b8e",
-    "lame": "^1.2.4",
     "later": "1.1.10",
     "linkedin-public-profile-parser": "git://github.com/hfreire/linkedin-public-profile-parser",
     "locks": "^0.2.2",
@@ -55,7 +54,6 @@
     "s3": "4.4.0",
     "sendgrid": "2.0.0",
     "snowboy": "^1.1.0",
-    "speaker": "^0.3.0",
     "split": "1.0.0",
     "sqlite3": "3.1.4",
     "stack-trace": "0.0.9",
@@ -75,4 +73,3 @@
     "standard": "8.1.0"
   }
 }
-

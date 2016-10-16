@@ -15,11 +15,50 @@ const path = require('path')
 const stream = require('stream')
 const spawn = require('child_process').spawn
 
-const { Decoder } = require('lame')
-const Speaker = require('speaker')
-
 const record = require('node-record-lpcm16')
 const { Detector, Models } = require('snowboy')
+
+const execPico2WaveCommand = (text) => {
+  const execAplayCommand = (file) => {
+    return new Promise((resolve, reject) => {
+      const child = spawn('aplay', [ file ])
+      child.on('error', reject)
+      child.on('close', () => resolve())
+    })
+  }
+
+  const file = path.join(__dirname, '/../../../var/tmp/voice.wav')
+
+  return new Promise((resolve, reject) => {
+    const child = spawn('pico2wave', [
+      '--wave=' + file,
+      text
+    ])
+    child.stderr.on('data', (data) => reject(new Error(data)))
+    child.on('error', reject)
+    child.on('close', () => resolve())
+  })
+    .then(() => execAplayCommand(file))
+}
+
+const execSayCommand = (text) => {
+  return new Promise((resolve, reject) => {
+    const child = spawn('say', [ text ])
+    child.stderr.on('data', (data) => reject(new Error(data)))
+    child.on('error', reject)
+    child.on('close', () => resolve())
+  })
+}
+
+const execPlayCommand = (stream) => {
+  return new Promise((resolve, reject) => {
+    const child = spawn('play', [ '-q', '-t', 'mp3', '-' ], { stdio: [ 'pipe' ] })
+    child.on('error', reject)
+    child.on('close', () => resolve())
+
+    stream.pipe(child.stdin)
+  })
+}
 
 class Voice extends IOModule {
   constructor () {
@@ -29,7 +68,7 @@ class Voice extends IOModule {
   load () {
     switch (process.platform) {
       case 'linux':
-        this._fallbackSpeak = this._execPico2Wave
+        this._fallbackSpeak = execPico2WaveCommand
 
         this._models = new Models()
         this._models.add({
@@ -40,7 +79,7 @@ class Voice extends IOModule {
 
         break
       case 'darwin':
-        this._fallbackSpeak = this._execSay
+        this._fallbackSpeak = execSayCommand
 
         this._models = new Models()
         this._models.add({
@@ -90,46 +129,21 @@ class Voice extends IOModule {
   }
 
   _doSpeak (text) {
+    const googleTTS = (text) => {
+      return Communication.emitAsync('tts:stream', { text })
+        .then((stream) => execPlayCommand(stream))
+    }
+
     return this._speakMutex.lockAsync()
       .then(() => {
-        return this._googleTTS(text)
+        return googleTTS(text)
           .catch((error) => {
             Logger.warn(error)
 
-            this._fallbackSpeak(text)
+            return this._fallbackSpeak(text)
           })
       })
-      .finally(() => {
-        this._speakMutex.unlock()
-      })
-  }
-
-  _googleTTS (text) {
-    return Communication.emitAsync('tts:stream', { text })
-      .then((mp3Stream) => {
-        return new Promise((resolve, reject) => {
-          if (process.platform === 'darwin') {
-            throw new Error()
-          }
-
-          mp3Stream.on('error', (error) => {
-            mp3Stream.end()
-
-            reject(error)
-          })
-
-          const decoderStream = new Decoder()
-            .on('format', (format) => {
-              const speakerStream = new Speaker(format)
-
-              speakerStream.on('finish', () => resolve())
-
-              decoderStream.pipe(speakerStream)
-            })
-
-          mp3Stream.pipe(decoderStream)
-        })
-      })
+      .finally(() => this._speakMutex.unlock())
   }
 
   _listen () {
@@ -148,38 +162,6 @@ class Voice extends IOModule {
           .catch(() => {})
       })
       .finally(() => this._listenMutex.unlock())
-  }
-
-  _execPico2Wave (text) {
-    const file = path.join(__dirname, '/../../../var/tmp/voice.wav')
-
-    return new Promise((resolve, reject) => {
-      const _process = spawn('pico2wave', [
-        '--wave=' + file,
-        text
-      ])
-      _process.stderr.on('data', (data) => reject(new Error(data)))
-      _process.on('error', reject)
-      _process.on('close', () => resolve())
-    })
-      .then(() => this._execAplay(file))
-  }
-
-  _execAplay (file) {
-    return new Promise((resolve, reject) => {
-      const _process = spawn('aplay', [ file ])
-      _process.on('error', reject)
-      _process.on('close', () => resolve())
-    })
-  }
-
-  _execSay (text) {
-    return new Promise((resolve, reject) => {
-      const _process = spawn('say', [ text ])
-      _process.stderr.on('data', (data) => reject(new Error(data)))
-      _process.on('error', reject)
-      _process.on('close', () => resolve())
-    })
   }
 
   _doListen () {
