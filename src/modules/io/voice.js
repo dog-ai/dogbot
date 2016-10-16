@@ -105,7 +105,7 @@ class Voice extends IOModule {
   }
 
   _googleTTS (text) {
-    return Communication.emitAsync('tts:stream', text)
+    return Communication.emitAsync('tts:stream', { text })
       .then((stream) => {
         return new Promise((resolve, reject) => {
           const fileStream = require('fs')
