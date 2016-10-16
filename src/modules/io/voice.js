@@ -108,6 +108,10 @@ class Voice extends IOModule {
     return Communication.emitAsync('tts:stream', { text })
       .then((mp3Stream) => {
         return new Promise((resolve, reject) => {
+          if (process.platform === 'darwin') {
+            throw new Error()
+          }
+
           mp3Stream.on('error', (error) => {
             mp3Stream.end()
 
