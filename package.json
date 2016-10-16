@@ -8,7 +8,7 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "test": "node_modules/.bin/eslint .",
+    "test": "node_modules/.bin/eslint . && node_modules/.bin/mocha",
     "clean": "rm -rf {var}"
   },
   "dependencies": {
@@ -31,13 +31,14 @@
     "ip": "0.3.3",
     "kue": "0.10.5",
     "kue-scheduler": "git://github.com/lykmapipo/kue-scheduler#c637b8e",
+    "lame": "^1.2.4",
     "later": "1.1.10",
     "linkedin-public-profile-parser": "git://github.com/hfreire/linkedin-public-profile-parser",
     "locks": "^0.2.2",
     "lodash": "3.10.1",
     "macvendor": "0.1.1",
+    "memorystream": "^0.3.1",
     "moment": "2.15.1",
-    "moment-timezone": "0.4.0",
     "nconf": "0.7.1",
     "node-record-lpcm16": "^0.1.4",
     "node-uuid": "1.4.7",
@@ -49,10 +50,12 @@
     "plotly": "1.0.2",
     "procfs-stats": "0.0.4",
     "redis": "2.4.2",
+    "request": "^2.75.0",
     "rollbar": "0.5.16",
     "s3": "4.4.0",
     "sendgrid": "2.0.0",
     "snowboy": "^1.1.0",
+    "speaker": "^0.3.0",
     "split": "1.0.0",
     "sqlite3": "3.1.4",
     "stack-trace": "0.0.9",
@@ -62,11 +65,13 @@
   },
   "devDependencies": {
     "chai": "3.5.0",
+    "chai-as-promised": "^6.0.0",
+    "eslint": "^3.6.0",
+    "eslint-config-standard": "^6.0.1",
     "mocha": "2.4.5",
     "mockery": "1.4.1",
     "sinon": "1.17.3",
-    "standard": "8.1.0",
-    "eslint": "^3.6.0",
-    "eslint-config-standard": "^6.0.1"
+    "sinon-as-promised": "^4.0.2",
+    "standard": "8.1.0"
   }
 }

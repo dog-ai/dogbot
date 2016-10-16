@@ -2,21 +2,23 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-'use strict'
-
 global.SRC_PATH = __dirname + '/../src/'
 
-var Promise = require('bluebird')
+const Promise = require('bluebird')
 
-var chai = require('chai')
-chai.use(require('chai-as-promised'));
+const chai = require('chai')
+chai.should()
+
+chai.use(require('chai-as-promised'))
+
 chai.config.includeStack = true
+
 global.expect = chai.expect
 global.AssertionError = chai.AssertionError
 global.Assertion = chai.Assertion
 global.assert = chai.assert
 
-var sinon = require('sinon')
+const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 global.sinon = sinon
 /*global.sinon.mockEvents = function (obj, event) {
@@ -45,7 +47,7 @@ global.sinon = sinon
  }
  }*/
 
-var mockery = require('mockery')
+const mockery = require('mockery')
 mockery.enable({
   warnOnReplace: false,
   warnOnUnregistered: false,
@@ -53,8 +55,8 @@ mockery.enable({
 })
 global.mockery = mockery
 
-var _ = require('lodash')
+const _ = require('lodash')
 global._ = _
 
-var moment = require('moment')
+const moment = require('moment')
 global.moment = moment

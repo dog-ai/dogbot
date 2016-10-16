@@ -7,6 +7,7 @@
 var LinkedIn, communication
 
 describe('LinkedIn', function () {
+  /*
   before(function () {
   })
 
@@ -41,4 +42,6 @@ describe('LinkedIn', function () {
       expect(communication._eventsCount).to.equal(0)
     })
   })
+
+   */
 })

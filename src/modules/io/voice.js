@@ -7,12 +7,16 @@ const IOModule = require('./io-module')
 const Promise = require('bluebird')
 const locks = Promise.promisifyAll(require('locks'))
 
+const Communication = require('../../utils/communication')
 const Locale = require('../../utils/locale')
 const Logger = require('../../utils/logger')
 
 const path = require('path')
 const stream = require('stream')
 const spawn = require('child_process').spawn
+
+const { Decoder } = require('lame')
+const Speaker = require('speaker')
 
 const record = require('node-record-lpcm16')
 const { Detector, Models } = require('snowboy')
@@ -25,7 +29,7 @@ class Voice extends IOModule {
   load () {
     switch (process.platform) {
       case 'linux':
-        this._doSpeak = this._execPico2Wave
+        this._fallbackSpeak = this._execPico2Wave
 
         this._models = new Models()
         this._models.add({
@@ -36,7 +40,7 @@ class Voice extends IOModule {
 
         break
       case 'darwin':
-        this._doSpeak = this._execSay
+        this._fallbackSpeak = this._execSay
 
         this._models = new Models()
         this._models.add({
@@ -57,10 +61,6 @@ class Voice extends IOModule {
     this._speakMutex = locks.createMutex()
     this._listenMutex = locks.createMutex()
 
-    super.start({
-      'io:voice:speak': this._speak.bind(this)
-    })
-
     this._detector = new Detector({
       resource: path.join(__dirname, '/../../../node_modules/snowboy/resources/common.res'),
       models: this._models,
@@ -71,6 +71,10 @@ class Voice extends IOModule {
 
     this._mic = record.start({ threshold: 0 })
     this._mic.pipe(this._detector)
+
+    super.start({
+      'io:voice:speak': this._speak.bind(this)
+    })
   }
 
   stop () {
@@ -79,12 +83,51 @@ class Voice extends IOModule {
     super.stop()
   }
 
-  _speak (text, callback = () => {}) {
-    return this._speakMutex.lockAsync()
-      .then(() => this._doSpeak(text))
+  _speak ({ text }, callback) {
+    return this._doSpeak(text)
       .then(() => callback())
       .catch(callback)
-      .finally(() => this._speakMutex.unlock())
+  }
+
+  _doSpeak (text) {
+    return this._speakMutex.lockAsync()
+      .then(() => {
+        return this._googleTTS(text)
+          .catch(() => this._fallbackSpeak(text))
+      })
+      .finally(() => {
+        this._speakMutex.unlock()
+      })
+  }
+
+  _googleTTS (text) {
+    return Communication.emitAsync('tts:stream', text)
+      .then((stream) => {
+        return new Promise((resolve, reject) => {
+          const fileStream = require('fs')
+            .createWriteStream(path.join(__dirname, '/../../../var/tmp/voice.mp3'))
+
+          fileStream.on('finish', () => resolve())
+
+          stream.on('error', (error) => {
+            stream.end()
+
+            reject(error)
+          })
+
+          stream.pipe(fileStream)
+        })
+      })
+      .then(() => {
+        const stream = new Decoder()
+          .on('format', function (format) {
+            this.pipe(new Speaker(format))
+          })
+
+        const fileStream = require('fs')
+          .createReadStream(path.join(__dirname, '/../../../var/tmp/voice.mp3'))
+        fileStream.pipe(stream)
+      })
   }
 
   _listen () {
@@ -93,13 +136,14 @@ class Voice extends IOModule {
     }
 
     return this._listenMutex.lockAsync()
-      .then(() => this._speak(Locale.get('yes')))
+      .then(() => this._doSpeak(Locale.get('yes')))
       .then(() => this._doListen())
-      .then((text) => this._speak(text))
+      .then((text) => this._doSpeak(text))
       .catch((error) => {
         Logger.error(error)
 
-        return this._speak(Locale.get('error'))
+        return this._doSpeak(Locale.get('error'))
+          .catch(() => {})
       })
       .finally(() => this._listenMutex.unlock())
   }

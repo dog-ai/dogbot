@@ -7,6 +7,7 @@
 var Notification, communication
 
 describe('Notification', function () {
+  /*
   before(function () {
   })
 
@@ -41,4 +42,5 @@ describe('Notification', function () {
       expect(communication._eventsCount).to.equal(0)
     })
   })
+   */
 })
