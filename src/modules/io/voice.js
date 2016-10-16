@@ -93,7 +93,11 @@ class Voice extends IOModule {
     return this._speakMutex.lockAsync()
       .then(() => {
         return this._googleTTS(text)
-          .catch(() => this._fallbackSpeak(text))
+          .catch((error) => {
+            Logger.warn(error)
+
+            this._fallbackSpeak(text)
+          })
       })
       .finally(() => {
         this._speakMutex.unlock()
@@ -166,7 +170,6 @@ class Voice extends IOModule {
   _execAplay (file) {
     return new Promise((resolve, reject) => {
       const _process = spawn('aplay', [ file ])
-      _process.stderr.on('data', (data) => reject(new Error(data)))
       _process.on('error', reject)
       _process.on('close', () => resolve())
     })
