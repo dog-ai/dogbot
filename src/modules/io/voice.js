@@ -19,9 +19,10 @@ const record = require('node-record-lpcm16')
 const { Detector, Models } = require('snowboy')
 
 const execPico2WaveCommand = (text) => {
-  const execAplayCommand = (file) => {
+  const execPlayCommand = (file) => {
     return new Promise((resolve, reject) => {
-      const child = spawn('aplay', [ file ])
+      const child = spawn('play', [ '-q', file ])
+      child.stderr.on('data', (data) => reject(new Error(data)))
       child.on('error', reject)
       child.on('close', () => resolve())
     })
@@ -38,7 +39,7 @@ const execPico2WaveCommand = (text) => {
     child.on('error', reject)
     child.on('close', () => resolve())
   })
-    .then(() => execAplayCommand(file))
+    .then(() => execPlayCommand(file))
 }
 
 const execSayCommand = (text) => {
@@ -53,6 +54,7 @@ const execSayCommand = (text) => {
 const execPlayCommand = (stream) => {
   return new Promise((resolve, reject) => {
     const child = spawn('play', [ '-q', '-t', 'mp3', '-' ], { stdio: [ 'pipe' ] })
+    child.stderr.on('data', (data) => reject(new Error(data)))
     child.on('error', reject)
     child.on('close', () => resolve())
 
