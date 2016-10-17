@@ -6,8 +6,7 @@ const IOModule = require('./io-module')
 
 const Promise = require('bluebird')
 
-const Logger = require('../../utils/logger')
-const Locale = require('../../utils/locale')
+const { Logger, Locale } = require('../../utils')
 
 const Botkit = require('botkit')
 const slackbot = Botkit.slackbot({ log: false })
@@ -70,7 +69,7 @@ class Slack extends IOModule {
     })
       .then(() => {
         super.start({
-          'io:slack:text': this._sendTextMessage.bind(this)
+          'io:slack:text': this.text.bind(this)
         })
       })
   }
@@ -84,7 +83,7 @@ class Slack extends IOModule {
       })
   }
 
-  _sendTextMessage (message, callback) {
+  text ({ text }, callback = () => {}) {
     callback()
   }
 }

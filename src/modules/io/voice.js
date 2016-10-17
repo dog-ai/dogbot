@@ -5,11 +5,10 @@
 const IOModule = require('./io-module')
 
 const Promise = require('bluebird')
+const TimeoutError = Promise.TimeoutError
 const locks = Promise.promisifyAll(require('locks'))
 
-const Communication = require('../../utils/communication')
-const Locale = require('../../utils/locale')
-const Logger = require('../../utils/logger')
+const { Communication, Locale, Logger } = require('../../utils')
 
 const path = require('path')
 const stream = require('stream')
@@ -35,9 +34,29 @@ const execPico2WaveCommand = (text) => {
       '--wave=' + file,
       text
     ])
-    child.stderr.on('data', (data) => reject(new Error(data)))
-    child.on('error', reject)
-    child.on('close', () => resolve())
+
+    const timeout = setTimeout(() => {
+      child.stderr.pause()
+      child.kill()
+
+      reject(new TimeoutError())
+    }, 8000)
+
+    child.stderr.on('data', (data) => {
+      clearTimeout(timeout)
+
+      reject(new Error(data))
+    })
+    child.on('error', (error) => {
+      clearTimeout(timeout)
+
+      reject(error)
+    })
+    child.on('close', () => {
+      clearTimeout(timeout)
+
+      resolve()
+    })
   })
     .then(() => execPlayCommand(file))
 }
@@ -45,18 +64,58 @@ const execPico2WaveCommand = (text) => {
 const execSayCommand = (text) => {
   return new Promise((resolve, reject) => {
     const child = spawn('say', [ text ])
-    child.stderr.on('data', (data) => reject(new Error(data)))
-    child.on('error', reject)
-    child.on('close', () => resolve())
+
+    const timeout = setTimeout(() => {
+      child.stderr.pause()
+      child.kill()
+
+      reject(new TimeoutError())
+    }, 8000)
+
+    child.stderr.on('data', (data) => {
+      clearTimeout(timeout)
+
+      reject(new Error(data))
+    })
+    child.on('error', (error) => {
+      clearTimeout(timeout)
+
+      reject(error)
+    })
+    child.on('close', () => {
+      clearTimeout(timeout)
+
+      resolve()
+    })
   })
 }
 
 const execPlayCommand = (stream) => {
   return new Promise((resolve, reject) => {
     const child = spawn('play', [ '-q', '-t', 'mp3', '-' ], { stdio: [ 'pipe' ] })
-    child.stderr.on('data', (data) => reject(new Error(data)))
-    child.on('error', reject)
-    child.on('close', () => resolve())
+
+    const timeout = setTimeout(() => {
+      child.stderr.pause()
+      child.kill()
+
+      reject(new TimeoutError())
+    }, 8000)
+
+    child.stderr.on('data', (data) => {
+      clearTimeout(timeout)
+
+      reject(new Error(data))
+    })
+    child.on('error', (error) => {
+      clearTimeout(timeout)
+
+      reject(error)
+    })
+    child.on('close', () => {
+      clearTimeout(timeout)
+
+      resolve()
+    })
 
     stream.pipe(child.stdin)
   })
@@ -100,6 +159,7 @@ class Voice extends IOModule {
 
   start () {
     this._speakMutex = locks.createMutex()
+    this._hotwordMutex = locks.createMutex()
     this._listenMutex = locks.createMutex()
 
     this._detector = new Detector({
@@ -108,29 +168,30 @@ class Voice extends IOModule {
       audioGain: 2.0
     })
 
-    this._detector.on('hotword', () => this._listen())
+    this._detector.on('hotword', () => this._onHotword())
 
     this._mic = record.start({ threshold: 0 })
     this._mic.pipe(this._detector)
 
     super.start({
-      'io:voice:speak': this._speak.bind(this)
+      'io:voice:speak': this.speak.bind(this),
+      'io:voice:listen': this.listen.bind(this)
     })
   }
 
   stop () {
-    record.stop()
-
     super.stop()
+
+    record.stop()
   }
 
-  _speak ({ text }, callback) {
-    return this._doSpeak(text)
+  speak ({ text }, callback = () => {}) {
+    this._speak(text)
       .then(() => callback())
       .catch(callback)
   }
 
-  _doSpeak (text) {
+  _speak (text) {
     const googleTTS = (text) => {
       return Communication.emitAsync('tts:stream', { text })
         .then((stream) => execPlayCommand(stream))
@@ -148,57 +209,69 @@ class Voice extends IOModule {
       .finally(() => this._speakMutex.unlock())
   }
 
-  _listen () {
-    if (this._listenMutex.isLocked) {
+  _onHotword () {
+    if (this._hotwordMutex.isLocked) {
       return
     }
 
-    return this._listenMutex.lockAsync()
-      .then(() => this._doSpeak(Locale.get('yes')))
-      .then(() => this._doListen())
-      .then((text) => this._doSpeak(text))
+    return this._hotwordMutex.lockAsync()
+      .then(() => this._speak(Locale.get('yes')))
+      .then(() => this._listen())
+      .then((buffer) => super._onVoiceInput(buffer))
+      .then((text) => this._speak(text))
       .catch((error) => {
         Logger.error(error)
 
-        return this._doSpeak(Locale.get('error'))
+        return this._speak(Locale.get('error'))
           .catch(() => {})
       })
-      .finally(() => this._listenMutex.unlock())
+      .finally(() => this._hotwordMutex.unlock())
   }
 
-  _doListen () {
-    return new Promise((resolve, reject) => {
-      const data = []
-      const _stream = new stream.Writable({
-        write: (chunk, encoding, next) => {
-          data.push(chunk)
+  listen ({ minPeriod, maxPeriod }, callback = () => {}) {
+    this._listen(minPeriod, maxPeriod)
+      .then((buffer) => super._onTextInput(buffer))
+      .then((text) => callback(text))
+      .catch(callback)
+  }
 
-          next()
-        }
-      })
+  _listen (minPeriod = 1000, maxPeriod = 8000) {
+    const capture = () => {
+      return new Promise((resolve, reject) => {
+        const data = []
+        const _stream = new stream.Writable({
+          write: (chunk, encoding, next) => {
+            data.push(chunk)
 
-      const stop = () => {
-        this._mic.unpipe(_stream)
-
-        const buffer = Buffer.concat(data)
-
-        super._onVoiceInput(buffer)
-          .then((text) => resolve(text))
-          .catch(reject)
-      }
-
-      this._mic.pipe(_stream)
-
-      const timeout = setTimeout(() => stop(), 8000)
-
-      setTimeout(() => {
-        this._detector.once('silence', () => {
-          clearTimeout(timeout)
-
-          stop()
+            next()
+          }
         })
-      }, 1000)
-    })
+
+        const stop = () => {
+          this._mic.unpipe(_stream)
+
+          const buffer = Buffer.concat(data)
+
+          resolve(buffer)
+        }
+
+        this._mic.pipe(_stream)
+
+        const timeout = setTimeout(() => stop(), maxPeriod)
+
+        setTimeout(() => {
+          this._detector.once('silence', () => {
+            clearTimeout(timeout)
+
+            stop()
+          })
+        }, minPeriod)
+      })
+    }
+
+    return this._listenMutex.lockAsync()
+      .then(() => capture())
+      .finally(() => this._listenMutex.unlock())
   }
 }
 

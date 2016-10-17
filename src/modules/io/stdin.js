@@ -4,29 +4,21 @@
 
 const IOModule = require('./io-module')
 
-const Locale = require('../../utils/locale')
+const { Locale } = require('../../utils')
 
 const readline = require('readline')
 
-class STDIn extends IOModule {
+class stdin extends IOModule {
   constructor () {
     super('stdin')
   }
 
   start () {
-    super.start()
-
     this._interface = readline.createInterface({ input: process.stdin, terminal: false })
 
-    this._interface.on('line', (text) => {
-      super._onTextInput(text)
-        .then((reply) => console.log(reply))
-        .catch(() => {
-          const reply = Locale.get('error')
+    this._interface.on('line', this._onLine.bind(this))
 
-          console.log(reply)
-        })
-    })
+    super.start()
   }
 
   stop () {
@@ -36,6 +28,17 @@ class STDIn extends IOModule {
 
     super.stop()
   }
+
+  _onLine (text) {
+    super._onTextInput(text)
+      .then((reply) => console.log(reply))
+      .catch(() => {
+        const reply = Locale.get('error')
+
+        console.log(reply)
+      })
+  }
 }
 
-module.exports = new STDIn()
+// eslint-disable-next-line new-cap
+module.exports = new stdin()
