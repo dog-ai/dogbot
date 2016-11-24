@@ -8,7 +8,9 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "test": "node_modules/.bin/eslint . && node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- --recursive test",
+    "lint": "node_modules/.bin/eslint .",
+    "test": "node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- --recursive test",
+    "coverage": "node_modules/.bin/codecov",
     "clean": "rm -rf {var,coverage}"
   },
   "dependencies": {
