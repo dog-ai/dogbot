@@ -1,3 +1,2 @@
 test
---recursive
 --require ./test/mocha

@@ -1,17 +1,17 @@
 language: node_js
 node_js:
-- '6.3'
+  - '6.3'
 env:
-- CXX=g++-4.8
+  - CXX=g++-4.8
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
+      - ubuntu-toolchain-r-test
     packages:
-    - g++-4.8
-    - libasound2-dev
-after_success:
-- bash <(curl -s https://codecov.io/bash)
+      - g++-4.8
+      - libasound2-dev
+script:
+  - node_modules/.bin/codecov
 notifications:
   email: false
   slack:
