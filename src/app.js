@@ -21,36 +21,36 @@ try {
   // shutdown gracefully
   const stopAndExit = () => {
     bot.stop()
-      .finally(() => process.exit(0))
+        .finally(() => process.exit(0))
   }
-
-  bot.start()
-    .then(() => {
-      if (process.platform === 'linux') {
-        require('./utils/systemd').sdNotify(0, 'READY=1', (error) => {
-          if (error) {
-            Logger.error(error.message, error)
-          }
-        })
-      }
-
-      if (WATCHDOG_USEC) {
-        bot.heartbeat(WATCHDOG_USEC, (callback) => {
-          if (process.platform === 'linux') {
-            require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', callback)
-          } else {
-            if (callback) {
-              callback()
-            }
-          }
-        })
-      }
-    })
 
   process.on('SIGINT', stopAndExit)
   process.on('SIGTERM', stopAndExit)
   process.on('SIGHUP', stopAndExit)
   process.on('SIGABRT', () => process.exit(1)) // force immediate exit, i.e. systemd watchdog?
+
+  bot.start()
+      .then(() => {
+        if (process.platform === 'linux') {
+          require('./utils/systemd').sdNotify(0, 'READY=1', (error) => {
+            if (error) {
+              Logger.error(error.message, error)
+            }
+          })
+        }
+
+        if (WATCHDOG_USEC) {
+          bot.heartbeat(WATCHDOG_USEC, (callback) => {
+            if (process.platform === 'linux') {
+              require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', callback)
+            } else {
+              if (callback) {
+                callback()
+              }
+            }
+          })
+        }
+      })
 } catch (error) {
   logErrorAndExit(error)
 }
