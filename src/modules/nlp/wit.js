@@ -4,13 +4,19 @@
 
 const NLPModule = require('./nlp-module')
 
-const _ = require('lodash')
 const Promise = require('bluebird')
 const retry = require('bluebird-retry')
 
-const { UnknownIntentError } = require('./errors')
-
 const wit = Promise.promisifyAll(require('node-wit'))
+
+const extractSpeechIntent = function (speech, callback) {
+  retry(() => wit.captureSpeechIntentAsync(this._apiToken, speech, 'audio/wav'), {
+    max_tries: 3,
+    interval: 500
+  })
+    .then(({ _text }) => callback(null, { params: { text: _text } }))
+    .catch(callback)
+}
 
 class Wit extends NLPModule {
   constructor () {
@@ -18,7 +24,7 @@ class Wit extends NLPModule {
   }
 
   load (communication, config) { // TODO: remove communication
-    this._apiToken = config && config.api_token
+    this._apiToken = config && config.wit && config.wit.api_token
 
     if (!this._apiToken) {
       throw new Error('invalid configuration: no api token available')
@@ -29,25 +35,8 @@ class Wit extends NLPModule {
 
   start () {
     super.start({
-      'nlp:intent:text': this._extractTextIntent.bind(this)
+      'nlp:intent:speech': extractSpeechIntent.bind(this)
     })
-  }
-
-  _extractTextIntent (text, callback) {
-    retry(() => wit.captureTextIntentAsync(this._apiToken, text), { max_tries: 3, interval: 500 })
-      .then((response) => {
-        const outcome = _.head(_.sortBy(response.outcomes, [ 'confidence' ]))
-
-        if (outcome.intent === 'UNKNOWN' || outcome.confidence < 0.8) {
-          return callback(new UnknownIntentError())
-        }
-
-        const event = outcome.metadata
-        const params = outcome.entities
-
-        callback(null, { event, params })
-      })
-      .catch(callback)
   }
 }
 

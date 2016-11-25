@@ -15,8 +15,7 @@ class IOModule extends Module {
   }
 
   _onVoiceInput (voice) {
-    return Communication.emitAsync('nlp:intent:voice', voice)
-      .timeout(5000)
+    return Communication.emitAsync('nlp:intent:speech', voice)
       .then(({ event, params }) => {
         if (params.text) {
           return params.text
@@ -30,7 +29,6 @@ class IOModule extends Module {
 
   _onTextInput (text) {
     return Communication.emitAsync('nlp:intent:text', text)
-      .timeout(5000)
       .then(({ event, params }) => {
         if (params.text) {
           return params.text

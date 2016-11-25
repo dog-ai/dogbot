@@ -44,8 +44,7 @@ class Api extends NLPModule {
 
   start () {
     super.start({
-      'nlp:intent:text': this._extractTextIntent.bind(this),
-      'nlp:intent:voice': this._extractVoiceIntent.bind(this)
+      'nlp:intent:text': this._extractTextIntent.bind(this)
     })
 
     this._client = new Apiai(this._apiToken)
@@ -53,7 +52,7 @@ class Api extends NLPModule {
 
   _extractTextIntent (text, callback) {
     return retry(() => new Promise((resolve, reject) => {
-      const request = this._client.textRequest(text)
+      const request = this._client.textRequest(text, { sessionId: '94296bfa-b336-11e6-80f5-76304dec7eb7' })
       request.on('response', (response) => resolve(response))
       request.on('error', reject)
 
@@ -61,23 +60,6 @@ class Api extends NLPModule {
     }), { max_tries: 3, interval: 500 })
       .then((response) => responseHandler(response, callback))
       .catch(callback)
-  }
-
-  _extractVoiceIntent (voice, callback) {
-    callback(null, { params: { text: 'Awesome!' } })
-    /*
-     return retry(() => new Promise((resolve, reject) => {
-     const request = this._client.voiceRequest()
-     request.on('response', (response) => resolve(response))
-     request.on('error', reject)
-
-     request.write(voice)
-
-     request.end()
-     }), { max_tries: 3, interval: 500 })
-     .then((response) => responseHandler(response, callback))
-      .catch(callback)
-     */
   }
 }
 

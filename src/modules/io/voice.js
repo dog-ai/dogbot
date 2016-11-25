@@ -11,7 +11,6 @@ const locks = Promise.promisifyAll(require('locks'))
 const { Communication, Locale, Logger } = require('../../utils')
 
 const path = require('path')
-const stream = require('stream')
 const spawn = require('child_process').spawn
 
 const record = require('node-record-lpcm16')
@@ -121,6 +120,19 @@ const execPlayCommand = (stream) => {
   })
 }
 
+const captureAudio = (minPeriod = 3000, maxPeriod = 8000) => {
+  return new Promise((resolve, reject) => {
+    let stream
+    try {
+      stream = record.start({ threshold: 0.9 })
+    } catch (error) {
+      reject(error)
+    }
+
+    return resolve(stream)
+  })
+}
+
 class Voice extends IOModule {
   constructor () {
     super('voice')
@@ -159,8 +171,8 @@ class Voice extends IOModule {
 
   start () {
     this._speakMutex = locks.createMutex()
-    this._hotwordMutex = locks.createMutex()
     this._listenMutex = locks.createMutex()
+    this._hotwordMutex = locks.createMutex()
 
     this._detector = new Detector({
       resource: path.join(__dirname, '/../../../node_modules/snowboy/resources/common.res'),
@@ -210,14 +222,17 @@ class Voice extends IOModule {
   }
 
   _onHotword () {
-    if (this._hotwordMutex.isLocked) {
-      return
-    }
-
     return this._hotwordMutex.lockAsync()
+      .then(() => {
+        this._mic.unpipe(this._detector)
+        record.stop()
+      })
       .then(() => this._speak(Locale.get('yes')))
-      .then(() => this._listen())
-      .then((buffer) => super._onVoiceInput(buffer))
+      .then(() => captureAudio.bind(this)())
+      .then((stream) => {
+        return super._onVoiceInput(stream)
+          .then((text) => super._onTextInput(text))
+      })
       .then((text) => this._speak(text))
       .catch((error) => {
         Logger.error(error)
@@ -225,52 +240,27 @@ class Voice extends IOModule {
         return this._speak(Locale.get('error'))
           .catch(() => {})
       })
-      .finally(() => this._hotwordMutex.unlock())
+      .finally(() => {
+        this._mic = record.start({ threshold: 0 })
+        this._mic.pipe(this._detector)
+
+        this._hotwordMutex.unlock()
+      })
   }
 
   listen ({ minPeriod, maxPeriod }, callback = () => {}) {
     this._listen(minPeriod, maxPeriod)
-      .then((buffer) => super._onTextInput(buffer))
       .then((text) => callback(text))
       .catch(callback)
   }
 
-  _listen (minPeriod = 1000, maxPeriod = 8000) {
-    const capture = () => {
-      return new Promise((resolve, reject) => {
-        const data = []
-        const _stream = new stream.Writable({
-          write: (chunk, encoding, next) => {
-            data.push(chunk)
-
-            next()
-          }
-        })
-
-        const stop = () => {
-          this._mic.unpipe(_stream)
-
-          const buffer = Buffer.concat(data)
-
-          resolve(buffer)
-        }
-
-        this._mic.pipe(_stream)
-
-        const timeout = setTimeout(() => stop(), maxPeriod)
-
-        setTimeout(() => {
-          this._detector.once('silence', () => {
-            clearTimeout(timeout)
-
-            stop()
-          })
-        }, minPeriod)
-      })
-    }
-
+  _listen (minPeriod, maxPeriod) {
     return this._listenMutex.lockAsync()
-      .then(() => capture())
+      .then(() => captureAudio.bind(this)(minPeriod, maxPeriod))
+      .then((stream) => {
+        return super._onVoiceInput(stream)
+          .then((text) => super._onTextInput(text))
+      })
       .finally(() => this._listenMutex.unlock())
   }
 }
