@@ -39,15 +39,18 @@ bot.start()
     }
 
     if (WATCHDOG_USEC) {
-      bot.heartbeat(WATCHDOG_USEC, (callback) => {
+      const heartbeat = (callback = () => {}) => {
         if (process.platform === 'linux') {
           require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', callback)
         } else {
-          if (callback) {
-            callback()
-          }
+          callback()
         }
-      })
+      }
+
+      bot.heartbeat(WATCHDOG_USEC, heartbeat)
+        .then((interval) => {
+          Logger.info(`Sending a heartbeat every ${interval} seconds`)
+        })
     }
   })
   .catch((error) => logErrorAndExit(error))

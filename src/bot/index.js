@@ -15,6 +15,8 @@ const Heartbeat = require('./heartbeat')
 class Bot {
   constructor (secret) {
     this.secret = secret
+
+    this._heartbeat = new Heartbeat()
   }
 
   start () {
@@ -38,16 +40,21 @@ class Bot {
     return AppManager.disableAllApps()
       .then(() => Sync.terminate())
       .then(() => Worker.terminate())
-      .then(() => Heartbeat.terminate())
+      .then(() => this._heartbeat.stop())
       .then(() => Logger.info('Stopped dogbot'))
       .catch(Logger.error)
   }
 
   heartbeat (interval, heartbeat) {
-    const healthChecks = [ AppManager.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
+    try {
+      const healthChecks = [ AppManager.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
 
-    return Heartbeat.initialize(interval, heartbeat, () => Promise.all(healthChecks))
-      .then(interval => Logger.info('Sending a heartbeat every ' + interval + ' seconds'))
+      const realInterval = this._heartbeat.start(interval, heartbeat, () => Promise.all(healthChecks))
+
+      return Promise.resolve(realInterval)
+    } catch (error) {
+      return Promise.reject(error)
+    }
   }
 
   _configureWorker () {

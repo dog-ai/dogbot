@@ -4,52 +4,50 @@
 
 const Promise = require('bluebird')
 
-const Communication = require('../utils/communication.js')
+const { Communication } = require('../utils')
 
-function heartbeat (params, callback) {
+function run (params, callback) {
   this._healthCheck()
     .then(() => this._heartbeat())
     .then(() => callback())
-    .catch(error => callback(error))
+    .catch(callback)
 }
 
 class Heartbeat {
-  initialize (interval, heartbeatFn, healthCheckFn) {
-    return new Promise((resolve, reject) => {
-      if (!interval > 0) {
-        return reject(new Error('invalid interval'))
-      }
+  start (interval, heartbeat, healthCheck) {
+    if (this._isRunning) {
+      throw new Error('already started')
+    }
 
-      this._interval = interval / 2
+    if (!interval > 0) {
+      throw new Error('invalid interval')
+    }
 
-      this._heartbeat = Promise.promisify(heartbeatFn)
-      this._healthCheck = healthCheckFn
+    this._interval = interval / 2
 
-      Communication.on('bot:heartbeat', heartbeat.bind(this))
-      Communication.emit('worker:job:enqueue', 'bot:heartbeat', null, { schedule: this._interval + ' seconds' })
+    this._heartbeat = Promise.promisify(heartbeat)
+    this._healthCheck = healthCheck
 
-      this._isInitialized = true
+    Communication.on('bot:heartbeat', run.bind(this))
+    Communication.emit('worker:job:enqueue', 'bot:heartbeat', null, { schedule: this._interval + ' seconds' })
 
-      resolve(this._interval)
-    })
+    this._isRunning = true
+
+    return this._interval
   }
 
-  terminate () {
-    return new Promise((resolve) => {
-      if (!this._isInitialized) {
-        return resolve()
-      }
+  stop () {
+    if (!this._isRunning) {
+      return
+    }
 
-      Communication.emit('worker:job:dequeue', 'bot:heartbeat')
-      Communication.removeListener('bot:heartbeat', heartbeat.bind(this))
+    Communication.emit('worker:job:dequeue', 'bot:heartbeat')
+    Communication.removeListener('bot:heartbeat', run.bind(this))
 
-      delete this._interval
-      delete this._heartbeat
-      delete this._isInitialized
-
-      resolve()
-    })
+    delete this._interval
+    delete this._heartbeat
+    delete this._isRunning
   }
 }
 
-module.exports = new Heartbeat()
+module.exports = Heartbeat

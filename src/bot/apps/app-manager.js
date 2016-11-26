@@ -2,12 +2,12 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const APPS_BLACKLIST = process.env.DOGBOT_APP_BLACKLIST
+const APP_BLACKLIST = process.env.DOGBOT_APP_BLACKLIST
 
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Logger = require('../../utils/logger.js')
+const { Logger } = require('../../utils')
 
 const { AppNotAvailableError, AppAlreadyDisabledError } = require('./errors')
 
@@ -17,13 +17,15 @@ const Modules = require('../../modules')
 const path = require('path')
 const fs = require('fs')
 
+const APP_DIR = path.join(__dirname, '/')
+
 class AppManager {
   constructor () {
-    this.appsDir = path.join(__dirname, '/')
+    this.blacklist = (APP_BLACKLIST && APP_BLACKLIST.split(' ')) || []
 
-    this.blacklist = (APPS_BLACKLIST && APPS_BLACKLIST.split(' ')) || []
     this.enabled = []
-    this.available = (fs.readdirSync(this.appsDir) || [])
+
+    this.available = (fs.readdirSync(APP_DIR) || [])
       .map(file => file.replace('.js', ''))
       .filter(file => file !== 'app-manager' && file !== 'errors' && file !== 'app')
       .filter(file => !_.contains(this.blacklist, file))
@@ -37,10 +39,10 @@ class AppManager {
     }
 
     if (!_.contains(this.available, id)) {
-      return Promise.reject(new AppNotAvailableError(id))
+      return Promise.reject(new AppNotAvailableError())
     }
 
-    const app = require(this.appsDir + id)
+    const app = require(APP_DIR + id)
     let promises = []
 
     _.forEach(app.databases, (database) => {
@@ -83,7 +85,7 @@ class AppManager {
     const app = _.find(this.enabled, { id: id })
 
     if (!app) {
-      return Promise.reject(new AppAlreadyDisabledError(id))
+      return Promise.reject(new AppAlreadyDisabledError())
     }
 
     let promises = []

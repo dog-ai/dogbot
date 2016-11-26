@@ -2,42 +2,36 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const stream = new require('stream')
-const path = require('path')
+describe('Google Text-to-Speech', () => {
+  let subject
+  let Communication
 
-let target
+  before(() => {
+    Communication = require('../../../src/utils/communication')
+  })
 
-let Communication
+  beforeEach(() => {
+    subject = require('../../../src/modules/tts/google')
 
-describe('TTS', () => {
-  describe('Google', () => {
-    before(() => {
-      Communication = require('../../../src/utils/communication')
-    })
+    subject.load()
+  })
 
-    beforeEach(() => {
-      target = require(path.join(__dirname, '/../../../src/modules/tts/google'))
+  after(() => {
+    delete require.cache[ require.resolve('../../../src/utils/communication') ]
+  })
 
-      target.load()
-    })
+  afterEach(() => {
+    if (subject) {
+      subject.unload()
+    }
 
-    after(() => {
-      delete require.cache[ require.resolve(path.join(__dirname, '/../../../src/utils/communication')) ]
-    })
+    delete require.cache[ require.resolve('../../../src/modules/tts/google') ]
+  })
 
-    afterEach(() => {
-      if (target) {
-        target.unload()
-      }
-
-      delete require.cache[ require.resolve(path.join(__dirname, '/../../../src/modules/tts/google')) ]
-    })
-
-    describe('^tts:stream', () => {
-      it('should return speech stream', () => {
-        return Communication.emitAsync('tts:stream', { text: 'Hello world!' })
-          .should.be.fulfilled
-      })
+  describe('^tts:stream', () => {
+    it('should return speech stream', () => {
+      return Communication.emitAsync('tts:stream', { text: 'Hello world!' })
+        .should.be.fulfilled
     })
   })
 })
