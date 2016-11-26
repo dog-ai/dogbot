@@ -20,10 +20,6 @@ const TMP_DIR = path.join(__dirname, '/../../var/tmp')
 
 winston.emitErrs = true
 
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR)
-}
-
 const timeFormat = () => {
   return moment().format('YYYY-MM-DDTHH:mm:ss,SSSZ')
 }
@@ -42,6 +38,10 @@ switch (LOG_TYPE) {
     }))
     break
   case 'file':
+    if (!fs.existsSync(LOG_DIR)) {
+      fs.mkdirSync(LOG_DIR)
+    }
+
     transports.push(new (winston.transports.File)({
       name: 'log', // http://stackoverflow.com/a/17374968
       level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,

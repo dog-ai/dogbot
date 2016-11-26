@@ -3,6 +3,7 @@
  */
 
 const Promise = require('bluebird')
+let Heartbeat
 
 describe('Heartbeat', () => {
   let subject

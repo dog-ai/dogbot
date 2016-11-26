@@ -2,15 +2,16 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+let AppManager
+
 describe('App Manager', () => {
   let subject
 
-  before(() => {
-    td.replace('../../../src/utils/logger', td.object())
-  })
-
   beforeEach(() => {
-    subject = require('../../../src/bot/apps').AppManager
+    td.replace('../../../src/databases', td.object())
+    td.replace('../../../src/modules', td.object())
+    td.replace(require('../../../src/utils'), 'Logger', td.object([ 'error', 'info' ]))
+    AppManager = require('../../../src/bot/apps').AppManager
   })
 
   afterEach(() => {
@@ -19,16 +20,12 @@ describe('App Manager', () => {
     delete require.cache[ require.resolve('../../../src/bot/apps') ]
   })
 
-  describe('#enableApp()', () => {
-    it('should enable dummy app', () => {
-      const id = 'dummy'
-
-      const result = subject.enableApp(id)
-
-      return result.should.eventually.be.fulfilled
+  context('when app not available', () => {
+    beforeEach(() => {
+      subject = new AppManager()
     })
 
-    it('should fail to enable app not available', () => {
+    it('should fail to enable', () => {
       const id = 'not-available-app'
 
       const result = subject.enableApp(id)
@@ -37,39 +34,51 @@ describe('App Manager', () => {
     })
   })
 
-  describe('#disableApp()', () => {
-    it('should disable dummy app', () => {
+  context('when app available', () => {
+    beforeEach(() => {
+      subject = new AppManager()
+    })
+
+    it('should enable', () => {
       const id = 'dummy'
 
       const result = subject.enableApp(id)
-        .then(() => subject.disableApp(id))
 
       return result.should.eventually.be.fulfilled
     })
+  })
 
-    it('should fail to disable app already disabled', () => {
-      const id = 'dummy'
+  context('when app already disabled', () => {
+    const id = 'dummy'
 
+    beforeEach(() => {
+      subject = new AppManager()
+    })
+
+    it('should fail to disable', () => {
       const result = subject.disableApp(id)
 
       return result.should.eventually.be.rejected
     })
   })
 
-  describe('#disableAllApps()', () => {
-    it('should disable all apps', () => {
-      const id = 'dummy'
+  context('when app already enabled', () => {
+    const id = 'dummy'
 
-      const result = subject.enableApp(id)
-        .then(() => subject.disableAllApps())
+    beforeEach(() => {
+      subject = new AppManager
+
+      return subject.enableApp(id)
+    })
+
+    it('should disable', () => {
+      const result = subject.disableApp(id)
 
       return result.should.eventually.be.fulfilled
     })
-  })
 
-  describe('#healthCheck()', () => {
-    it('should be healthy', () => {
-      const result = subject.healthCheck()
+    it('should disable all apps', () => {
+      const result = subject.disableAllApps()
 
       return result.should.eventually.be.fulfilled
     })

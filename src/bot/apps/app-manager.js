@@ -129,4 +129,4 @@ class AppManager {
   }
 }
 
-module.exports = new AppManager()
+module.exports = AppManager

@@ -16,6 +16,7 @@ class Bot {
   constructor (secret) {
     this.secret = secret
 
+    this._appManager = new AppManager()
     this._heartbeat = new Heartbeat()
   }
 
@@ -37,7 +38,7 @@ class Bot {
   }
 
   stop () {
-    return AppManager.disableAllApps()
+    return this._appManager.disableAllApps()
       .then(() => Sync.terminate())
       .then(() => Worker.terminate())
       .then(() => this._heartbeat.stop())
@@ -47,7 +48,7 @@ class Bot {
 
   heartbeat (interval, heartbeat) {
     try {
-      const healthChecks = [ AppManager.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
+      const healthChecks = [ this._appManager.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
 
       const realInterval = this._heartbeat.start(interval, heartbeat, () => Promise.all(healthChecks))
 
@@ -151,11 +152,11 @@ class Bot {
       const isEnabled = config.is_enabled
 
       if (isEnabled) {
-        return AppManager.enableApp(id, config)
+        return this._appManager.enableApp(id, config)
           .catch(AppNotAvailableError, () => {})
           .catch(Logger.error)
       } else {
-        return AppManager.disableApp(id)
+        return this._appManager.disableApp(id)
           .catch(AppAlreadyDisabledError, () => {})
           .catch(Logger.error)
       }
