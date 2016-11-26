@@ -25,7 +25,7 @@ class AppManager {
     this.enabled = []
     this.available = (fs.readdirSync(this.appsDir) || [])
       .map(file => file.replace('.js', ''))
-      .filter(file => file !== 'index' && file !== 'errors' && file !== 'app')
+      .filter(file => file !== 'app-manager' && file !== 'errors' && file !== 'app')
       .filter(file => !_.contains(this.blacklist, file))
   }
 
