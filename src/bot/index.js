@@ -12,6 +12,24 @@ const Sync = require('./sync')
 const Worker = require('./worker')
 const Heartbeat = require('./heartbeat')
 
+function configureApps (apps) {
+  return Promise.mapSeries(_.keys(apps), id => {
+    const config = apps[ id ]
+    const isEnabled = config.is_enabled
+
+    if (isEnabled) {
+      return this._appManager.enableApp(id, config)
+        .catch(AppNotAvailableError, () => {})
+        .catch(Logger.error)
+    } else {
+      return this._appManager.disableApp(id)
+        .catch(AppAlreadyDisabledError, () => {})
+        .catch(Logger.error)
+    }
+  })
+    .catch(Logger.error)
+}
+
 class Bot {
   constructor (secret) {
     this.secret = secret
@@ -31,8 +49,8 @@ class Bot {
       .then(() => {
         // unchain so we don't get blocked by not having an internet connection
         this._configureDataSync()
-          .then(this._configureApps)
-          .then(this._configureTaskSync)
+          .then(configureApps.bind(this))
+          .then(this._configureTaskSync.bind(this))
       })
       .catch(Logger.error)
   }
@@ -73,7 +91,7 @@ class Bot {
         Communication.on('sync:outgoing:periodic', callback)
         Communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
       },
-      this._configureApps,
+      configureApps.bind(this)(),
       callback => {
         // listen for incoming sync callback registrations
         Communication.on('sync:incoming:register:setup', callback)
@@ -144,24 +162,6 @@ class Bot {
         Communication.emit('worker:job:enqueue', event, params, null, callbacks)
       }
     )
-  }
-
-  _configureApps (apps) {
-    return Promise.mapSeries(_.keys(apps), id => {
-      const config = apps[ id ]
-      const isEnabled = config.is_enabled
-
-      if (isEnabled) {
-        return this._appManager.enableApp(id, config)
-          .catch(AppNotAvailableError, () => {})
-          .catch(Logger.error)
-      } else {
-        return this._appManager.disableApp(id)
-          .catch(AppAlreadyDisabledError, () => {})
-          .catch(Logger.error)
-      }
-    })
-      .catch(Logger.error)
   }
 }
 
