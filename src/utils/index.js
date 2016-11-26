@@ -5,5 +5,6 @@
 module.exports = {
   Communication: require('./communication'),
   Locale: require('./locale'),
-  Logger: require('./logger')
+  Logger: require('./logger'),
+  retry: require('./retry')
 }
