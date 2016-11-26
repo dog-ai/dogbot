@@ -4,7 +4,7 @@
 
 const LOG_TYPE = process.env.DOGBOT_LOG_TYPE || 'console'
 const LOG_LEVEL = process.env.DOGBOT_LOG_LEVEL || 'info'
-const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'development'
+const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local'
 const BRANCH = process.env.DOGBOT_REPO_BRANCH || 'develop'
 const ROLLBAR_API_KEY = process.env.ROLLBAR_API_KEY
 

@@ -95,7 +95,7 @@ class Sync {
               moment.tz.setDefault(dog.timezone)
             }
 
-            if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+            if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'local') {
               // https://www.firebase.com/docs/web/guide/offline-capabilities.html#section-connection-state
               firebase.child('.info/connected').on('value', (snapshot) => {
                 var connected = snapshot.val()
@@ -154,7 +154,7 @@ class Sync {
 
     var now = moment().format()
 
-    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'local') {
       this.dogRef.update({ last_seen_date: now, updated_date: now })
     }
 
@@ -186,7 +186,7 @@ class Sync {
 
     var now = moment().format()
 
-    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+    if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'local') {
       this.dogRef.update({ last_seen_date: now, updated_date: now })
     }
 
@@ -327,7 +327,7 @@ class Sync {
         } else {
           var companyResourceRef = firebase.child('company_' + companyResource + '/' + this.companyId + '/' + companyResourceObj.id)
 
-          if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+          if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'local') {
             companyResourceRef.set(null, (error) => {
               callback(error, companyResourceObj)
             })
@@ -403,7 +403,7 @@ class Sync {
           (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
           (isStats ? '_stats' : ''))
 
-        if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+        if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'local') {
           if (isStats) {
             companyResourceRef.set(val, callback)
           } else {
@@ -455,7 +455,7 @@ class Sync {
           return priority
         }
 
-        if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'development') {
+        if (!process.env.DOGBOT_ENVIRONMENT || process.env.DOGBOT_ENVIRONMENT !== 'local') {
           companyResourceRef.update(val, (error) => {
             if (error) {
               callback(error)

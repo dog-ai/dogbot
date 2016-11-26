@@ -7,9 +7,9 @@ var _ = require('lodash'),
 
 var redis = require("redis");
 
-var ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'development';
+var ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local';
 
-var REDIS_UNIX_SOCKET = ENVIRONMENT === 'development' ? __dirname + '/../../../var/run/redis.sock' : '/var/run/redis.sock';
+var REDIS_UNIX_SOCKET = ENVIRONMENT === 'local' ? __dirname + '/../../../var/run/redis.sock' : '/var/run/redis.sock';
 
 function nosql() {
 }
