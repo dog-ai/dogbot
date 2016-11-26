@@ -76,7 +76,7 @@ switch (LOG_TYPE) {
 
 switch (ENVIRONMENT) {
   case 'production':
-
+  case 'development':
     const rollbar = require('rollbar')
     rollbar.init(ROLLBAR_API_KEY, {
       branch: BRANCH,
