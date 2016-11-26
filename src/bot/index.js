@@ -35,6 +35,7 @@ class Bot {
     this.secret = secret
 
     this._appManager = new AppManager()
+    this._worker = new Worker()
     this._heartbeat = new Heartbeat()
   }
 
@@ -45,7 +46,7 @@ class Bot {
 
     Logger.info('Starting dogbot')
 
-    return this._configureWorker()
+    return this._worker.start()
       .then(() => {
         // unchain so we don't get blocked by not having an internet connection
         this._configureDataSync()
@@ -58,15 +59,15 @@ class Bot {
   stop () {
     return this._appManager.disableAllApps()
       .then(() => Sync.terminate())
-      .then(() => Worker.terminate())
-      .then(() => this._heartbeat.stop())
+      .then(this._worker.stop)
+      .then(this._heartbeat.stop)
       .then(() => Logger.info('Stopped dogbot'))
       .catch(Logger.error)
   }
 
   heartbeat (interval, heartbeat) {
     try {
-      const healthChecks = [ this._appManager.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
+      const healthChecks = [ this._appManager.healthCheck(), Sync.healthCheck(), this._worker.healthCheck() ]
 
       const realInterval = this._heartbeat.start(interval, heartbeat, () => Promise.all(healthChecks))
 
@@ -74,14 +75,6 @@ class Bot {
     } catch (error) {
       return Promise.reject(error)
     }
-  }
-
-  _configureWorker () {
-    return Worker.initialize(
-      callback => Communication.on('worker:job:enqueue', callback),
-      callback => Communication.on('worker:job:dequeue', callback),
-      (event, params) => Communication.emitAsync(event, params)
-    )
   }
 
   _configureDataSync () {

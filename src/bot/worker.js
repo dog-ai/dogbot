@@ -13,18 +13,66 @@ const JobTypeTtlEnum = {
 
 const Promise = require('bluebird')
 
-const Logger = require('../utils/logger.js')
+const { Logger, Communication } = require('../utils')
 
 const Databases = require('../databases')
 
 const kue = require('kue-scheduler')
+
+function enqueueJob (event, params, options, callbacks) {
+  const _options = options || {}
+
+  let type
+  switch (event) {
+    case 'social:linkedin:company:import':
+    case 'person:device:discover':
+      type = JobTypeEnum.SLOW
+      break
+    case 'bot:heartbeat':
+      type = JobTypeEnum.FAST
+      break
+    default:
+      type = JobTypeEnum.NORMAL
+  }
+
+  const job = this.queue.create(type, { event: event, params: params, callbacks: callbacks })
+  job.ttl(JobTypeTtlEnum[ type ])
+
+  if (_options.retry) {
+    job.attempts(_options.retry)
+  }
+
+  if (_options.schedule) {
+    this.queue.every(_options.schedule, job)
+  } else {
+    try {
+      job.save((error) => {
+        if (error) {
+          throw error
+        }
+      })
+    } catch (ignored) {}
+  }
+}
+
+function dequeueJob (event) {
+  if (this.queue && this._schedules[ event ]) {
+    this.queue.remove(this._schedules[ event ], (error) => {
+      if (error) {
+        // throw error
+      } else {
+        delete this._schedules[ event ]
+      }
+    })
+  }
+}
 
 class Worker {
   constructor () {
     this._schedules = {}
   }
 
-  initialize (enqueue, dequeue, emit, report) {
+  start () {
     return new Promise((resolve, reject) => {
       if (!Databases) {
         return reject(new Error('Unable to initialize worker because no database available'))
@@ -47,7 +95,7 @@ class Worker {
               callback(null, result)
 
               if (callbacks.resolve) {
-                emit(callbacks.resolve, result)
+                Communication.emitAsync(callbacks.resolve, result)
               }
             }
 
@@ -59,11 +107,11 @@ class Worker {
               callback(error)
 
               if (callbacks.reject) {
-                emit(callbacks.reject, error)
+                Communication.emitAsync(callbacks.reject, error)
               }
             }
 
-            emit(event, params)
+            Communication.emitAsync(event, params)
               .then(success)
               .catch((error) => {
                 failure(error, job)
@@ -103,16 +151,19 @@ class Worker {
           })
           this.queue.on('error', () => {})
 
-          enqueue(this._enqueue.bind(this))
-          dequeue(this._dequeue.bind(this))
+          Communication.on('worker:job:enqueue', enqueueJob.bind(this))
+          Communication.on('worker:job:dequeue', dequeueJob.bind(this))
         })
         .then(() => resolve())
         .catch(reject)
     })
   }
 
-  terminate () {
+  stop () {
     return new Promise((resolve, reject) => {
+      Communication.removeListener('worker:job:enqueue', enqueueJob.bind(this))
+      Communication.removeListener('worker:job:dequeue', dequeueJob.bind(this))
+
       if (this.queue) {
         try {
           this.queue.shutdown(100, (error) => {
@@ -133,57 +184,9 @@ class Worker {
       })
   }
 
-  _enqueue (event, params, options, callbacks) {
-    const _options = options || {}
-
-    let type
-    switch (event) {
-      case 'social:linkedin:company:import':
-      case 'person:device:discover':
-        type = JobTypeEnum.SLOW
-        break
-      case 'bot:heartbeat':
-        type = JobTypeEnum.FAST
-        break
-      default:
-        type = JobTypeEnum.NORMAL
-    }
-
-    const job = this.queue.create(type, { event: event, params: params, callbacks: callbacks })
-    job.ttl(JobTypeTtlEnum[ type ])
-
-    if (_options.retry) {
-      job.attempts(_options.retry)
-    }
-
-    if (_options.schedule) {
-      this.queue.every(_options.schedule, job)
-    } else {
-      try {
-        job.save((error) => {
-          if (error) {
-            throw error
-          }
-        })
-      } catch (ignored) {}
-    }
-  }
-
-  _dequeue (event) {
-    if (this.queue && this._schedules[ event ]) {
-      this.queue.remove(this._schedules[ event ], (error) => {
-        if (error) {
-          // throw error
-        } else {
-          delete this._schedules[ event ]
-        }
-      })
-    }
-  }
-
   healthCheck () {
     return Promise.resolve()
   }
 }
 
-module.exports = new Worker()
+module.exports = Worker
