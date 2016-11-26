@@ -2,7 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const APPS_BLACKLIST = process.env.DOGBOT_APPS_BLACKLIST
+const APPS_BLACKLIST = process.env.DOGBOT_APP_BLACKLIST
 
 const _ = require('lodash')
 const Promise = require('bluebird')
