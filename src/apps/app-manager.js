@@ -7,12 +7,12 @@ const APP_BLACKLIST = process.env.DOGBOT_APP_BLACKLIST
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const { Logger } = require('../../utils')
+const { Logger } = require('../utils')
 
 const { AppNotAvailableError, AppAlreadyDisabledError } = require('./errors')
 
-const Databases = require('../../databases')
-const Modules = require('../../modules')
+const Databases = require('../databases')
+const Modules = require('../modules')
 
 const path = require('path')
 const fs = require('fs')

@@ -7,7 +7,9 @@ const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const { Logger } = require('../../utils')
+const { AppManager, AppNotAvailableError, AppAlreadyDisabledError } = require('../../apps')
+
+const { Communication, Logger } = require('../../utils')
 const moment = require('moment-timezone')
 
 const Firebase = require('firebase')
@@ -15,25 +17,61 @@ const firebase = new Firebase(`https://${FIREBASE_PROJECT_ID}.firebaseio.com`)
 
 const Task = require('./task')
 
+function configureApps (apps) {
+  return Promise.mapSeries(_.keys(apps), id => {
+    const config = apps[ id ]
+    const isEnabled = config.is_enabled
+
+    if (isEnabled) {
+      return this._appManager.enableApp(id, config)
+        .catch(AppNotAvailableError, () => {})
+        .catch(Logger.error)
+    } else {
+      return this._appManager.disableApp(id)
+        .catch(AppAlreadyDisabledError, () => {})
+        .catch(Logger.error)
+    }
+  })
+    .catch(Logger.error)
+}
+
 class Sync {
-  start (token,
-         startOutgoingPeriodicSynchronizationFn,
-         onCompanyAppChangedCallback,
-         registerIncomingSynchronizationFn,
-         registerOutgoingPeriodicSynchronizationFn,
-         registerOutgoingQuickshotSynchronizationFn,
-         onOutgoingSynchronizeCallback) {
+  constructor () {
+    this._appManager = new AppManager()
+  }
+
+  start (token) {
     return new Promise((resolve, reject) => {
       return this._authenticate(token)
         .then((dog) => {
           this.outgoingSynchronizeEvents = []
 
-          startOutgoingPeriodicSynchronizationFn(this._periodicOutgoingSynchronization.bind(this))
-          this.onCompanyAppChangedCallback = onCompanyAppChangedCallback
-          registerIncomingSynchronizationFn(this._registerIncomingSynchronization.bind(this))
-          registerOutgoingPeriodicSynchronizationFn(this._registerPeriodicOutgoingSynchronization.bind(this))
-          registerOutgoingQuickshotSynchronizationFn(this._quickshotOutgoingSynchronization.bind(this))
-          this.onOutgoingSynchronizeCallback = onOutgoingSynchronizeCallback
+          // start an outgoing periodic sync job every 10 minutes
+          Communication.on('sync:outgoing:periodic', this._periodicOutgoingSynchronization.bind(this))
+          Communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
+
+          // listen for incoming sync callback registrations
+          Communication.on('sync:incoming:register:setup', this._registerIncomingSynchronization.bind(this))
+
+          // listen for outgoing periodic sync callback registrations
+          Communication.on('sync:outgoing:periodic:register', this._registerPeriodicOutgoingSynchronization.bind(this))
+
+          // listen for outgoing quickshot sync callback registrations
+          Communication.on('sync:outgoing:quickshot:register', registerParams => {
+            if (registerParams && registerParams.registerEvents) {
+              _.forEach(registerParams.registerEvents, registerEvent => {
+                // listen for outgoing quickshot events
+                Communication.on(registerEvent, (outgoingParams, outgoingCallback) => {
+                  // split quickshot event arguments
+                  // let outgoingCallback = arguments.length > 1 && _.isFunction(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : undefined
+                  // let outgoingParams = [].slice.call(arguments, 0, outgoingCallback ? arguments.length - 1 : arguments.length)
+
+                  // sync module will take care of doing the quickshot
+                  this._quickshotOutgoingSynchronization.bind(this)(registerParams, outgoingParams, outgoingCallback)
+                })
+              })
+            }
+          })
 
           if (dog.company_id) {
             this.companyId = dog.company_id
@@ -43,21 +81,18 @@ class Sync {
               var app = {}
               app[ snapshot.key() ] = snapshot.val()
 
-              this.onCompanyAppChangedCallback(app)
+              configureApps.bind(this)(app)
             })
 
-            this.companyRef.child('/apps').once('value',
-              (snapshot) => {
-                resolve([
-                  this.dogId,
-                  snapshot.val()
-                ])
-              },
-              (error) => {
-                reject(error)
-              })
+            this.companyRef.child('/apps').once('value', (snapshot) => {
+              const apps = snapshot.val()
+
+              configureApps.bind(this)(apps)
+
+              resolve(this.dogId)
+            }, (error) => reject(error))
           } else {
-            resolve([ this.dogId ])
+            resolve(this.dogId)
           }
         })
         .then(() => Task.start(firebase, this.companyId))
@@ -66,7 +101,8 @@ class Sync {
 
   stop () {
     return new Promise((resolve, reject) => {
-      Task.stop()
+      this._appManager.disableAllApps()
+        .then(() => Task.stop())
         .then(() => this._unauthenthicate())
         .then(() => {
           delete this.companyId
@@ -137,7 +173,7 @@ class Sync {
   _periodicOutgoingSynchronization (params, callback) {
     if (this.companyRef) {
       _.forEach(this.outgoingSynchronizeEvents, (outgoing) => {
-        this.onOutgoingSynchronizeCallback(outgoing.event, null, (error, companyResourceObj, callback) => {
+        Communication.emit(outgoing.event, null, (error, companyResourceObj, callback) => {
           if (error) {
             Logger.error(error.stack)
           } else {
@@ -175,7 +211,7 @@ class Sync {
 
     if (registerParams.outgoingEvent) {
       // quickshot event callback
-      this.onOutgoingSynchronizeCallback(registerParams.outgoingEvent, outgoingParams, quickshot)
+      Communication.emit(registerParams.outgoingEvent, outgoingParams, quickshot)
     } else {
       // quickshot function callback
       registerParams.outgoingFunction(outgoingParams, quickshot)

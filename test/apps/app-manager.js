@@ -8,16 +8,16 @@ describe('App Manager', () => {
   let subject
 
   beforeEach(() => {
-    td.replace('../../../src/databases', td.object())
-    td.replace('../../../src/modules', td.object())
-    td.replace(require('../../../src/utils'), 'Logger', td.object([ 'error', 'info' ]))
-    AppManager = require('../../../src/bot/apps').AppManager
+    td.replace('../../src/databases', td.object())
+    td.replace('../../src/modules', td.object())
+    td.replace(require('../../src/utils'), 'Logger', td.object([ 'error', 'info' ]))
+    AppManager = require('../../src/apps').AppManager
   })
 
   afterEach(() => {
     td.reset()
 
-    delete require.cache[ require.resolve('../../../src/bot/apps') ]
+    delete require.cache[ require.resolve('../../src/apps') ]
   })
 
   context('when app not available', () => {

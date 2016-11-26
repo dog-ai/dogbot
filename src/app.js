@@ -13,6 +13,7 @@ const bot = new Bot()
 // shutdown gracefully
 const stopAndExit = () => {
   bot.stop()
+    .then(() => Logger.info('Stopped dogbot'))
     .finally(() => process.exit(0))
 }
 
@@ -27,6 +28,8 @@ process.on('SIGINT', stopAndExit)
 process.on('SIGTERM', stopAndExit)
 process.on('SIGHUP', stopAndExit)
 process.on('SIGABRT', () => process.exit(1)) // force immediate exit, i.e. systemd watchdog?
+
+Logger.info('Starting dogbot')
 
 bot.start(SECRET)
   .then(() => {
