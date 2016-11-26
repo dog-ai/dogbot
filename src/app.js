@@ -51,5 +51,3 @@ bot.start()
     }
   })
   .catch((error) => logErrorAndExit(error))
-
-

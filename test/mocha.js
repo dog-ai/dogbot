@@ -60,3 +60,10 @@ global._ = _
 
 const moment = require('moment')
 global.moment = moment
+
+const td = require('testdouble')
+td.config({
+  promiseConstructor: Promise
+})
+
+global.td = td

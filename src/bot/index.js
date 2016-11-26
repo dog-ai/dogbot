@@ -5,13 +5,12 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Logger = require('../utils/logger.js')
-const Communication = require('../utils/communication.js')
+const { Communication, Logger } = require('../utils')
 
 const { AppManager, AppNotAvailableError, AppAlreadyDisabledError } = require('./apps')
 const Sync = require('./sync')
-const Worker = require('./worker.js')
-const Heartbeat = require('./heartbeat.js')
+const Worker = require('./worker')
+const Heartbeat = require('./heartbeat')
 
 class Bot {
   constructor (secret) {
