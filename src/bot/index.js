@@ -31,16 +31,15 @@ function configureApps (apps) {
 }
 
 class Bot {
-  constructor (secret) {
-    this.secret = secret
-
+  constructor () {
     this._appManager = new AppManager()
+    this._sync = new Sync()
     this._worker = new Worker()
     this._heartbeat = new Heartbeat()
   }
 
-  start () {
-    if (!this.secret) {
+  start (secret) {
+    if (!secret) {
       throw new Error('Please provide a secret.')
     }
 
@@ -49,25 +48,24 @@ class Bot {
     return this._worker.start()
       .then(() => {
         // unchain so we don't get blocked by not having an internet connection
-        this._configureDataSync()
+        this._configureDataSync(secret)
           .then(configureApps.bind(this))
-          .then(this._configureTaskSync.bind(this))
       })
       .catch(Logger.error)
   }
 
   stop () {
     return this._appManager.disableAllApps()
-      .then(() => Sync.terminate())
-      .then(this._worker.stop)
-      .then(this._heartbeat.stop)
+      .then(() => this._sync.stop())
+      .then(() => this._worker.stop())
+      .then(() => this._heartbeat.stop())
       .then(() => Logger.info('Stopped dogbot'))
       .catch(Logger.error)
   }
 
   heartbeat (interval, heartbeat) {
     try {
-      const healthChecks = [ this._appManager.healthCheck(), Sync.healthCheck(), this._worker.healthCheck() ]
+      const healthChecks = [ this._appManager.healthCheck(), this._sync.healthCheck(), this._worker.healthCheck() ]
 
       const realInterval = this._heartbeat.start(interval, heartbeat, () => Promise.all(healthChecks))
 
@@ -77,8 +75,8 @@ class Bot {
     }
   }
 
-  _configureDataSync () {
-    return Sync.initialize(this.secret,
+  _configureDataSync (secret) {
+    return this._sync.start(secret,
       callback => {
         // start an outgoing periodic sync job every 10 minutes
         Communication.on('sync:outgoing:periodic', callback)
@@ -120,41 +118,6 @@ class Bot {
 
       return apps
     })
-  }
-
-  _configureTaskSync () {
-    return Sync.initializeTask(
-      (event, params, progress, resolve, reject) => {
-        // trigger incoming sync task events
-
-        const now = _.now()
-        const callbacks = {
-          'progress': event + ':progress:' + now,
-          'resolve': event + ':resolve:' + now,
-          'reject': event + ':reject:' + now
-        }
-
-        const onResolve = (result) => {
-          resolve(result)
-
-          Communication.removeListener(callbacks.progress, progress)
-          Communication.removeListener(callbacks.reject, onReject)
-        }
-
-        const onReject = (error) => {
-          reject(error)
-
-          Communication.removeListener(callbacks.progress, progress)
-          Communication.removeListener(callbacks.resolve, onResolve)
-        }
-
-        Communication.on(callbacks.progress, progress)
-        Communication.once(callbacks.resolve, onResolve)
-        Communication.once(callbacks.reject, onReject)
-
-        Communication.emit('worker:job:enqueue', event, params, null, callbacks)
-      }
-    )
   }
 }
 

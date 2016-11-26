@@ -7,22 +7,22 @@ const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Logger = require('../../utils/logger.js')
+const { Logger } = require('../../utils')
 const moment = require('moment-timezone')
 
 const Firebase = require('firebase')
 const firebase = new Firebase(`https://${FIREBASE_PROJECT_ID}.firebaseio.com`)
 
-const Task = require('./task.js')
+const Task = require('./task')
 
 class Sync {
-  initialize (token,
-              startOutgoingPeriodicSynchronizationFn,
-              onCompanyAppChangedCallback,
-              registerIncomingSynchronizationFn,
-              registerOutgoingPeriodicSynchronizationFn,
-              registerOutgoingQuickshotSynchronizationFn,
-              onOutgoingSynchronizeCallback) {
+  start (token,
+         startOutgoingPeriodicSynchronizationFn,
+         onCompanyAppChangedCallback,
+         registerIncomingSynchronizationFn,
+         registerOutgoingPeriodicSynchronizationFn,
+         registerOutgoingQuickshotSynchronizationFn,
+         onOutgoingSynchronizeCallback) {
     return new Promise((resolve, reject) => {
       return this._authenticate(token)
         .then((dog) => {
@@ -60,16 +60,13 @@ class Sync {
             resolve([ this.dogId ])
           }
         })
+        .then(() => Task.start(firebase, this.companyId))
     })
   }
 
-  initializeTask (onIncomingTaskCallback) {
-    Task.initialize(firebase, this.companyId, onIncomingTaskCallback)
-  }
-
-  terminate () {
+  stop () {
     return new Promise((resolve, reject) => {
-      return Task.terminate()
+      Task.stop()
         .then(() => this._unauthenthicate())
         .then(() => {
           delete this.companyId
@@ -485,4 +482,4 @@ class Sync {
   }
 }
 
-module.exports = new Sync()
+module.exports = Sync

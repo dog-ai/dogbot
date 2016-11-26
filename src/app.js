@@ -8,7 +8,7 @@ const WATCHDOG_USEC = process.env.WATCHDOG_USEC
 const { Logger } = require('./utils')
 const Bot = require('./bot')
 
-const bot = new Bot(SECRET)
+const bot = new Bot()
 
 // shutdown gracefully
 const stopAndExit = () => {
@@ -28,7 +28,7 @@ process.on('SIGTERM', stopAndExit)
 process.on('SIGHUP', stopAndExit)
 process.on('SIGABRT', () => process.exit(1)) // force immediate exit, i.e. systemd watchdog?
 
-bot.start()
+bot.start(SECRET)
   .then(() => {
     if (process.platform === 'linux') {
       require('./utils/systemd').sdNotify(0, 'READY=1', (error) => {
