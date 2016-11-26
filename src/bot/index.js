@@ -8,21 +8,21 @@ const Promise = require('bluebird')
 const Logger = require('../utils/logger.js')
 const Communication = require('../utils/communication.js')
 
-const Apps = require('./apps')
+const { AppManager, AppNotAvailableError, AppAlreadyDisabledError } = require('./apps')
 const Sync = require('./sync')
 const Worker = require('./worker.js')
 const Heartbeat = require('./heartbeat.js')
 
 class Bot {
   constructor (secret) {
-    if (!secret) {
-      throw new Error('Please provide a secret.')
-    }
-
     this.secret = secret
   }
 
   start () {
+    if (!this.secret) {
+      throw new Error('Please provide a secret.')
+    }
+
     Logger.info('Starting dogbot')
 
     return this._configureWorker()
@@ -36,7 +36,7 @@ class Bot {
   }
 
   stop () {
-    return Apps.disableAllApps()
+    return AppManager.disableAllApps()
       .then(() => Sync.terminate())
       .then(() => Worker.terminate())
       .then(() => Heartbeat.terminate())
@@ -45,7 +45,7 @@ class Bot {
   }
 
   heartbeat (interval, heartbeat) {
-    const healthChecks = [ Apps.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
+    const healthChecks = [ AppManager.healthCheck(), Sync.healthCheck(), Worker.healthCheck() ]
 
     return Heartbeat.initialize(interval, heartbeat, () => Promise.all(healthChecks))
       .then(interval => Logger.info('Sending a heartbeat every ' + interval + ' seconds'))
@@ -139,9 +139,22 @@ class Bot {
     )
   }
 
-  _configureApps (_apps) {
-    return Promise.all(
-      _.map(_apps, (appConfig, appName) => appConfig.is_enabled ? Apps.enableApp(appName, appConfig) : Apps.disableApp(appName)))
+  _configureApps (apps) {
+    return Promise.mapSeries(_.keys(apps), id => {
+      const config = apps[ id ]
+      const isEnabled = config.is_enabled
+
+      if (isEnabled) {
+        return AppManager.enableApp(id, config)
+          .catch(AppNotAvailableError, () => {})
+          .catch(Logger.error)
+      } else {
+        return AppManager.disableApp(id)
+          .catch(AppAlreadyDisabledError, () => {})
+          .catch(Logger.error)
+      }
+    })
+      .catch(Logger.error)
   }
 }
 

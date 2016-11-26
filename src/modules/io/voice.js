@@ -226,6 +226,8 @@ class Voice extends IOModule {
       .then(() => {
         this._mic.unpipe(this._detector)
         record.stop()
+
+        Communication.emit('io:slack:text', { text: 'yes' })
       })
       .then(() => this._speak(Locale.get('yes')))
       .then(() => captureAudio.bind(this)())

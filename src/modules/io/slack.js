@@ -64,6 +64,8 @@ class Slack extends IOModule {
           return reject(error)
         }
 
+        this._bot = bot
+
         return resolve(bot, payload)
       })
     })
@@ -77,6 +79,8 @@ class Slack extends IOModule {
   stop () {
     return Promise.resolve()
       .then(() => {
+        delete this._bot
+
         this._client.closeRTM()
 
         super.stop()
@@ -84,7 +88,18 @@ class Slack extends IOModule {
   }
 
   text ({ text }, callback = () => {}) {
-    callback()
+    this._bot.startPrivateConversation({
+      user: 'U2K057TDF',
+      channel: 'D2K83C4JF'
+    }, (error, conversation) => {
+      if (error) {
+        return callback(error)
+      }
+
+      conversation.say(text)
+
+      callback()
+    })
   }
 }
 

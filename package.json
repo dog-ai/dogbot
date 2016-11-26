@@ -75,6 +75,7 @@
     "mockery": "1.4.1",
     "sinon": "1.17.3",
     "sinon-as-promised": "^4.0.2",
-    "standard": "8.1.0"
+    "standard": "8.1.0",
+    "testdouble": "^1.9.0"
   }
 }
