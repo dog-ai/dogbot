@@ -120,7 +120,7 @@ class Sync {
   stop () {
     return new Promise((resolve, reject) => {
       this._apps.stop()
-        .then(() => this.jobs.stop())
+        .then(() => this._jobs.stop())
         .then(() => this._modules.stop())
         .then(unauthenthicate.bind(this))
         .then(() => {
