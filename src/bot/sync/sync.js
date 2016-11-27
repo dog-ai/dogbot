@@ -119,9 +119,9 @@ class Sync {
 
   stop () {
     return new Promise((resolve, reject) => {
-      this._app.stop()
-        .then(() => this._task.stop())
-        .then(() => this._module.stop())
+      this._apps.stop()
+        .then(() => this.jobs.stop())
+        .then(() => this._modules.stop())
         .then(unauthenthicate.bind(this))
         .then(() => {
           delete this._companyId
