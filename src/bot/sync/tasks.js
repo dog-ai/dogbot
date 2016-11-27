@@ -38,7 +38,7 @@ function handle (event, params, progress, resolve, reject) {
   Communication.emit('worker:job:enqueue', event, params, null, callbacks)
 }
 
-class Task {
+class Tasks {
   start (firebase, dogId, companyId) {
     this._firebase = firebase
 
@@ -74,4 +74,4 @@ class Task {
   }
 }
 
-module.exports = Task
+module.exports = Tasks

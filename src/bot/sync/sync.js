@@ -13,9 +13,9 @@ const moment = require('moment-timezone')
 
 const Firebase = require('firebase')
 
-const Task = require('./task')
-const Module = require('./module')
-const App = require('./app')
+const Tasks = require('./tasks')
+const Modules = require('./modules')
+const Apps = require('./apps')
 
 function goOnline (id) {
   return new Promise((resolve, reject) => {
@@ -89,9 +89,9 @@ class Sync {
   constructor () {
     this._firebase = new Firebase(URL)
 
-    this._task = new Task()
-    this._module = new Module()
-    this._app = new App()
+    this._tasks = new Tasks()
+    this._modules = new Modules()
+    this._apps = new Apps()
   }
 
   start (token) {
@@ -104,9 +104,9 @@ class Sync {
 
           resolve(this._dogId)
         })
-        .then(() => this._module.start(this._firebase, this._dogId, this._companyId))
-        .then(() => this._task.start(this._firebase, this._dogId, this._companyId))
-        .then(() => this._app.start(this._firebase, this._dogId, this._companyId))
+        .then(() => this._modules.start(this._firebase, this._dogId, this._companyId))
+        .then(() => this._tasks.start(this._firebase, this._dogId, this._companyId))
+        .then(() => this._apps.start(this._firebase, this._dogId, this._companyId))
         .catch(reject)
     })
   }

@@ -27,7 +27,7 @@ function configureApps (apps) {
     .catch(Logger.error)
 }
 
-class App {
+class Apps {
   constructor () {
     this._appManager = new AppManager()
   }
@@ -67,4 +67,4 @@ class App {
   }
 }
 
-module.exports = App
+module.exports = Apps

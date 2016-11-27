@@ -11,7 +11,7 @@ const moment = require('moment-timezone')
 
 const { Communication, Logger } = require('../../utils')
 
-class Data {
+class Modules {
   start (firebase, dogId, companyId) {
     return new Promise((resolve, reject) => {
       this._firebase = firebase
@@ -405,4 +405,4 @@ class Data {
   }
 }
 
-module.exports = Data
+module.exports = Modules
