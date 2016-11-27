@@ -9,7 +9,7 @@ const { Logger } = require('../../utils')
 
 const { AppManager, AppNotAvailableError, AppAlreadyDisabledError } = require('../../apps')
 
-function configureApps (apps) {
+function configure (apps) {
   return Promise.mapSeries(_.keys(apps), id => {
     const config = apps[ id ]
     const isEnabled = config.is_enabled
@@ -27,6 +27,15 @@ function configureApps (apps) {
     .catch(Logger.error)
 }
 
+function onChanges () {
+  this._companyRef.child('/apps').on('child_changed', (snapshot) => {
+    const app = {}
+    app[ snapshot.key() ] = snapshot.val()
+
+    configure.bind(this)(app)
+  }, Logger.error)
+}
+
 class Apps {
   constructor () {
     this._appManager = new AppManager()
@@ -35,33 +44,36 @@ class Apps {
   start (firebase, dogId, companyId) {
     return new Promise((resolve, reject) => {
       this._firebase = firebase
+      this._companyId = companyId
 
-      if (companyId) {
-        this._companyId = companyId
+      if (this._companyId) {
         this._companyRef = this._firebase.child(`companies/${this._companyId}`)
 
-        this._companyRef.child('/apps').on('child_changed', (snapshot) => {
-          var app = {}
-          app[ snapshot.key() ] = snapshot.val()
+        this._companyRef.child('/apps').once('value')
+          .then((snapshot) => {
+            const apps = snapshot.val()
 
-          configureApps.bind(this)(app)
-        })
-
-        this._companyRef.child('/apps').once('value', (snapshot) => {
-          const apps = snapshot.val()
-
-          configureApps.bind(this)(apps)
-        })
+            configure.bind(this)(apps)
+          })
+          .then(resolve)
+          .catch(reject)
+      } else {
+        resolve()
       }
-
-      resolve()
     })
+      .then(onChanges.bind(this))
   }
 
   stop () {
     return new Promise((resolve, reject) => {
       this._appManager.disableAllApps()
-        .then(resolve)
+        .then(() => {
+          if (this._companyId) {
+            this._companyRef.child('/apps').off('child_changed')
+          }
+
+          resolve()
+        })
         .catch(reject)
     })
   }

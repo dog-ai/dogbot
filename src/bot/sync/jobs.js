@@ -9,7 +9,7 @@ const { Communication, Logger } = require('../../utils')
 
 const FirebaseQueue = require('firebase-queue')
 
-function handle (event, params, progress, resolve, reject) {
+function enqueueJob (event, params, progress, resolve, reject) {
   const now = _.now()
   const callbacks = {
     'progress': event + ':progress:' + now,
@@ -38,7 +38,17 @@ function handle (event, params, progress, resolve, reject) {
   Communication.emit('worker:job:enqueue', event, params, null, callbacks)
 }
 
-class Tasks {
+function onCreate (task, progress, resolve, reject) {
+  Logger.debug('Incoming task: ' + JSON.stringify(task))
+
+  if (!task || !task.event) {
+    return reject('Invalid task')
+  }
+
+  enqueueJob(task.event, task.data, progress, resolve, reject)
+}
+
+class Jobs {
   start (firebase, dogId, companyId) {
     this._firebase = firebase
 
@@ -53,15 +63,7 @@ class Tasks {
 
       const options = { specId: 'default_spec', numWorkers: 1, suppressStack: true }
 
-      this._queue = new FirebaseQueue(refs, options, (task, progress, resolve, reject) => {
-        Logger.debug('Incoming task: ' + JSON.stringify(task))
-
-        if (!task || !task.event) {
-          return reject('Invalid task')
-        }
-
-        handle(task.event, task.data, progress, resolve, reject)
-      })
+      this._queue = new FirebaseQueue(refs, options, onCreate.bind(this))
     }
   }
 
@@ -74,4 +76,4 @@ class Tasks {
   }
 }
 
-module.exports = Tasks
+module.exports = Jobs
