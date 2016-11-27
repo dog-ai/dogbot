@@ -9,6 +9,8 @@ const URL = `https://${PROJECT_ID}.firebaseio.com`
 
 const Promise = require('bluebird')
 
+const { Logger } = require('../../utils')
+
 const moment = require('moment-timezone')
 
 const Firebase = require('firebase')
@@ -66,7 +68,11 @@ function authenticate (token) {
       if (error) {
         return reject(error)
       } else {
-        goOnline.bind(this)(authData.uid)
+        const id = authData.uid
+
+        Logger.info(`Authenticated as ${id}`)
+
+        goOnline.bind(this)(id)
           .then(resolve)
           .then(reject)
       }

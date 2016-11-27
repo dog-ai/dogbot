@@ -26,7 +26,7 @@ class Bot {
       .then(() => {
         // unchain so we don't get blocked by not having an internet connection
         this._sync.start(secret)
-          .then((id) => Logger.info(`Authenticated as ${id}`))
+          .catch(Logger.error)
       })
       .catch(Logger.error)
   }
