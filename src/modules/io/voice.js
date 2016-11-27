@@ -245,11 +245,17 @@ class Voice extends IOModule {
       .then((stream) => {
         return super._onVoiceInput(stream)
           .then((text) => {
+            Communication.emit('io:slack:text', { text: `I just heard: ${text}` })
+
             return playAudio('success.wav')
               .then(() => super._onTextInput(text))
           })
       })
-      .then((text) => this._speak(text))
+      .then((text) => {
+        Communication.emit('io:slack:text', { text: `I've answered: ${text}` })
+
+        return this._speak(text)
+      })
       .catch((error) => {
         Logger.error(error)
 
