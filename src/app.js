@@ -6,7 +6,7 @@ const SECRET = process.env.DOGBOT_SECRET
 const WATCHDOG_USEC = process.env.WATCHDOG_USEC
 
 const { Logger } = require('./utils')
-const Bot = require('./bot')
+const { Bot } = require('./bot')
 
 const bot = new Bot()
 

@@ -63,7 +63,8 @@ global.moment = moment
 
 const td = require('testdouble')
 td.config({
-  promiseConstructor: Promise
+  promiseConstructor: Promise,
+  ignoreWarnings: true
 })
 
 global.td = td

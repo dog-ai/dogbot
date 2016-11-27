@@ -4,7 +4,7 @@
 
 module.exports = {
   AppManager: require('./app-manager'),
-  AppNotAvailableError: require('./errors/app-not-available-error'),
-  AppAlreadyDisabledError: require('./errors/app-already-disabled-error')
+  AppNotAvailableError: require('./errors').AppNotAvailableError,
+  AppAlreadyDisabledError: require('./errors').AppAlreadyDisabledError
 }
 
