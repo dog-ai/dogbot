@@ -104,9 +104,9 @@ class Sync {
 
           resolve(this._dogId)
         })
-        .then(() => this._module.start(this._firebase, this._companyId))
-        .then(() => this._task.start(this._firebase, this._companyId))
-        .then(() => this._app.start(this._firebase, this._companyId))
+        .then(() => this._module.start(this._firebase, this._dogId, this._companyId))
+        .then(() => this._task.start(this._firebase, this._dogId, this._companyId))
+        .then(() => this._app.start(this._firebase, this._dogId, this._companyId))
         .catch(reject)
     })
   }

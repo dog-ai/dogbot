@@ -39,7 +39,7 @@ function handle (event, params, progress, resolve, reject) {
 }
 
 class Task {
-  start (firebase, companyId) {
+  start (firebase, dogId, companyId) {
     this._firebase = firebase
 
     if (companyId) {

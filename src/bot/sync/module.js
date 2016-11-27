@@ -12,9 +12,10 @@ const moment = require('moment-timezone')
 const { Communication, Logger } = require('../../utils')
 
 class Data {
-  start (firebase, companyId) {
+  start (firebase, dogId, companyId) {
     return new Promise((resolve, reject) => {
       this._firebase = firebase
+      this._dogRef = this._firebase.child(`dogs/${this._dogId}`)
 
       if (companyId) {
         this._companyRef = this._firebase.child(`companies/${companyId}`)
@@ -78,7 +79,7 @@ class Data {
     var now = moment().format()
 
     if (ENVIRONMENT !== 'local') {
-      this.dogRef.update({ last_seen_date: now, updated_date: now })
+      this._dogRef.update({ last_seen_date: now, updated_date: now })
     }
 
     callback()
@@ -110,7 +111,7 @@ class Data {
     var now = moment().format()
 
     if (ENVIRONMENT !== 'local') {
-      this.dogRef.update({ last_seen_date: now, updated_date: now })
+      this._dogRef.update({ last_seen_date: now, updated_date: now })
     }
 
     if (callback) {

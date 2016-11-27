@@ -32,7 +32,7 @@ class App {
     this._appManager = new AppManager()
   }
 
-  start (firebase, companyId) {
+  start (firebase, dogId, companyId) {
     return new Promise((resolve, reject) => {
       this._firebase = firebase
 
