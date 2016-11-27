@@ -242,13 +242,12 @@ class Voice extends IOModule {
 
   _onHotword () {
     return this._hotwordMutex.lockAsync()
-      .then(() => {
+      .then(() => Communication.emit('io:slack:text', { text: 'yes' }))
+      /* .then(() => {
         this._mic.unpipe(this._detector)
         record.stop()
-
-        Communication.emit('io:slack:text', { text: 'yes' })
       })
-      /*.then(() => captureAudio.bind(this)())
+       .then(() => captureAudio.bind(this)())
       .then((stream) => {
         return super._onVoiceInput(stream)
           .then((text) => {
@@ -261,7 +260,7 @@ class Voice extends IOModule {
         Communication.emit('io:slack:text', { text: `I've answered: ${text}` })
 
         return this._speak(text)
-       })*/
+       }) */
       .catch((error) => {
         Logger.error(error)
 
@@ -269,8 +268,8 @@ class Voice extends IOModule {
           .catch(() => {})
       })
       .finally(() => {
-        this._mic = record.start({ threshold: 0 })
-        this._mic.pipe(this._detector)
+        // this._mic = record.start({ threshold: 0 })
+        // this._mic.pipe(this._detector)
 
         this._hotwordMutex.unlock()
       })
