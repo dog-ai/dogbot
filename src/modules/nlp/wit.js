@@ -8,6 +8,8 @@ const Promise = require('bluebird')
 
 const { retry } = require('../../utils')
 
+const { UnknownIntentError } = require('./errors')
+
 const wit = Promise.promisifyAll(require('node-wit'))
 
 const extractSpeechIntent = function (speech, callback) {
@@ -15,7 +17,13 @@ const extractSpeechIntent = function (speech, callback) {
     max_tries: 3,
     interval: 500
   })
-    .then(({ _text }) => callback(null, { params: { text: _text } }))
+    .then(({ _text }) => {
+      if (_text === '') {
+        callback(new UnknownIntentError())
+      }
+
+      callback(null, { params: { text: _text } })
+    })
     .catch(callback)
 }
 

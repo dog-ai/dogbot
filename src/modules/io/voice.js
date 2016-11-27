@@ -10,6 +10,7 @@ const locks = Promise.promisifyAll(require('locks'))
 
 const { Communication, Locale, Logger } = require('../../utils')
 
+const createReadStream = require('fs').createReadStream
 const path = require('path')
 const spawn = require('child_process').spawn
 
@@ -89,9 +90,9 @@ const execSayCommand = (text) => {
   })
 }
 
-const execPlayCommand = (stream) => {
+const execPlayCommand = (stream, format = 'wav') => {
   return new Promise((resolve, reject) => {
-    const child = spawn('play', [ '-q', '-t', 'mp3', '-' ], { stdio: [ 'pipe' ] })
+    const child = spawn('play', [ '-q', '-t', format, '-' ], { stdio: [ 'pipe' ] })
 
     const timeout = setTimeout(() => {
       child.stderr.pause()
@@ -120,7 +121,12 @@ const execPlayCommand = (stream) => {
   })
 }
 
-const captureAudio = (minPeriod = 3000, maxPeriod = 8000) => {
+const playAudio = (file) => {
+  const stream = createReadStream(path.join(__dirname, `/../../../share/dogbot/voice/${file}`))
+  return execPlayCommand(stream)
+}
+
+const captureAudio = (maxPeriod = 8000) => {
   return new Promise((resolve, reject) => {
     let stream
     try {
@@ -128,6 +134,11 @@ const captureAudio = (minPeriod = 3000, maxPeriod = 8000) => {
     } catch (error) {
       reject(error)
     }
+
+    const timeout = setTimeout(record.stop, maxPeriod)
+    stream.once('end', () => {
+      clearTimeout(timeout)
+    })
 
     return resolve(stream)
   })
@@ -145,7 +156,7 @@ class Voice extends IOModule {
 
         this._models = new Models()
         this._models.add({
-          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/feedeobot.pmdl'),
+          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl'),
           sensitivity: '0.5',
           hotwords: 'dog'
         })
@@ -156,7 +167,7 @@ class Voice extends IOModule {
 
         this._models = new Models()
         this._models.add({
-          file: path.join(__dirname, '/../../../share/snowboy/macbookpro/dog.pmdl'),
+          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl'),
           sensitivity: '0.5',
           hotwords: 'dog'
         })
@@ -206,7 +217,7 @@ class Voice extends IOModule {
   _speak (text) {
     const googleTTS = (text) => {
       return Communication.emitAsync('tts:stream', { text })
-        .then((stream) => execPlayCommand(stream))
+        .then((stream) => execPlayCommand(stream, 'mp3'))
     }
 
     return this._speakMutex.lockAsync()
@@ -229,17 +240,21 @@ class Voice extends IOModule {
 
         Communication.emit('io:slack:text', { text: 'yes' })
       })
-      .then(() => this._speak(Locale.get('yes')))
+      .then(() => playAudio('listen.wav'))
       .then(() => captureAudio.bind(this)())
       .then((stream) => {
         return super._onVoiceInput(stream)
-          .then((text) => super._onTextInput(text))
+          .then((text) => {
+            return playAudio('success.wav')
+              .then(() => super._onTextInput(text))
+          })
       })
       .then((text) => this._speak(text))
       .catch((error) => {
         Logger.error(error)
 
-        return this._speak(Locale.get('error'))
+        return playAudio('failure.wav')
+          .then(() => this._speak(Locale.get('error')))
           .catch(() => {})
       })
       .finally(() => {
@@ -250,15 +265,15 @@ class Voice extends IOModule {
       })
   }
 
-  listen ({ minPeriod, maxPeriod }, callback = () => {}) {
-    this._listen(minPeriod, maxPeriod)
+  listen ({ maxPeriod }, callback = () => {}) {
+    this._listen(maxPeriod)
       .then((text) => callback(text))
       .catch(callback)
   }
 
-  _listen (minPeriod, maxPeriod) {
+  _listen (maxPeriod) {
     return this._listenMutex.lockAsync()
-      .then(() => captureAudio.bind(this)(minPeriod, maxPeriod))
+      .then(() => captureAudio.bind(this)(maxPeriod))
       .then((stream) => {
         return super._onVoiceInput(stream)
           .then((text) => super._onTextInput(text))

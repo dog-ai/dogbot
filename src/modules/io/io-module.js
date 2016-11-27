@@ -21,8 +21,10 @@ class IOModule extends Module {
           return params.text
         }
 
-        return Communication.emitAsync(event, params)
-          .then((text) => text)
+        if (event) {
+          return Communication.emitAsync(event, params)
+            .then((text) => text)
+        }
       })
       .catch(UnknownIntentError, () => Locale.get('unable_to_understand'))
   }
@@ -34,8 +36,10 @@ class IOModule extends Module {
           return params.text
         }
 
-        return Communication.emitAsync(event, params)
-          .then((text) => text)
+        if (event) {
+          return Communication.emitAsync(event, params)
+            .then((text) => text)
+        }
       })
       .catch(UnknownIntentError, () => Locale.get('unable_to_understand'))
   }
