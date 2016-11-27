@@ -6,7 +6,7 @@ const Promise = require('bluebird')
 
 const { Logger } = require('../utils')
 
-const Sync = require('./sync')
+const { Sync } = require('./sync')
 const Worker = require('./worker')
 const Heartbeat = require('./heartbeat')
 

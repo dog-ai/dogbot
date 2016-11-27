@@ -39,23 +39,30 @@ function handle (event, params, progress, resolve, reject) {
 }
 
 class Task {
-  start (ref, companyId) {
-    const refs = {
-      tasksRef: ref.child('companies/' + companyId + '/tasks'),
-      specsRef: ref.child('queue/specs')
-    }
+  start (firebase, companyId) {
+    this._firebase = firebase
 
-    const options = { specId: 'default_spec', numWorkers: 1, suppressStack: true }
+    if (companyId) {
+      this._companyId = companyId
+      this._companyRef = this._firebase.child(`companies/${this._companyId}`)
 
-    this._queue = new FirebaseQueue(refs, options, (task, progress, resolve, reject) => {
-      Logger.debug('Incoming task: ' + JSON.stringify(task))
-
-      if (!task || !task.event) {
-        return reject('Invalid task')
+      const refs = {
+        tasksRef: firebase.child(`companies/${this._companyId}/tasks`),
+        specsRef: firebase.child('queue/specs')
       }
 
-      handle(task.event, task.data, progress, resolve, reject)
-    })
+      const options = { specId: 'default_spec', numWorkers: 1, suppressStack: true }
+
+      this._queue = new FirebaseQueue(refs, options, (task, progress, resolve, reject) => {
+        Logger.debug('Incoming task: ' + JSON.stringify(task))
+
+        if (!task || !task.event) {
+          return reject('Invalid task')
+        }
+
+        handle(task.event, task.data, progress, resolve, reject)
+      })
+    }
   }
 
   stop () {
@@ -67,4 +74,4 @@ class Task {
   }
 }
 
-module.exports = new Task()
+module.exports = Task
