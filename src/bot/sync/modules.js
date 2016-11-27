@@ -15,6 +15,7 @@ class Modules {
   start (firebase, dogId, companyId) {
     return new Promise((resolve, reject) => {
       this._firebase = firebase
+      this._dogId = dogId
       this._dogRef = this._firebase.child(`dogs/${this._dogId}`)
 
       if (companyId) {
