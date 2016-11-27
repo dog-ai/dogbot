@@ -55,7 +55,7 @@ function onChanges () {
         const _apps = {}
         _apps[ appId ] = snapshot.val()
 
-        const __apps = _.merge({}, apps, _apps)
+        const __apps = _.merge({}, _apps, apps)
 
         configure.bind(this)(__apps)
       })
