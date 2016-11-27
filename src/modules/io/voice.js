@@ -164,7 +164,7 @@ class Voice extends IOModule {
 
         this._models = new Models()
         this._models.add({
-          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl'),
+          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/default.pmdl'),
           sensitivity: '0.45',
           hotwords: 'dog'
         })
@@ -175,7 +175,7 @@ class Voice extends IOModule {
 
         this._models = new Models()
         this._models.add({
-          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl'),
+          file: path.join(__dirname, '/../../../share/snowboy/macbookpro/default.pmdl'),
           sensitivity: '0.45',
           hotwords: 'dog'
         })
