@@ -66,7 +66,7 @@ class Data {
       _.forEach(this.outgoingSynchronizeEvents, (outgoing) => {
         Communication.emit(outgoing.event, null, (error, companyResourceObj, callback) => {
           if (error) {
-            Logger.error(error.stack)
+            Logger.error(error)
           } else {
             this._sendCompanyResource(outgoing.companyResource, companyResourceObj, (error) => {
               callback(error, companyResourceObj)
@@ -247,7 +247,7 @@ class Data {
     if (companyResourceObj.is_to_be_deleted) {
       this._companyRef.child(companyResource + '/' + companyResourceObj.id).remove((error) => {
         if (error) {
-          Logger.error(error.stack)
+          Logger.error(error)
         } else {
           var companyResourceRef = this._firebase.child('company_' + companyResource + '/' + this._companyId + '/' + companyResourceObj.id)
 

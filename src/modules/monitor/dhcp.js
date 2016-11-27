@@ -8,7 +8,7 @@ const DHCPRL_UNIX_SOCKET = '/var/run/dhcprl.sock'
 
 const Promise = require('bluebird')
 
-const Logger = require('../../utils/logger')
+const { Logger } = require('../../utils')
 const Communication = require('../../utils/communication')
 
 class DHCP extends MonitorModule {

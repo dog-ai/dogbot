@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const { Logger } = require('../../utils')
 
 var _ = require('lodash');
 var CronJob = require('cron').CronJob;
@@ -39,7 +39,7 @@ eventreminder.prototype.schedule = function() {
         try {
             self.process();
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 };
@@ -50,7 +50,7 @@ eventreminder.prototype.process = function() {
     var google = this.moduleManager.findLoadedModuleByName('google');
     google.getAccounts(function(error, accounts) {
         if (error !== undefined && error !== null) {
-            logger.error(error.stack);
+            Logger.error(error);
         } else {
             var calendar = self.moduleManager.findLoadedModuleByName('calendar');
 
@@ -58,7 +58,7 @@ eventreminder.prototype.process = function() {
 
                 calendar.retrieveEventListForToday(account.user_id, account.access_token, function(error, eventList) {
                     if (error !== undefined && error !== null) {
-                        logger.error(error.stack);
+                        Logger.error(error);
                     } else {
                         eventList.items.forEach(function(event) {
                             var reminder = _.find(reminders, function(r) {
@@ -82,7 +82,7 @@ eventreminder.prototype.process = function() {
                                         try {
                                             self._remind(reminder);
                                         } catch (error) {
-                                            logger.error('Unable to run schedule because ' + error);
+                                            Logger.error('Unable to run schedule because ' + error);
                                         }
                                     }, null, true, "Europe/Stockholm");
 

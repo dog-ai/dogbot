@@ -2,7 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const { Logger } = require('../../utils')
 
 function presence() {
     var moduleManager = {};
@@ -75,7 +75,7 @@ presence.prototype._retrieveSample = function (callback) {
         "SELECT Datetime(date, 'localtime') as date, value FROM arp;", [],
         function (error, rows) {
             if (error !== undefined && error !== null) {
-                logger.error(error.stack);
+              Logger.error(error);
             } else {
                 callback(rows);
             }

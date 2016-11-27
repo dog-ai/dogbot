@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js'),
+const { Logger } = require('../../utils'),
     _ = require('lodash'),
     Promise = require('bluebird');
 

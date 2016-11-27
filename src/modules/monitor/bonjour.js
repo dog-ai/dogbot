@@ -7,7 +7,7 @@ const MonitorModule = require('./monitor-module')
 const Promise = require('bluebird')
 const retry = require('bluebird-retry')
 
-const Logger = require('../../utils/logger')
+const { Logger } = require('../../utils')
 const Communication = require('../../utils/communication')
 
 class Bonjour extends MonitorModule {

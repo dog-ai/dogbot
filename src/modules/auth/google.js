@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const { Logger } = require('../../utils')
 
 var sqlInsertEntryIntoTable = "INSERT INTO google (user_id, name, email, access_token, expires_in, refresh_token) VALUES (?, ?, ?, ?, ?, ?);";
 
@@ -67,7 +67,7 @@ google.prototype.start = function() {
       self.moduleManager.emit('database:auth:retrieveOne', sqlSelectFromTableByUserId, [profile.id],
         function(error, row) {
           if (error !== null) {
-              logger.error(error.stack);
+            Logger.error(error);
           } else {
             if (row === undefined) {
               self._addPresence(profile.id, profile.displayName, profile.emails[0].value, accessToken, params.expires_in, refreshToken);
@@ -107,12 +107,12 @@ google.prototype.refreshAuth = function(accountId, callback) {
   this.moduleManager.emit('database:auth:retrieveOne', sqlSelectFromTableByUserId, [accountId],
     function(error, row) {
       if (error !== null) {
-          logger.error(error.stack);
+        Logger.error(error);
       } else {
         if (row !== undefined) {
           refresh.requestNewAccessToken('google', row.refresh_token, function(error, accessToken) {
             if (error !== undefined && error !== null) {
-                logger.error(error.stack);
+              Logger.error(error);
             } else {
               row.access_token = accessToken;
               self._update(row.user_id, row.name, row.email, row.access_token, row.expires_in, row.refresh_token);
@@ -137,7 +137,7 @@ google.prototype._addPresence = function (userId, name, email, accessToken, expi
     ],
     function(error) {
       if (error !== undefined && error !== null) {
-          logger.error(error.stack);
+        Logger.error(error);
       } else {
 
       }
@@ -159,7 +159,7 @@ google.prototype._update = function(userId, name, email, accessToken, expiresIn,
     ],
     function(error, lastId, changes) {
       if (error !== undefined && error !== null) {
-          logger.error(error.stack);
+        Logger.error(error);
       } else {}
     });
 };

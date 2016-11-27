@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const { Logger } = require('../../utils');
 
 var CronJob = require('cron').CronJob;
 
@@ -44,7 +44,7 @@ beeroclock.prototype.schedule = function() {
         try {
             self.process();
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 
@@ -52,7 +52,7 @@ beeroclock.prototype.schedule = function() {
         try {
             self._tminus("1 minute");
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 
@@ -60,7 +60,7 @@ beeroclock.prototype.schedule = function() {
         try {
             self._tminus("2 minutes");
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 
@@ -68,7 +68,7 @@ beeroclock.prototype.schedule = function() {
         try {
             self._tminus("3 minutes");
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 
@@ -76,7 +76,7 @@ beeroclock.prototype.schedule = function() {
         try {
             self._tminus("4 minutes");
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 
@@ -84,7 +84,7 @@ beeroclock.prototype.schedule = function() {
         try {
             self._tminus("5 minutes");
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 
@@ -92,7 +92,7 @@ beeroclock.prototype.schedule = function() {
         try {
             self._tminus("10 minutes");
         } catch (error) {
-            logger.error('Unable to run schedule because ' + error);
+            Logger.error('Unable to run schedule because ' + error);
         }
     }, null, true, "Europe/Stockholm");
 };

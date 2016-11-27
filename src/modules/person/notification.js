@@ -6,7 +6,7 @@ const PersonModule = require('./person-module')
 
 const moment = require('moment')
 
-const Logger = require('../../utils/logger')
+const { Logger } = require('../../utils')
 const Communication = require('../../utils/communication')
 
 const _generatePushID = (function () {

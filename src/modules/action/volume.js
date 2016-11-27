@@ -2,7 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const { Logger } = require('../../utils')
 
 function volume() {
   var moduleManager = {};
@@ -47,7 +47,7 @@ volume.prototype.process = function(message, callback) {
         .exec('amixer -c 1 set Headphone ' + percentage,
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-                logger.error(error.stack);
+              Logger.error(error);
             }
           });
     } else {
@@ -55,7 +55,7 @@ volume.prototype.process = function(message, callback) {
         .exec("amixer -c 1 get Headphone | tail -n 1 | cut -d ' ' -f 7",
           function(error, stdout, stderr) {
             if (error !== undefined && error !== null) {
-                logger.error(error.stack);
+              Logger.error(error);
             } else {
               callback(stdout.replace('[', '').replace(']', ''));
             }

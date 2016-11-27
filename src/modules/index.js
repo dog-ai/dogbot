@@ -5,7 +5,7 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Logger = require('../utils/logger.js')
+const { Logger } = require('../utils')
 const Communication = require('../utils/communication')
 
 const path = require('path')
@@ -74,7 +74,7 @@ class Modules {
           if (!(error.message.indexOf('platform is not supported') > -1 ||
             error.message.indexOf('invalid configuration') > -1 ||
             error.message.indexOf('unix socket not available') > -1)) {
-            Logger.error(error.stack)
+            Logger.error(error)
           }
 
           if (optional) {

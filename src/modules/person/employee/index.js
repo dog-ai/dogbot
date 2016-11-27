@@ -2,7 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../../utils/logger.js'),
+const { Logger } = require('../../../utils'),
   _ = require('lodash'),
   moment = require('moment');
 
@@ -127,7 +127,7 @@ employee.prototype._handleDeviceOnline = function (device) {
         }
       })
       .catch(function (error) {
-        logger.error(error.stack);
+        Logger.error(error);
       });
   }
 };
@@ -145,7 +145,7 @@ employee.prototype._handleDeviceOnlineAgain = function (device) {
         }
       })
       .catch(function (error) {
-        logger.error(error.stack);
+        Logger.error(error);
       });
   }
 };
@@ -178,7 +178,7 @@ employee.prototype._handleDeviceOffline = function (device) {
         }
       })
       .catch(function (error) {
-        logger.error(error.stack);
+        Logger.error(error);
       });
   }
 };
@@ -216,7 +216,7 @@ employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
       }
     })
     .catch(function (error) {
-      logger.error(error.stack);
+      Logger.error(error);
     });
 };
 
@@ -243,7 +243,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
       }
     })
     .catch(function (error) {
-      logger.error(error.stack);
+      Logger.error(error);
     });
 };
 
@@ -265,7 +265,7 @@ employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (
       });
     })
     .catch(function (error) {
-      logger.error(error.stack);
+      Logger.error(error);
     });
 };
 
@@ -282,7 +282,7 @@ employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee
       }
     })
     .catch(function (error) {
-      logger.error(error.stack);
+      Logger.error(error);
     });
 };
 
@@ -299,7 +299,7 @@ employee.prototype._onEmployeeOutgoingSynchronization = function (params, callba
 
           callback(null, employee, function (error) {
             if (error) {
-              logger.error(error.stack)
+              Logger.error(error)
             } else {
               delete employee.devices;
 
@@ -307,7 +307,7 @@ employee.prototype._onEmployeeOutgoingSynchronization = function (params, callba
 
               instance._updateById(employee.id, employee)
                 .catch(function (error) {
-                  logger.error(error.stack);
+                  Logger.error(error);
                 });
             }
           });

@@ -2,7 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const { Logger } = require('../../utils')
 
 var wit = require('node-wit');
 var fs = require('fs');
@@ -60,14 +60,14 @@ listen.prototype._listen = function(callback) {
 
     self._sample(sampleFile, sampleDuration, function(error) {
       if (error !== undefined && error !== null) {
-        logger.error(error.stack);
+        Logger.error(error);
         fs.unlink(sampleFile);
       } else {
         voice.send(null, 'Let me think...');
 
         self._upload(sampleFile, function(error, text) {
           if (error !== undefined && error !== null) {
-            logger.error(error.stack);
+            Logger.error(error);
           } else {
             callback('I heard "' + text + '"');
 

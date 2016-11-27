@@ -5,7 +5,7 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Logger = require('../utils/logger.js')
+const { Logger } = require('../utils')
 const Communication = require('../utils/communication.js')
 
 const path = require('path')

@@ -2,7 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js');
+const { Logger } = require('../../utils')
 
 var GoSquared = require('gosquared');
 
@@ -56,7 +56,7 @@ gosquared.prototype.process = function(message, callback) {
 
     this.api.now.v3.visitors(function (e, data) {
       if (e) {
-        return logger.info(e);
+        return Logger.info(e);
       }
 
       var response = '';

@@ -2,7 +2,7 @@
  * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-var logger = require('../../utils/logger.js'),
+const { Logger } = require('../../utils'),
   _ = require('lodash'),
   moment = require('moment'),
   Promise = require('bluebird');
@@ -103,7 +103,7 @@ device.prototype._discover = function (macAddress, callback) {
             });
           })
           .then(function (result) {
-            logger.debug('Scan result for ' + macAddress.address + ': ' + JSON.stringify(result, null, 2));
+            Logger.debug('Scan result for ' + macAddress.address + ': ' + JSON.stringify(result, null, 2));
 
             var _device = device || {};
 
@@ -540,7 +540,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
           }
         })
         .catch(function (error) {
-          logger.error(error.stack);
+          Logger.error(error);
         });
     });
 };
@@ -561,7 +561,7 @@ device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
       }
     })
     .catch(function (error) {
-      logger.error(error.stack);
+      Logger.error(error);
     });
 };
 
@@ -583,7 +583,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
         }
       })
       .catch(function (error) {
-        logger.error(error.stack);
+        Logger.error(error);
       });
   }
 };
@@ -637,7 +637,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
         }
       })
       .catch(function (error) {
-        logger.error(error.stack);
+        Logger.error(error);
       });
   }
 };
@@ -646,7 +646,7 @@ device.prototype._onDeviceOutgoingSynchronization = function (params, callback) 
   instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM device WHERE is_synced = 0' +
     (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
     if (error) {
-      logger.error(error.stack);
+      Logger.error(error);
     } else {
       if (row !== undefined) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -665,7 +665,7 @@ device.prototype._onDeviceOutgoingSynchronization = function (params, callback) 
 
             callback(null, row, function (error) {
               if (error) {
-                logger.error(error.stack)
+                Logger.error(error)
               } else {
                 delete row.mac_addresses;
 
@@ -673,7 +673,7 @@ device.prototype._onDeviceOutgoingSynchronization = function (params, callback) 
 
                 instance._updateById(row.id, row)
                   .catch(function (error) {
-                    logger.error(error.stack);
+                    Logger.error(error);
                   });
               }
             });
