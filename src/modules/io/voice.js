@@ -127,21 +127,29 @@ const playAudio = (file) => {
 }
 
 const captureAudio = (maxPeriod = 8000) => {
-  return new Promise((resolve, reject) => {
-    let stream
-    try {
-      stream = record.start({ threshold: 0.9 })
-    } catch (error) {
-      reject(error)
-    }
+  return playAudio('listen.wav')
+    .then(() => {
+      let stream
+      try {
+        stream = record.start({ threshold: 0.9 })
+      } catch (error) {
+        throw error
+      }
 
-    const timeout = setTimeout(record.stop, maxPeriod)
-    stream.once('end', () => {
-      clearTimeout(timeout)
+      const timeout = setTimeout(record.stop, maxPeriod)
+      stream.once('end', () => {
+        clearTimeout(timeout)
+
+        playAudio('success.wav')
+      })
+
+      return stream
     })
+    .catch((error) => {
+      playAudio('failure.wav')
 
-    return resolve(stream)
-  })
+      throw error
+    })
 }
 
 class Voice extends IOModule {
@@ -240,15 +248,13 @@ class Voice extends IOModule {
 
         Communication.emit('io:slack:text', { text: 'yes' })
       })
-      .then(() => playAudio('listen.wav'))
       .then(() => captureAudio.bind(this)())
       .then((stream) => {
         return super._onVoiceInput(stream)
           .then((text) => {
             Communication.emit('io:slack:text', { text: `I just heard: ${text}` })
 
-            return playAudio('success.wav')
-              .then(() => super._onTextInput(text))
+            return super._onTextInput(text)
           })
       })
       .then((text) => {
@@ -259,8 +265,7 @@ class Voice extends IOModule {
       .catch((error) => {
         Logger.error(error)
 
-        return playAudio('failure.wav')
-          .then(() => this._speak(Locale.get('error')))
+        return this._speak(Locale.get('error'))
           .catch(() => {})
       })
       .finally(() => {
