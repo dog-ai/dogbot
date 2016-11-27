@@ -28,11 +28,38 @@ function configure (apps) {
 }
 
 function onChanges () {
-  this._companyRef.child('/apps').on('child_changed', (snapshot) => {
-    const app = {}
-    app[ snapshot.key() ] = snapshot.val()
+  this._firebase.child('/apps').on('child_changed', (snapshot) => {
+    const appId = snapshot.key()
+    const apps = {}
+    apps[ appId ] = snapshot.val()
 
-    configure.bind(this)(app)
+    this._companyRef.child(`/apps/${appId}`).once('value')
+      .then((snapshot) => {
+        const _apps = {}
+        _apps[ appId ] = snapshot.val()
+
+        const __apps = _.merge({}, apps, _apps)
+
+        configure.bind(this)(__apps)
+      })
+      .catch(Logger.error)
+  }, Logger.error)
+
+  this._companyRef.child('/apps').on('child_changed', (snapshot) => {
+    const appId = snapshot.key()
+    const apps = {}
+    apps[ appId ] = snapshot.val()
+
+    this._firebase.child(`/apps/${appId}`).once('value')
+      .then((snapshot) => {
+        const _apps = {}
+        _apps[ appId ] = snapshot.val()
+
+        const __apps = _.merge({}, apps, _apps)
+
+        configure.bind(this)(__apps)
+      })
+      .catch(Logger.error)
   }, Logger.error)
 }
 
@@ -49,14 +76,19 @@ class Apps {
       if (this._companyId) {
         this._companyRef = this._firebase.child(`companies/${this._companyId}`)
 
-        this._companyRef.child('/apps').once('value')
+        this._firebase.child('/apps').once('value')
           .then((snapshot) => {
             const apps = snapshot.val()
 
-            configure.bind(this)(apps)
+            return this._companyRef.child('/apps').once('value')
+              .then((snapshot) => {
+                const _apps = _.merge({}, apps, snapshot.val())
+
+                configure.bind(this)(_apps)
+              })
+              .then(resolve)
+              .catch(reject)
           })
-          .then(resolve)
-          .catch(reject)
       } else {
         resolve()
       }
@@ -69,6 +101,7 @@ class Apps {
       this._appManager.disableAllApps()
         .then(() => {
           if (this._companyId) {
+            this._firebase.child('/apps').off('child_changed')
             this._companyRef.child('/apps').off('child_changed')
           }
 
