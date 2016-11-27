@@ -5,7 +5,8 @@
 const NLPModule = require('./nlp-module')
 
 const Promise = require('bluebird')
-const retry = require('bluebird-retry')
+
+const { retry } = require('../../utils')
 
 const wit = Promise.promisifyAll(require('node-wit'))
 

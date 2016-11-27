@@ -5,9 +5,8 @@
 const MonitorModule = require('./monitor-module')
 
 const Promise = require('bluebird')
-const retry = require('bluebird-retry')
 
-const { Logger } = require('../../utils')
+const { Logger, retry } = require('../../utils')
 const Communication = require('../../utils/communication')
 
 class Bonjour extends MonitorModule {
@@ -38,7 +37,12 @@ class Bonjour extends MonitorModule {
   }
 
   _discover (params, callback) {
-    return retry(() => this._execAvahiBrowse(), { max_tries: 3, interval: 1000 })
+    return retry(() => this._execAvahiBrowse(), {
+      timeout: 50000,
+      max_tries: -1,
+      interval: 1000,
+      backoff: 2
+    })
       .then((bonjours) => {
         return Promise.mapSeries(bonjours, (bonjour) => {
           return this._createOrUpdateBonjour(bonjour)

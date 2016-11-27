@@ -6,9 +6,8 @@ const MonitorModule = require('./monitor-module')
 
 const _ = require('lodash')
 const Promise = require('bluebird')
-const retry = require('bluebird-retry')
 
-const Communication = require('../../utils/communication')
+const { Communication, retry } = require('../../utils')
 
 const os = require('os')
 
@@ -39,7 +38,12 @@ class IP extends MonitorModule {
   }
 
   _discover (params, callback) {
-    return retry(() => this._execFping(), { max_tries: 10, interval: 1000 })
+    return retry(() => this._execFping(), {
+      timeout: 50000,
+      max_tries: -1,
+      interval: 1000,
+      backoff: 2
+    })
       .then((ips) => {
         return Promise.mapSeries(ips, (ip) => {
           return this._createOrUpdateIP(ip)

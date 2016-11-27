@@ -5,7 +5,8 @@
 const Module = require('../module')
 
 const Promise = require('bluebird')
-const retry = require('bluebird-retry')
+
+const { retry } = require('../../utils')
 
 const request = Promise.promisifyAll(require('request'))
 

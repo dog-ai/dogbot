@@ -5,9 +5,8 @@
 const MonitorModule = require('./monitor-module')
 
 const Promise = require('bluebird')
-const retry = require('bluebird-retry')
 
-const { Logger } = require('../../utils')
+const { Logger, retry } = require('../../utils')
 const Communication = require('../../utils/communication')
 
 class ARP extends MonitorModule {
@@ -69,7 +68,12 @@ class ARP extends MonitorModule {
   _discover (params, callback) {
     Communication.emit('monitor:arp:discover:begin')
 
-    return retry(() => this._execArpScan(), { max_tries: 3, interval: 1000 })
+    return retry(() => this._execArpScan(), {
+      timeout: 50000,
+      max_tries: -1,
+      interval: 1000,
+      backoff: 2
+    })
       .mapSeries((arp) => {
         return this._createOrUpdateARP(arp)
           .catch((error) => Logger.warn(error))
