@@ -165,7 +165,7 @@ class Voice extends IOModule {
         this._models = new Models()
         this._models.add({
           file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/dog.pmdl'),
-          sensitivity: '0.5',
+          sensitivity: '0.8',
           hotwords: 'dog'
         })
 
@@ -248,7 +248,7 @@ class Voice extends IOModule {
 
         Communication.emit('io:slack:text', { text: 'yes' })
       })
-      .then(() => captureAudio.bind(this)())
+      /*.then(() => captureAudio.bind(this)())
       .then((stream) => {
         return super._onVoiceInput(stream)
           .then((text) => {
@@ -261,7 +261,7 @@ class Voice extends IOModule {
         Communication.emit('io:slack:text', { text: `I've answered: ${text}` })
 
         return this._speak(text)
-      })
+       })*/
       .catch((error) => {
         Logger.error(error)
 
