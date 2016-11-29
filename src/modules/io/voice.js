@@ -164,8 +164,8 @@ class Voice extends IOModule {
 
         this._models = new Models()
         this._models.add({
-          file: path.join(__dirname, '/../../../share/snowboy/raspberrypi/default.pmdl'),
-          sensitivity: '0.45',
+          file: path.join(__dirname, '/../../../share/snowboy/macbookpro/default.pmdl'),
+          sensitivity: '0.46',
           hotwords: 'hey dog'
         })
 
@@ -176,7 +176,7 @@ class Voice extends IOModule {
         this._models = new Models()
         this._models.add({
           file: path.join(__dirname, '/../../../share/snowboy/macbookpro/default.pmdl'),
-          sensitivity: '0.45',
+          sensitivity: '0.5',
           hotwords: 'hey dog'
         })
 
@@ -242,25 +242,18 @@ class Voice extends IOModule {
 
   _onHotword () {
     return this._hotwordMutex.lockAsync()
-      .then(() => Communication.emit('io:slack:text', { text: 'yes' }))
-      /* .then(() => {
+      .then(() => {
         this._mic.unpipe(this._detector)
         record.stop()
       })
-       .then(() => captureAudio.bind(this)())
+      .then(() => captureAudio.bind(this)())
       .then((stream) => {
         return super._onVoiceInput(stream)
           .then((text) => {
-            Communication.emit('io:slack:text', { text: `I just heard: ${text}` })
-
             return super._onTextInput(text)
           })
       })
-      .then((text) => {
-        Communication.emit('io:slack:text', { text: `I've answered: ${text}` })
-
-        return this._speak(text)
-       }) */
+      .then((text) => this._speak(text))
       .catch((error) => {
         Logger.error(error)
 
@@ -268,8 +261,8 @@ class Voice extends IOModule {
           .catch(() => {})
       })
       .finally(() => {
-        // this._mic = record.start({ threshold: 0 })
-        // this._mic.pipe(this._detector)
+        this._mic = record.start({ threshold: 0 })
+        this._mic.pipe(this._detector)
 
         this._hotwordMutex.unlock()
       })
