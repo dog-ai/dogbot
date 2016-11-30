@@ -1,12 +1,12 @@
 # dogbot
 
-[![JavaScript Style Guide][style]][style img]
+[![JavaScript Style Guide][standardjs]][standardjs img]
 [![Dependency Status][david-dm]][david-dm img]
 [![Build Status][travis img]][travis]
 [![Coverage Status][codecov img]][codecov]
 
-[style]:https://img.shields.io/badge/code%20style-standard-brightgreen.svg
-[style img]:http://standardjs.com
+[standardjs]:https://img.shields.io/badge/code%20style-standard-brightgreen.svg
+[standardjs img]:http://standardjs.com
 
 [david-dm]:https://img.shields.io/david/dog-ai/dogbot.svg?style=flat
 [david-dm img]:https://david-dm.org/dog-ai/dogbot
