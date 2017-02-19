@@ -2,6 +2,8 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+const EventEmitter = require('events').EventEmitter
+
 const Promise = require('bluebird')
 
 const { Logger } = require('../utils')
@@ -10,7 +12,15 @@ const Sync = require('./sync')
 const Worker = require('./worker')
 const Heartbeat = require('./heartbeat')
 
-class Bot {
+class Bot extends EventEmitter {
+  constructor () {
+    super()
+
+    Bot.prototype.emitAsync = Promise.promisify(EventEmitter.prototype.emit)
+
+    this.setMaxListeners(256)
+  }
+
   start (secret) {
     if (!secret) {
       return Promise.reject(new Error('invalid secret'))
@@ -49,15 +59,9 @@ class Bot {
   }
 
   heartbeat (interval, heartbeat) {
-    try {
-      const healthChecks = [ Sync.healthCheck(), Worker.healthCheck() ]
+    const healthChecks = [ Sync.healthCheck(), Worker.healthCheck() ]
 
-      const realInterval = Heartbeat.start(interval, heartbeat, () => Promise.all(healthChecks))
-
-      return Promise.resolve(realInterval)
-    } catch (error) {
-      return Promise.reject(error)
-    }
+    return Heartbeat.start(interval, heartbeat, () => Promise.all(healthChecks))
   }
 }
 

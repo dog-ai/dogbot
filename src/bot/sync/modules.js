@@ -1,11 +1,13 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local'
 
 const _ = require('lodash')
 const Promise = require('bluebird')
+
+const Bot = require('../../bot')
 
 const moment = require('moment-timezone')
 
@@ -26,7 +28,8 @@ class Modules {
 
         // start an outgoing periodic sync job every 10 minutes
         Communication.on('sync:outgoing:periodic', this._periodicOutgoingSynchronization.bind(this))
-        Communication.emit('worker:job:enqueue', 'sync:outgoing:periodic', null, { schedule: '10 minutes' })
+        const options = { schedule: '10 minutes' }
+        Bot.enqueueJob('sync:outgoing:periodic', null, options)
 
         // listen for incoming sync callback registrations
         Communication.on('sync:incoming:register:setup', this._registerIncomingSynchronization.bind(this))

@@ -1,6 +1,8 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../bot')
 
 const { Logger } = require('../../utils'),
   _ = require('lodash'),
@@ -42,7 +44,8 @@ mac_address.prototype.start = function () {
   this.communication.on('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
   this.communication.on('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 
-  this.communication.emit('worker:job:enqueue', 'person:macAddress:clean', null, {schedule: '6 hours'});
+  const options = { schedule: '6 hours' }
+  Bot.enqueueJob('person:macAddress:clean', null, options)
 
   this.communication.emitAsync('sync:incoming:register:setup', {
     companyResource: 'mac_addresses',
@@ -78,6 +81,8 @@ mac_address.prototype.stop = function () {
   this.communication.removeListener('sync:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
   this.communication.removeListener('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
   this.communication.removeListener('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+
+  Bot.dequeueJob('person:macAddress:clean')
 };
 
 mac_address.prototype._clean = function (params, callback) {

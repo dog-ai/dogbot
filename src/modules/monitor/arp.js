@@ -1,10 +1,12 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const MonitorModule = require('./monitor-module')
 
 const Promise = require('bluebird')
+
+const Bot = require('../../bot')
 
 const { Logger, retry } = require('../../utils')
 const Communication = require('../../utils/communication')
@@ -25,14 +27,12 @@ class ARP extends MonitorModule {
       'monitor:dhcp:update': this._onDHCPCreateOrUpdate.bind(this)
     })
 
-    Communication.emit('worker:job:enqueue', 'monitor:arp:discover', null, {
-      schedule: '1 minute',
-      retry: 6
-    })
+    const options = { schedule: '1 minute', retry: 6 }
+    Bot.enqueueJob('monitor:arp:discover', null, options)
   }
 
   stop () {
-    Communication.emit('worker:job:dequeue', 'monitor:arp:discover')
+    Bot.dequeueJob('monitor:arp:discover')
 
     super.stop()
   }
@@ -55,7 +55,7 @@ class ARP extends MonitorModule {
     return this._findARPByMACAddress(dhcp.mac_address)
       .then((arp) => {
         if (!arp) {
-          Communication.emit('worker:job:enqueue', 'monitor:arp:reverse', dhcp.mac_address)
+          Bot.enqueueJob('monitor:arp:reverse', dhcp.mac_address)
         } else {
           arp.updated_date = new Date()
 

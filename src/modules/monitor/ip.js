@@ -1,11 +1,13 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const MonitorModule = require('./monitor-module')
 
 const _ = require('lodash')
 const Promise = require('bluebird')
+
+const Bot = require('../../bot')
 
 const { Communication, retry } = require('../../utils')
 
@@ -25,14 +27,12 @@ class IP extends MonitorModule {
       'monitor:upnp:update': this._onServiceDiscoveryCreateOrUpdate.bind(this)
     })
 
-    Communication.emit('worker:job:enqueue', 'monitor:ip:discover', null, {
-      schedule: '1 minute',
-      priority: 'low'
-    })
+    const options = { schedule: '1 minute', priority: 'low' }
+    Bot.enqueueJob('monitor:ip:discover', null, options)
   }
 
   stop () {
-    Communication.emit('worker:job:dequeue', 'monitor:ip:discover')
+    Bot.dequeueJob('monitor:ip:discover')
 
     super.stop()
   }

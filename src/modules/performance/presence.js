@@ -26,7 +26,7 @@ class Presence extends PerformanceModule {
   start () {
     super.start({ 'performance:presence:stats:update': enqueueStatsUpdateTask })
 
-    const options = { schedule: '1 minute' }
+    const options = { schedule: '6 hours' }
     Bot.enqueueJob('performance:presence:stats:update', null, options)
   }
 

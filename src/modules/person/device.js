@@ -1,11 +1,15 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const { Logger } = require('../../utils'),
-  _ = require('lodash'),
-  moment = require('moment'),
-  Promise = require('bluebird');
+const _ = require('lodash')
+const Promise = require('bluebird')
+
+const Bot = require('../../bot')
+
+const { Logger } = require('../../utils')
+
+const moment = require('moment')
 
 function device() {
 }
@@ -79,7 +83,7 @@ device.prototype.stop = function () {
 
   this.communication.removeAllListeners('monitor:arp:discover:finish');
 
-  this.communication.emit('worker:job:dequeue', 'person:device:discover');
+  Bot.dequeueJob('person:device:discover')
 };
 
 device.prototype._discover = function (macAddress, callback) {
@@ -608,7 +612,7 @@ device.prototype._onMacAddressOnlineAgain = function (mac_address) {
     mac_address.updated_date = new Date();
     mac_address.last_scan_date = new Date();
     return instance._updateMacAddressByAddress(mac_address.address, mac_address).then(function () {
-      instance.communication.emit('worker:job:enqueue', 'person:device:discover', mac_address);
+      Bot.enqueueJob('person:device:discover', mac_address)
     })
   }
 };

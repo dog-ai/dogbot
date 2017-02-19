@@ -5,6 +5,8 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
+const Bot = require('../../bot')
+
 const { Communication, Logger } = require('../../utils')
 
 const FirebaseQueue = require('firebase-queue')
@@ -35,7 +37,7 @@ function enqueueJob (event, params, progress, resolve, reject) {
   Communication.once(callbacks.resolve, onResolve)
   Communication.once(callbacks.reject, onReject)
 
-  Communication.emit('worker:job:enqueue', event, params, null, callbacks)
+  Bot.enqueueJob(event, params, null, callbacks)
 }
 
 function onCreate (task, progress, resolve, reject) {

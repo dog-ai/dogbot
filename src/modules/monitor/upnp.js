@@ -1,6 +1,8 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../bot')
 
 const { Logger } = require('../../utils'),
     _ = require('lodash'),
@@ -38,13 +40,14 @@ upnp.prototype.unload = function () {
 upnp.prototype.start = function () {
     this.communication.on('monitor:upnp:discover', this._discover);
 
-    this.communication.emit('worker:job:enqueue', 'monitor:upnp:discover', null, {schedule: '1 minute'});
+  const options = { schedule: '1 minute' }
+  Bot.enqueueJob('monitor:upnp:discover', null)
 };
 
 upnp.prototype.stop = function () {
     this.communication.removeListener('monitor:upnp:discover', this._discover);
 
-    this.communication.emit('worker:job:dequeue', 'monitor:upnp:discover');
+  Bot.dequeueJob('monitor:upnp:discover')
 };
 
 upnp.prototype._discover = function (params, callback) {

@@ -1,11 +1,13 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const SocialModule = require('./social-module')
 
 const _ = require('lodash')
 const Promise = require('bluebird')
+
+const Bot = require('../../bot')
 
 const Communication = require('../../utils/communication')
 
@@ -86,12 +88,13 @@ class LinkedIn extends SocialModule {
       outgoingFunction: this._onConfigOutgoingSynchronization.bind(this)
     })
 
-    Communication.emit('worker:job:enqueue', 'social:linkedin:profile:import:auto', null, { schedule: '6 hours' })
-    Communication.emit('worker:job:enqueue', 'social:linkedin:company:import:auto', null, { schedule: '6 hours' })
+    Bot.enqueueJob('social:linkedin:profile:import:auto', null, { schedule: '6 hours' })
+    Bot.enqueueJob('social:linkedin:company:import:auto', null, { schedule: '6 hours' })
   }
 
   stop () {
-    Communication.emit('worker:job:dequeue', 'social:linkedin:profile:import:auto')
+    Bot.dequeueJob('social:linkedin:profile:import:auto')
+    Bot.dequeueJob('social:linkedin:company:import:auto')
 
     super.stop()
   }
@@ -186,7 +189,7 @@ class LinkedIn extends SocialModule {
     return this._findAllEmployeesBeforeLinkedInLastImportDate(linkedInLastImportDate)
       .mapSeries((employee) => {
         if (employee.linkedin_profile_url) {
-          Communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', {
+          Bot.enqueueJob('social:linkedin:profile:import', {
             employee_id: employee.id,
             employee_linkedin_profile_url: employee.linkedin_profile_url
           })
@@ -254,7 +257,7 @@ class LinkedIn extends SocialModule {
         })
           .then(() => {
             _.forEach(employeeUrls, (employeeUrl) => {
-              Communication.emit('worker:job:enqueue', 'social:linkedin:profile:import', { employee_linkedin_profile_url: employeeUrl })
+              Bot.enqueueJob('social:linkedin:profile:import', { employee_linkedin_profile_url: employeeUrl })
             })
           })
           .then(() => {
@@ -272,7 +275,7 @@ class LinkedIn extends SocialModule {
 
   _autoImportCompany (params, callback) {
     if (!this.config.last_import_date || moment(this.config.last_import_date).isBefore(moment().subtract(1, 'week'))) {
-      Communication.emit('worker:job:enqueue', 'social:linkedin:company:import')
+      Bot.enqueueJob('social:linkedin:company:import')
     }
 
     callback()

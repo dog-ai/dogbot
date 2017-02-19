@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const MonitorModule = require('./monitor-module')
@@ -7,6 +7,8 @@ const MonitorModule = require('./monitor-module')
 const DHCPRL_UNIX_SOCKET = '/var/run/dhcprl.sock'
 
 const Promise = require('bluebird')
+
+const Bot = require('../../bot')
 
 const { Logger } = require('../../utils')
 const Communication = require('../../utils/communication')
@@ -29,11 +31,12 @@ class DHCP extends MonitorModule {
       'monitor:dhcp:discover': this._discover.bind(this)
     })
 
-    Communication.emit('worker:job:enqueue', 'monitor:dhcp:discover', null, { schedule: '1 minute' })
+    const options = { schedule: '1 minute' }
+    Bot.enqueue('monitor:dhcp:discover', null, options)
   }
 
   stop () {
-    Communication.emit('worker:job:dequeue', 'monitor:dhcp:discover')
+    Bot.dequeueJob('monitor:dhcp:discover')
 
     super.stop()
   }

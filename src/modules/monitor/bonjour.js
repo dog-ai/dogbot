@@ -1,10 +1,12 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const MonitorModule = require('./monitor-module')
 
 const Promise = require('bluebird')
+
+const Bot = require('../../bot')
 
 const { Logger, retry } = require('../../utils')
 const Communication = require('../../utils/communication')
@@ -27,11 +29,12 @@ class Bonjour extends MonitorModule {
       'monitor:bonjour:discover': this._discover.bind(this)
     })
 
-    Communication.emit('worker:job:enqueue', 'monitor:bonjour:discover', null, { schedule: '1 minute' })
+    const options = { schedule: '1 minute' }
+    Bot.enqueueJob('monitor:bonjour:discover', null, options)
   }
 
   stop () {
-    Communication.emit('worker:job:dequeue', 'monitor:bonjour:discover')
+    Bot.dequeueJob('monitor:bonjour:discover')
 
     super.stop()
   }

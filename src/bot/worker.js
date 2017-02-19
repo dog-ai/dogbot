@@ -102,9 +102,6 @@ class Worker {
             Logger.debug('Job ' + id + ' failed ' + attempts + ' times')
           })
           this.queue.on('error', () => {})
-
-          Communication.on('worker:job:enqueue', this.enqueueJob.bind(this))
-          Communication.on('worker:job:dequeue', this.dequeueJob.bind(this))
         })
         .then(() => resolve())
         .catch(reject)
@@ -113,9 +110,6 @@ class Worker {
 
   stop () {
     return new Promise((resolve, reject) => {
-      Communication.removeListener('worker:job:enqueue', this.enqueueJob.bind(this))
-      Communication.removeListener('worker:job:dequeue', this.dequeueJob.bind(this))
-
       if (this.queue) {
         try {
           this.queue.shutdown(100, (error) => {
