@@ -113,8 +113,8 @@ class Worker {
 
   stop () {
     return new Promise((resolve, reject) => {
-      Communication.removeListener('worker:job:enqueue', enqueueJob.bind(this))
-      Communication.removeListener('worker:job:dequeue', dequeueJob.bind(this))
+      Communication.removeListener('worker:job:enqueue', this.enqueueJob.bind(this))
+      Communication.removeListener('worker:job:dequeue', this.dequeueJob.bind(this))
 
       if (this.queue) {
         try {
