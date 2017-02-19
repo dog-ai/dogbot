@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
@@ -48,7 +48,7 @@ function onCreate (task, progress, resolve, reject) {
   enqueueJob(task.event, task.data, progress, resolve, reject)
 }
 
-class Jobs {
+class Tasks {
   start (firebase, dogId, companyId) {
     this._firebase = firebase
 
@@ -74,6 +74,21 @@ class Jobs {
         .catch(reject)
     })
   }
+
+  enqueueTask (event, params) {
+    return new Promise((resolve, reject) => {
+      const task = { event, data: params, _state: 'spark' }
+
+      this._companyRef.child('tasks')
+        .push(task, (error) => {
+          if (error) {
+            return reject(error)
+          }
+
+          resolve()
+        })
+    })
+  }
 }
 
-module.exports = Jobs
+module.exports = new Tasks()
