@@ -1,9 +1,6 @@
 coverage
-
+node_modules
+share/dogbot/bin
 *.iml
 .idea
-
-node_modules
-
 var
-share/dogbot/bin/.cache
