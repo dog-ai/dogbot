@@ -1,18 +1,17 @@
 {
   "name": "dogbot",
-  "version": "1.0.0",
-  "private": true,
+  "version": "0.0.0",
   "description": "",
   "author": "Hugo Freire",
-  "homepage": "http://dog.ai",
-  "main": "src/app.js",
-  "scripts": {
-    "start": "node src/app.js",
-    "lint": "node_modules/.bin/eslint .",
-    "test": "node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- --recursive test",
-    "coverage": "node_modules/.bin/codecov",
-    "clean": "rm -rf {var,coverage}"
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dog-ai/dogbot.git"
   },
+  "bugs": {
+    "url": "https://github.com/dog-ai/dogbot/issues"
+  },
+  "homepage": "https://github.com/dog-ai/dogbot#readme",
   "dependencies": {
     "apiai": "^2.0.7",
     "async": "1.4.2",
@@ -42,7 +41,7 @@
     "moment": "2.15.1",
     "moment-timezone": "0.4.0",
     "nconf": "0.7.1",
-    "node-record-lpcm16": "^0.1.4",
+    "node-record-lpcm16": "^0.1.8",
     "node-uuid": "1.4.7",
     "node-wit": "2.0.0",
     "node-wolfram": "0.0.1",
@@ -65,14 +64,35 @@
     "xml2js": "0.4.15"
   },
   "devDependencies": {
+    "babel-eslint": "7.1.1",
     "chai": "3.5.0",
-    "chai-as-promised": "^6.0.0",
-    "codecov": "^1.0.1",
-    "eslint": "^3.6.0",
-    "eslint-config-standard": "^6.0.1",
-    "istanbul": "^0.4.5",
-    "mocha": "2.4.5",
-    "standard": "8.1.0",
-    "testdouble": "^1.9.0"
+    "chai-as-promised": "6.0.0",
+    "coveralls": "2.11.16",
+    "eslint": "3.15.0",
+    "eslint-config-standard": "6.2.1",
+    "eslint-plugin-mocha": "4.8.0",
+    "eslint-plugin-promise": "3.4.2",
+    "eslint-plugin-standard": "2.0.1",
+    "istanbul": "0.4.5",
+    "mocha": "3.2.0",
+    "semantic-release": "6.3.2",
+    "pre-git": "3.13.0",
+    "standard": "8.6.0",
+    "testdouble": "1.11.1"
+  },
+  "config": {
+    "pre-git": {
+      "commit-msg": "conventional"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf var coverage",
+    "lint": "node_modules/.bin/eslint .",
+    "coverage": "node_modules/.bin/istanbul cover --include-all-sources --root src --print detail ./node_modules/mocha/bin/_mocha -- --recursive test",
+    "test": "npm run lint && npm run coverage",
+    "coveralls": "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
+    "semantic-release": "./node_modules/.bin/semantic-release pre && node_modules/.bin/semantic-release post",
+    "commit": "./node_modules/.bin/commit-wizard",
+    "start": "node src/app.js"
   }
 }
