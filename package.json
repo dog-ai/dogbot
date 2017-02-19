@@ -37,7 +37,6 @@
     "locks": "^0.2.2",
     "lodash": "3.10.1",
     "macvendor": "0.1.1",
-    "memory-stream": "0.0.3",
     "moment": "2.15.1",
     "moment-timezone": "0.4.0",
     "nconf": "0.7.1",
