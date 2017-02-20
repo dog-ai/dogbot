@@ -62,7 +62,7 @@ class Modules {
             module = require('./' + type.toLowerCase() + '/' + name)
           }
 
-          module.load(null, config)
+          module.load(config)
 
           this.loaded.push(module)
 
