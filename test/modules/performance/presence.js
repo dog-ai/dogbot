@@ -6,11 +6,15 @@ describe('Presence', () => {
   let subject
   let Bot
 
+  before(() => {
+    Bot = td.object([ 'enqueueJob', 'dequeueJob', 'on', 'removeListener' ])
+  })
+
   afterEach(() => td.reset())
 
   context('when starting', () => {
     beforeEach(() => {
-      Bot = td.replace('../../../src/bot', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      td.replace('../../../src/bot', Bot)
 
       subject = require('../../../src/modules/performance/presence')
     })
@@ -28,7 +32,7 @@ describe('Presence', () => {
 
   context('when stopping', () => {
     beforeEach(() => {
-      Bot = td.replace('../../../src/bot', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      td.replace('../../../src/bot', Bot)
 
       subject = require('../../../src/modules/performance/presence')
 

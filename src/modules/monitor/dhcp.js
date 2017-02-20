@@ -11,7 +11,6 @@ const Promise = require('bluebird')
 const Bot = require('../../bot')
 
 const { Logger } = require('../../utils')
-const Communication = require('../../utils/communication')
 
 class DHCP extends MonitorModule {
   constructor () {
@@ -109,7 +108,7 @@ class DHCP extends MonitorModule {
 
     return this._deleteAllDHCPBeforeDate(new Date(now.setHours(now.getHours() - 24)))
       .mapSeries((dhcp) => {
-        Communication.emit('monitor:dhcp:delete', dhcp)
+        Bot.emit('monitor:dhcp:delete', dhcp)
       })
   }
 }

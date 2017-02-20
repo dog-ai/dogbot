@@ -9,7 +9,6 @@ const Promise = require('bluebird')
 const Bot = require('../../bot')
 
 const { Logger, retry } = require('../../utils')
-const Communication = require('../../utils/communication')
 
 class ARP extends MonitorModule {
   constructor () {
@@ -41,12 +40,12 @@ class ARP extends MonitorModule {
     return this._findARPByIPAddress(ip.ip_address)
       .then((arp) => {
         if (!arp) {
-          Communication.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address)
+          Bot.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address)
         } else {
           arp.updated_date = new Date()
 
           return this._updateARPByIPAddressAndMACAddress(arp.ip_address, arp.mac_address, arp)
-            .then(() => Communication.emit('monitor:arp:update', arp))
+            .then(() => Bot.emit('monitor:arp:update', arp))
         }
       })
   }
@@ -60,13 +59,13 @@ class ARP extends MonitorModule {
           arp.updated_date = new Date()
 
           return this._updateARPByIPAddressAndMACAddress(arp.ip_address, arp.mac_address, arp)
-            .then(() => Communication.emit('monitor:arp:update', arp))
+            .then(() => Bot.emit('monitor:arp:update', arp))
         }
       })
   }
 
   _discover (params, callback) {
-    Communication.emit('monitor:arp:discover:begin')
+    Bot.emit('monitor:arp:discover:begin')
 
     return retry(() => this._execArpScan(), {
       timeout: 50000,
@@ -81,7 +80,7 @@ class ARP extends MonitorModule {
       .then(this._clean.bind(this))
       .then(() => callback())
       .catch(callback)
-      .finally(() => Communication.emit('monitor:arp:discover:finish'))
+      .finally(() => Bot.emit('monitor:arp:discover:finish'))
   }
 
   _reverse (macAddress, callback) {
@@ -124,7 +123,7 @@ class ARP extends MonitorModule {
     const now = new Date()
 
     return this._deleteAllARPBeforeDate(new Date(new Date().setMinutes(now.getMinutes() - 5)))
-      .mapSeries((arp) => Communication.emit('monitor:arp:delete', arp))
+      .mapSeries((arp) => Bot.emit('monitor:arp:delete', arp))
   }
 
   _execArpScan () {

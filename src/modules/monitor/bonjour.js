@@ -9,7 +9,6 @@ const Promise = require('bluebird')
 const Bot = require('../../bot')
 
 const { Logger, retry } = require('../../utils')
-const Communication = require('../../utils/communication')
 
 class Bonjour extends MonitorModule {
   constructor () {
@@ -137,7 +136,7 @@ class Bonjour extends MonitorModule {
 
     return this._deleteAllBonjourBeforeDate(new Date(now.setHours(now.getHours() - 24)))
       .mapSeries((bonjour) => {
-        Communication.emit('monitor:bonjour:delete', bonjour.ip_address)
+        Bot.emit('monitor:bonjour:delete', bonjour.ip_address)
       })
   }
 }

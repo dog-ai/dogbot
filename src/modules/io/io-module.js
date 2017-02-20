@@ -1,13 +1,14 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const Module = require('../module')
 
 const UnknownIntentError = require('../nlp/errors/unknown-intent-error')
 
+const Bot = require('../../bot')
+
 const Locale = require('../../utils/locale')
-const Communication = require('../../utils/communication')
 
 class IOModule extends Module {
   constructor (name) {
@@ -15,14 +16,14 @@ class IOModule extends Module {
   }
 
   _onVoiceInput (voice) {
-    return Communication.emitAsync('nlp:intent:speech', voice)
+    return Bot.emitAsync('nlp:intent:speech', voice)
       .then(({ event, params }) => {
         if (params.text) {
           return params.text
         }
 
         if (event) {
-          return Communication.emitAsync(event, params)
+          return Bot.emitAsync(event, params)
             .then((text) => text)
         }
       })
@@ -30,14 +31,14 @@ class IOModule extends Module {
   }
 
   _onTextInput (text) {
-    return Communication.emitAsync('nlp:intent:text', text)
+    return Bot.emitAsync('nlp:intent:text', text)
       .then(({ event, params }) => {
         if (params.text) {
           return params.text
         }
 
         if (event) {
-          return Communication.emitAsync(event, params)
+          return Bot.emitAsync(event, params)
             .then((text) => text)
         }
       })

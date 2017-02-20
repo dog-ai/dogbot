@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
 
-const Communication = require('../utils/communication')
+const Bot = require('../bot')
 
 module.exports = {
 
@@ -12,7 +12,7 @@ module.exports = {
     var _this = this
 
     _.forEach(events, function (fn, event) {
-      Communication.on(event, fn)
+      Bot.on(event, fn)
       _.extend(_this.events, events)
     })
   },
@@ -21,7 +21,7 @@ module.exports = {
     var _this = this
 
     _.forEach(events, function (event) {
-      Communication.removeListener(event, _this.events[ event ])
+      Bot.removeListener(event, _this.events[ event ])
       delete _this.events[ event ]
     })
   }

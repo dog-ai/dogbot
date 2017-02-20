@@ -9,7 +9,7 @@ const Promise = require('bluebird')
 
 const Bot = require('../../bot')
 
-const { Communication, retry } = require('../../utils')
+const { retry } = require('../../utils')
 
 const os = require('os')
 
@@ -64,7 +64,7 @@ class IP extends MonitorModule {
     var date = new Date(new Date().setSeconds(new Date().getSeconds() - 10))
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return Communication.emitAsync('database:monitor:retrieveOne',
+    return Bot.emitAsync('database:monitor:retrieveOne',
       'SELECT * FROM ip WHERE ip_address = ? AND updated_date > Datetime(?)', [ service.ip_address, updatedDate ])
       .then((row) => {
         if (row === undefined) {
@@ -157,7 +157,7 @@ class IP extends MonitorModule {
     var now = new Date()
     return this._deleteAllIPBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
       (ip) => {
-        Communication.emit('monitor:ipAddress:delete', ip.ip_address)
+        Bot.emit('monitor:ipAddress:delete', ip.ip_address)
       })
   }
 }

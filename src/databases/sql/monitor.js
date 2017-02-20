@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../bot')
 
 var sql = require('./'),
   util = require('util');
 
 function monitor() {
   sql.call(this);
-
-  this.communication = undefined;
 
   this._runFn = this._run.bind(this);
   this._getFn = this._get.bind(this);
@@ -20,24 +20,20 @@ util.inherits(monitor, sql);
 
 monitor.prototype.name = 'monitor';
 
-monitor.prototype.start = function (communication) {
-  var self = this;
-
-  this.communication = communication;
-
-  this.communication.on('database:' + this.name + ':setup', this._runFn);
-  this.communication.on('database:' + this.name + ':create', this._runFn);
-  this.communication.on('database:' + this.name + ':retrieveOne', this._getFn);
-  this.communication.on('database:' + this.name + ':retrieveAll', this._allFn);
-  this.communication.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  this.communication.on('database:' + this.name + ':update', this._runFn);
-  this.communication.on('database:' + this.name + ':delete', this._runFn);
+monitor.prototype.start = function () {
+  Bot.on('database:' + this.name + ':setup', this._runFn);
+  Bot.on('database:' + this.name + ':create', this._runFn);
+  Bot.on('database:' + this.name + ':retrieveOne', this._getFn);
+  Bot.on('database:' + this.name + ':retrieveAll', this._allFn);
+  Bot.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+  Bot.on('database:' + this.name + ':update', this._runFn);
+  Bot.on('database:' + this.name + ':delete', this._runFn);
 
   return this._open(this.name, true)
     .then(function () {
-      return self.communication.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS arp', [])
+      return Bot.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS arp', [])
         .then(function () {
-          return self.communication.emitAsync('database:monitor:setup',
+          return Bot.emitAsync('database:monitor:setup',
             'CREATE TABLE arp (' +
             'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -50,9 +46,9 @@ monitor.prototype.start = function (communication) {
         })
     })
     .then(function () {
-      return self.communication.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS bonjour', [])
+      return Bot.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS bonjour', [])
         .then(function () {
-          return self.communication.emitAsync('database:monitor:setup',
+          return Bot.emitAsync('database:monitor:setup',
             'CREATE TABLE bonjour (' +
             'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -69,9 +65,9 @@ monitor.prototype.start = function (communication) {
         })
     })
     .then(function () {
-      return self.communication.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS upnp', [])
+      return Bot.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS upnp', [])
         .then(function () {
-          return self.communication.emitAsync('database:monitor:setup',
+          return Bot.emitAsync('database:monitor:setup',
             'CREATE TABLE upnp (' +
             'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -88,9 +84,9 @@ monitor.prototype.start = function (communication) {
         })
     })
     .then(function () {
-      return self.communication.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS ip', [])
+      return Bot.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS ip', [])
         .then(function () {
-          return self.communication.emitAsync('database:monitor:setup',
+          return Bot.emitAsync('database:monitor:setup',
             'CREATE TABLE ip (' +
             'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -101,9 +97,9 @@ monitor.prototype.start = function (communication) {
         })
     })
     .then(function () {
-      return self.communication.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS slack', [])
+      return Bot.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS slack', [])
         .then(function () {
-          return self.communication.emitAsync('database:monitor:setup',
+          return Bot.emitAsync('database:monitor:setup',
             'CREATE TABLE slack (' +
             'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -116,9 +112,9 @@ monitor.prototype.start = function (communication) {
         })
     })
     .then(function () {
-      return self.communication.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS dhcp', [])
+      return Bot.emitAsync('database:monitor:setup', 'DROP TABLE IF EXISTS dhcp', [])
         .then(function () {
-          return self.communication.emitAsync('database:monitor:setup',
+          return Bot.emitAsync('database:monitor:setup',
             'CREATE TABLE dhcp (' +
             'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -134,13 +130,13 @@ monitor.prototype.start = function (communication) {
 };
 
 monitor.prototype.stop = function () {
-  this.communication.removeListener('database:' + this.name + ':setup', this._runFn);
-  this.communication.removeListener('database:' + this.name + ':create', this._runFn);
-  this.communication.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
-  this.communication.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
-  this.communication.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  this.communication.removeListener('database:' + this.name + ':update', this._runFn);
-  this.communication.removeListener('database:' + this.name + ':delete', this._runFn);
+  Bot.removeListener('database:' + this.name + ':setup', this._runFn);
+  Bot.removeListener('database:' + this.name + ':create', this._runFn);
+  Bot.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
+  Bot.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
+  Bot.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+  Bot.removeListener('database:' + this.name + ':update', this._runFn);
+  Bot.removeListener('database:' + this.name + ':delete', this._runFn);
 
   return this._close();
 };

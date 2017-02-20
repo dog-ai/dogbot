@@ -5,9 +5,10 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Bot = require('../../bot')
+const Worker = require('../worker')
+const Communication = require('../communication')
 
-const { Communication, Logger } = require('../../utils')
+const { Logger } = require('../../utils')
 
 const FirebaseQueue = require('firebase-queue')
 
@@ -37,7 +38,7 @@ function enqueueJob (event, params, progress, resolve, reject) {
   Communication.once(callbacks.resolve, onResolve)
   Communication.once(callbacks.reject, onReject)
 
-  Bot.enqueueJob(event, params, null, callbacks)
+  Worker.enqueueJob(event, params, null, callbacks)
 }
 
 function onCreate (task, progress, resolve, reject) {
@@ -71,6 +72,10 @@ class Tasks {
 
   stop () {
     return new Promise((resolve, reject) => {
+      if (!this._queue) {
+        return resolve()
+      }
+
       this._queue.shutdown()
         .then(resolve)
         .catch(reject)

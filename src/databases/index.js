@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
 const Promise = require('bluebird')
 
+const Bot = require('../bot')
+
 const { Logger } = require('../utils')
-const Communication = require('../utils/communication.js')
 
 const path = require('path')
 const fs = require('fs')
@@ -48,7 +49,7 @@ class Databases {
       try {
         const database = require(this.databasesDir + type.toLowerCase() + '/' + file)
 
-        return database.start(Communication)
+        return database.start()
           .then((result) => {
             this.started.push(database)
 

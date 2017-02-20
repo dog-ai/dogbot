@@ -23,9 +23,7 @@ upnp.prototype.info = function () {
         this.type.toLowerCase() + " module_";
 };
 
-upnp.prototype.load = function (communication) {
-    this.communication = communication;
-
+upnp.prototype.load = function () {
     if (!require('fs').existsSync(MINISSDPD_UNIX_SOCKET)) {
         throw new Error('minissdpd unix socket not available');
     }
@@ -38,14 +36,14 @@ upnp.prototype.unload = function () {
 };
 
 upnp.prototype.start = function () {
-    this.communication.on('monitor:upnp:discover', this._discover);
+  Bot.on('monitor:upnp:discover', this._discover);
 
   const options = { schedule: '1 minute' }
   Bot.enqueueJob('monitor:upnp:discover', null)
 };
 
 upnp.prototype.stop = function () {
-    this.communication.removeListener('monitor:upnp:discover', this._discover);
+  Bot.removeListener('monitor:upnp:discover', this._discover);
 
   Bot.dequeueJob('monitor:upnp:discover')
 };
@@ -181,7 +179,7 @@ upnp.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setHours(now.getHours() - 24)),
         function (upnp) {
-            instance.communication.emit('monitor:upnp:delete', upnp.ip_address);
+          Bot.emit('monitor:upnp:delete', upnp.ip_address);
         });
 };
 
@@ -191,13 +189,13 @@ upnp.prototype._createOrUpdate = function (upnp) {
             if (row === undefined) {
                 return instance._create(upnp)
                     .then(function () {
-                        return instance.communication.emitAsync('monitor:upnp:create', upnp);
+                      return Bot.emitAsync('monitor:upnp:create', upnp);
                     });
             } else {
                 upnp.updated_date = new Date();
                 return instance._updateIpAddress(upnp.ip_address, upnp)
                     .then(function () {
-                        return instance.communication.emitAsync('monitor:upnp:update', upnp);
+                      return Bot.emitAsync('monitor:upnp:update', upnp);
                     });
             }
         });
@@ -217,7 +215,7 @@ upnp.prototype._create = function (upnp) {
     var keys = _.keys(_upnp);
     var values = _.values(_upnp);
 
-    return instance.communication.emitAsync('database:monitor:create',
+  return Bot.emitAsync('database:monitor:create',
         'INSERT INTO upnp (' + keys + ') VALUES (' + values.map(function () {
             return '?';
         }) + ');',
@@ -227,7 +225,7 @@ upnp.prototype._create = function (upnp) {
 };
 
 upnp.prototype._findByIpAddress = function (ipAddress) {
-    return instance.communication.emitAsync('database:monitor:retrieveOne',
+  return Bot.emitAsync('database:monitor:retrieveOne',
         "SELECT * FROM upnp WHERE ip_address = ?;", [ipAddress])
         .then(function (row) {
             if (row !== undefined) {
@@ -252,7 +250,7 @@ upnp.prototype._updateIpAddress = function (ipAddress, upnp) {
     var keys = _.keys(_upnp);
     var values = _.values(_upnp);
 
-    return instance.communication.emitAsync('database:monitor:update',
+  return Bot.emitAsync('database:monitor:update',
         'UPDATE upnp SET ' + keys.map(function (key) {
             return key + ' = ?';
         }) + ' WHERE ip_address = \'' + ipAddress + '\';',
@@ -262,11 +260,11 @@ upnp.prototype._updateIpAddress = function (ipAddress, upnp) {
 upnp.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-    return instance.communication.emitAsync('database:monitor:retrieveAll',
+  return Bot.emitAsync('database:monitor:retrieveAll',
         "SELECT * FROM upnp WHERE updated_date < Datetime(?);", [updatedDate])
         .then(function (rows) {
             return Promise.each(rows, function (row) {
-                return instance.communication.emitAsync('database:monitor:delete', "DELETE FROM upnp WHERE id = ?;", [row.id])
+              return Bot.emitAsync('database:monitor:delete', "DELETE FROM upnp WHERE id = ?;", [ row.id ])
                     .then(function () {
                         return callback(row);
                     });

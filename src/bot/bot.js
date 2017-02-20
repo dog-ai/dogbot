@@ -2,8 +2,6 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const EventEmitter = require('events').EventEmitter
-
 const Promise = require('bluebird')
 
 const { Logger } = require('../utils')
@@ -11,16 +9,9 @@ const { Logger } = require('../utils')
 const Sync = require('./sync')
 const Worker = require('./worker')
 const Heartbeat = require('./heartbeat')
+const Communication = require('./communication')
 
-class Bot extends EventEmitter {
-  constructor () {
-    super()
-
-    Bot.prototype.emitAsync = Promise.promisify(EventEmitter.prototype.emit)
-
-    this.setMaxListeners(256)
-  }
-
+class Bot {
   start (secret) {
     if (!secret) {
       return Promise.reject(new Error('invalid secret'))
@@ -40,6 +31,30 @@ class Bot extends EventEmitter {
       .then(() => Worker.stop())
       .then(() => Heartbeat.stop())
       .catch(Logger.error)
+  }
+
+  on (event, callback) {
+    Communication.on(event, callback)
+  }
+
+  once (event, callback) {
+    Communication.once(event, callback)
+  }
+
+  removeListener (event, callback) {
+    Communication.removeListener(event, callback)
+  }
+
+  removeAllListeners (event) {
+    Communication.removeAllListeners(event)
+  }
+
+  emit (event, ...params) {
+    Communication.emit(event, ...params)
+  }
+
+  emitAsync (event, ...params) {
+    return Communication.emitAsync(event, ...params)
   }
 
   getCompanyId () {

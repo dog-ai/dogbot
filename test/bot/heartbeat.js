@@ -4,7 +4,7 @@
 
 describe('Heartbeat', () => {
   let subject
-  let Bot
+  let Worker
   let Communication
 
   afterEach(() => td.reset())
@@ -15,7 +15,7 @@ describe('Heartbeat', () => {
     const healthCheck = Promise.resolve
 
     before(() => {
-      Bot = td.replace('../../src/bot/bot', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
       subject = require('../../src/bot/heartbeat')
@@ -41,7 +41,7 @@ describe('Heartbeat', () => {
     const healthCheck = Promise.resolve
 
     beforeEach(() => {
-      Bot = td.replace('../../src/bot/bot', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
       subject = require('../../src/bot/heartbeat')
@@ -61,7 +61,7 @@ describe('Heartbeat', () => {
     it('should enqueue heartbeat job with schedule 0.5 seconds', () => {
       subject.start(interval, heartbeat, healthCheck)
 
-      td.verify(Bot.enqueueJob('bot:heartbeat', null, { schedule: '0.5 seconds' }), { times: 1 })
+      td.verify(Worker.enqueueJob('bot:heartbeat', null, { schedule: '0.5 seconds' }), { times: 1 })
     })
   })
 
@@ -71,7 +71,7 @@ describe('Heartbeat', () => {
     const healthCheck = Promise.resolve
 
     beforeEach(() => {
-      Bot = td.replace('../../src/bot/bot', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
       subject = require('../../src/bot/heartbeat')
@@ -91,7 +91,7 @@ describe('Heartbeat', () => {
 
   context('when stopping', () => {
     beforeEach(() => {
-      Bot = td.replace('../../src/bot/bot', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
       subject = require('../../src/bot/heartbeat')
@@ -106,7 +106,7 @@ describe('Heartbeat', () => {
     it('should dequeue heartbeat job', () => {
       subject.stop()
 
-      td.verify(Bot.dequeueJob('bot:heartbeat'), { times: 1 })
+      td.verify(Worker.dequeueJob('bot:heartbeat'), { times: 1 })
     })
   })
 })

@@ -7,11 +7,12 @@ const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local'
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Bot = require('../../bot')
+const Worker = require('../worker')
+const Communication = require('../communication')
 
 const moment = require('moment-timezone')
 
-const { Communication, Logger } = require('../../utils')
+const { Logger } = require('../../utils')
 
 class Modules {
   start (firebase, dogId, companyId) {
@@ -29,7 +30,7 @@ class Modules {
         // start an outgoing periodic sync job every 10 minutes
         Communication.on('sync:outgoing:periodic', this._periodicOutgoingSynchronization.bind(this))
         const options = { schedule: '10 minutes' }
-        Bot.enqueueJob('sync:outgoing:periodic', null, options)
+        Worker.enqueueJob('sync:outgoing:periodic', null, options)
 
         // listen for incoming sync callback registrations
         Communication.on('sync:incoming:register:setup', this._registerIncomingSynchronization.bind(this))

@@ -9,8 +9,6 @@ const Promise = require('bluebird')
 
 const Bot = require('../../bot')
 
-const Communication = require('../../utils/communication')
-
 const moment = require('moment')
 
 const LP = require('linkedin-public-profile-parser')
@@ -68,7 +66,7 @@ class LinkedIn extends SocialModule {
     super('linkedin')
   }
 
-  load (communication, config) { // TODO: remove communication
+  load (config) {
     this.config = config
 
     super.load()
@@ -82,7 +80,7 @@ class LinkedIn extends SocialModule {
       'social:linkedin:company:import:auto': this._autoImportCompany.bind(this)
     })
 
-    Communication.emit('sync:outgoing:quickshot:register', {
+    Bot.emit('sync:outgoing:quickshot:register', {
       companyResource: 'apps',
       registerEvents: [ 'social:linkedin:config:update' ],
       outgoingFunction: this._onConfigOutgoingSynchronization.bind(this)
@@ -143,7 +141,7 @@ class LinkedIn extends SocialModule {
 
                 return this._updateEmployeeById(employee.id, employee)
                   .then(() => {
-                    Communication.emit('person:employee:update', employee)
+                    Bot.emit('person:employee:update', employee)
                   })
               }
             })
@@ -158,7 +156,7 @@ class LinkedIn extends SocialModule {
 
                 return this._updateEmployeeById(employee.id, employee)
                   .then(() => {
-                    Communication.emit('person:employee:update', employee)
+                    Bot.emit('person:employee:update', employee)
                   })
               } else {
                 employee = {}
@@ -168,7 +166,7 @@ class LinkedIn extends SocialModule {
 
                 return this._addEmployee(employee)
                   .then(() => {
-                    Communication.emit('person:employee:update', employee)
+                    Bot.emit('person:employee:update', employee)
                   })
               }
             })
@@ -263,7 +261,7 @@ class LinkedIn extends SocialModule {
           .then(() => {
             this.config.last_import_date = new Date()
 
-            Communication.emit('social:linkedin:config:update')
+            Bot.emit('social:linkedin:config:update')
           })
           .then(() => {
             return callback(null, employeeUrls)

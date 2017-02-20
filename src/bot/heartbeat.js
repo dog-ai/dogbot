@@ -4,9 +4,8 @@
 
 const Promise = require('bluebird')
 
-const Bot = require('./bot')
-
-const { Communication } = require('../utils')
+const Worker = require('./worker')
+const Communication = require('./communication')
 
 function run (params, callback) {
   this._healthCheck()
@@ -34,7 +33,7 @@ class Heartbeat {
       Communication.on('bot:heartbeat', run.bind(this))
 
       const options = { schedule: this._interval + ' seconds' }
-      Bot.enqueueJob('bot:heartbeat', null, options)
+      Worker.enqueueJob('bot:heartbeat', null, options)
 
       this._isRunning = true
 
@@ -48,7 +47,7 @@ class Heartbeat {
         return resolve()
       }
 
-      Bot.dequeueJob('bot:heartbeat')
+      Worker.dequeueJob('bot:heartbeat')
 
       Communication.removeListener('bot:heartbeat', run.bind(this))
 

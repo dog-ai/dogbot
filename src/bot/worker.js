@@ -13,7 +13,9 @@ const JobTypeTtlEnum = {
 
 const Promise = require('bluebird')
 
-const { Logger, Communication } = require('../utils')
+const Communication = require('./communication')
+
+const { Logger } = require('../utils')
 
 const Databases = require('../databases')
 

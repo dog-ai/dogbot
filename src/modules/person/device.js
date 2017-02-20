@@ -24,9 +24,7 @@ device.prototype.info = function () {
     this.type.toLowerCase() + " module_";
 };
 
-device.prototype.load = function (communication) {
-  this.communication = communication;
-
+device.prototype.load = function () {
   this.start();
 };
 
@@ -35,35 +33,35 @@ device.prototype.unload = function () {
 };
 
 device.prototype.start = function () {
-  this.communication.on('person:mac_address:online', this._onMacAddressOnline);
-  this.communication.on('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
-  this.communication.on('person:mac_address:offline', this._onMacAddressOffline);
-  this.communication.on('person:device:is_present', this._isPresent);
-  this.communication.on('person:device:discover', this._discover);
-  this.communication.on('sync:incoming:person:device:create', this._onCreateOrUpdateDeviceIncomingSynchronization);
-  this.communication.on('sync:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
-  this.communication.on('sync:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
-  this.communication.on('sync:outgoing:person:device', this._onDeviceOutgoingSynchronization);
+  Bot.on('person:mac_address:online', this._onMacAddressOnline);
+  Bot.on('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
+  Bot.on('person:mac_address:offline', this._onMacAddressOffline);
+  Bot.on('person:device:is_present', this._isPresent);
+  Bot.on('person:device:discover', this._discover);
+  Bot.on('sync:incoming:person:device:create', this._onCreateOrUpdateDeviceIncomingSynchronization);
+  Bot.on('sync:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
+  Bot.on('sync:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
+  Bot.on('sync:outgoing:person:device', this._onDeviceOutgoingSynchronization);
 
-  this.communication.emitAsync('sync:incoming:register:setup', {
+  Bot.emitAsync('sync:incoming:register:setup', {
     companyResource: 'devices',
     onCompanyResourceAddedCallback: function (device) {
-      instance.communication.emit('sync:incoming:person:device:create', device);
+      Bot.emit('sync:incoming:person:device:create', device);
     },
     onCompanyResourceChangedCallback: function (device) {
-      instance.communication.emit('sync:incoming:person:device:update', device);
+      Bot.emit('sync:incoming:person:device:update', device);
     },
     onCompanyResourceRemovedCallback: function (device) {
-      instance.communication.emit('sync:incoming:person:device:delete', device);
+      Bot.emit('sync:incoming:person:device:delete', device);
     }
   });
 
-  this.communication.emitAsync('sync:outgoing:periodic:register', {
+  Bot.emitAsync('sync:outgoing:periodic:register', {
     companyResource: 'devices',
     event: 'sync:outgoing:person:device'
   });
 
-  this.communication.emit('sync:outgoing:quickshot:register', {
+  Bot.emit('sync:outgoing:quickshot:register', {
     companyResource: 'devices',
     registerEvents: ['person:device:online', 'person:device:offline', 'person:device:discover:create'],
     outgoingEvent: 'sync:outgoing:person:device'
@@ -71,17 +69,17 @@ device.prototype.start = function () {
 };
 
 device.prototype.stop = function () {
-  this.communication.removeListener('person:mac_address:online', this._onMacAddressOnline);
-  this.communication.removeListener('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
-  this.communication.removeListener('person:mac_address:offline', this._onMacAddressOffline);
-  this.communication.removeListener('sync:incoming:person:device:create', this._onCreateOrUpdateDeviceIncomingSynchronization);
-  this.communication.removeListener('sync:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
-  this.communication.removeListener('sync:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
-  this.communication.removeListener('person:device:is_present', this._isPresent);
-  this.communication.removeListener('person:device:discover', this._discover);
-  this.communication.removeListener('sync:outgoing:person:device', this._onDeviceOutgoingSynchronization);
+  Bot.removeListener('person:mac_address:online', this._onMacAddressOnline);
+  Bot.removeListener('person:mac_address:onlineAgain', this._onMacAddressOnlineAgain);
+  Bot.removeListener('person:mac_address:offline', this._onMacAddressOffline);
+  Bot.removeListener('sync:incoming:person:device:create', this._onCreateOrUpdateDeviceIncomingSynchronization);
+  Bot.removeListener('sync:incoming:person:device:update', this._onCreateOrUpdateDeviceIncomingSynchronization);
+  Bot.removeListener('sync:incoming:person:device:delete', this._onDeleteDeviceIncomingSynchronization);
+  Bot.removeListener('person:device:is_present', this._isPresent);
+  Bot.removeListener('person:device:discover', this._discover);
+  Bot.removeListener('sync:outgoing:person:device', this._onDeviceOutgoingSynchronization);
 
-  this.communication.removeAllListeners('monitor:arp:discover:finish');
+  Bot.removeAllListeners('monitor:arp:discover:finish');
 
   Bot.dequeueJob('person:device:discover')
 };
@@ -181,7 +179,7 @@ device.prototype._discover = function (macAddress, callback) {
                     return instance._updateMacAddressByAddress(macAddress.address, macAddress)
                       .then(function () {
 
-                        instance.communication.emit('person:device:discover:create', _device);
+                        Bot.emit('person:device:discover:create', _device);
 
                         return _device;
                       });
@@ -464,14 +462,14 @@ device.prototype._isPresent = function (device) {
   return new Promise(function (resolve, reject) {
 
     function handleArpDiscover() {
-      instance.communication.removeListener('monitor:arp:discover:finish', handleArpDiscover);
+      Bot.removeListener('monitor:arp:discover:finish', handleArpDiscover);
 
       return instance._findMacAddressesByDeviceId(device.id)
         .then(function (mac_addresses) {
           if (mac_addresses !== undefined) {
             var values = _.pluck(mac_addresses, 'address');
 
-            return instance.communication.emitAsync('database:monitor:retrieveAll',
+            return Bot.emitAsync('database:monitor:retrieveAll',
                 'SELECT * FROM arp WHERE mac_address IN (' + values.map(function () {
                   return '?';
                 }) + ');',
@@ -486,12 +484,12 @@ device.prototype._isPresent = function (device) {
         });
     }
 
-    instance.communication.on('monitor:arp:discover:finish', handleArpDiscover);
+    Bot.on('monitor:arp:discover:finish', handleArpDiscover);
   });
 };
 
 device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
-  return instance.communication.emitAsync('database:person:retrieveAll', 'PRAGMA table_info(device)', [])
+  return Bot.emitAsync('database:person:retrieveAll', 'PRAGMA table_info(device)', [])
     .then(function (rows) {
       device = _.pick(device, _.pluck(rows, 'name'));
 
@@ -515,9 +513,9 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
                   });
 
                   if (row.employee_id !== null && device.employee_id === null) {
-                    instance.communication.emit('person:device:removedFromEmployee', device, {id: row.employee_id});
+                    Bot.emit('person:device:removedFromEmployee', device, { id: row.employee_id });
                   } else if (row.employee_id === null && device.employee_id !== null) {
-                    instance.communication.emit('person:device:addedToEmployee', device, {id: device.employee_id});
+                    Bot.emit('person:device:addedToEmployee', device, { id: device.employee_id });
                   }
                 });
             }
@@ -535,7 +533,7 @@ device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (devi
 
                         return instance._updateById(device.id, device)
                           .then(function () {
-                            instance.communication.emit('person:device:offline', device);
+                            Bot.emit('person:device:offline', device);
                           });
                       }
                     });
@@ -559,7 +557,7 @@ device.prototype._onDeleteDeviceIncomingSynchronization = function (device) {
             if (row.is_present) {
               row.is_to_be_deleted = true;
 
-              instance.communication.emit('person:device:offline', row);
+              Bot.emit('person:device:offline', row);
             }
           });
       }
@@ -582,7 +580,7 @@ device.prototype._onMacAddressOnline = function (mac_address) {
 
           return instance._updateById(device.id, device)
             .then(function () {
-              instance.communication.emit('person:device:online', device);
+              Bot.emit('person:device:online', device);
             });
         }
       })
@@ -602,7 +600,7 @@ device.prototype._onMacAddressOnlineAgain = function (mac_address) {
 
         instance._updateById(device.id, device)
           .then(function () {
-            instance.communication.emit('person:device:onlineAgain', device);
+            Bot.emit('person:device:onlineAgain', device);
           });
       });
   }
@@ -634,7 +632,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
                 device.is_synced = false;
 
                 return instance._updateById(device.id, device).then(function () {
-                  instance.communication.emit('person:device:offline', device);
+                  Bot.emit('person:device:offline', device);
                 });
               });
           }
@@ -647,7 +645,7 @@ device.prototype._onMacAddressOffline = function (mac_address) {
 };
 
 device.prototype._onDeviceOutgoingSynchronization = function (params, callback) {
-  instance.communication.emit('database:person:retrieveOneByOne', 'SELECT * FROM device WHERE is_synced = 0' +
+  Bot.emit('database:person:retrieveOneByOne', 'SELECT * FROM device WHERE is_synced = 0' +
     (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
     if (error) {
       Logger.error(error);
@@ -688,7 +686,7 @@ device.prototype._onDeviceOutgoingSynchronization = function (params, callback) 
 };
 
 device.prototype._findMacAddressesByDeviceId = function (id) {
-  return instance.communication.emitAsync('database:person:retrieveAll',
+  return Bot.emitAsync('database:person:retrieveAll',
     "SELECT * FROM mac_address WHERE device_id = ?;", [id])
     .then(function (rows) {
       if (rows !== undefined) {
@@ -711,7 +709,7 @@ device.prototype._findMacAddressesByDeviceId = function (id) {
 };
 
 device.prototype._findAllBonjoursByIpAddress = function (ipAddress) {
-  return instance.communication.emitAsync('database:monitor:retrieveAll',
+  return Bot.emitAsync('database:monitor:retrieveAll',
     "SELECT * FROM bonjour WHERE ip_address = ?;", [ipAddress])
     .then(function (rows) {
       if (rows !== undefined) {
@@ -726,7 +724,7 @@ device.prototype._findAllBonjoursByIpAddress = function (ipAddress) {
 };
 
 device.prototype._findAllUPnPsByIpAddress = function (ipAddress) {
-  return instance.communication.emitAsync('database:monitor:retrieveAll',
+  return Bot.emitAsync('database:monitor:retrieveAll',
     "SELECT * FROM upnp WHERE ip_address = ?;", [ipAddress])
     .then(function (rows) {
       if (rows !== undefined) {
@@ -741,7 +739,7 @@ device.prototype._findAllUPnPsByIpAddress = function (ipAddress) {
 };
 
 device.prototype._findAllDHCPsByMACAddress = function (macAddress) {
-  return instance.communication.emitAsync('database:monitor:retrieveAll',
+  return Bot.emitAsync('database:monitor:retrieveAll',
     "SELECT * FROM dhcp WHERE mac_address = ?;", [macAddress])
     .then(function (rows) {
       if (rows !== undefined) {
@@ -756,12 +754,12 @@ device.prototype._findAllDHCPsByMACAddress = function (macAddress) {
 };
 
 device.prototype._findIpAdressByMacAddress = function (macAddress) {
-  return instance.communication.emitAsync('database:monitor:retrieveOne',
+  return Bot.emitAsync('database:monitor:retrieveOne',
     "SELECT ip_address FROM arp WHERE mac_address = ?;", [macAddress]);
 };
 
 device.prototype._findById = function (id) {
-  return instance.communication.emitAsync('database:person:retrieveOne', "SELECT * FROM device WHERE id = ?;", [id])
+  return Bot.emitAsync('database:person:retrieveOne', "SELECT * FROM device WHERE id = ?;", [ id ])
     .then(function (row) {
       if (row !== undefined) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -778,7 +776,7 @@ device.prototype._findById = function (id) {
 };
 
 device.prototype._findByMacAddress = function (macAddress) {
-  return instance.communication.emitAsync('database:person:retrieveOne',
+  return Bot.emitAsync('database:person:retrieveOne',
     "SELECT d.* FROM device d, mac_address ma WHERE d.id = ma.device_id AND ma.address = ?;", [macAddress])
     .then(function (row) {
       if (row !== undefined) {
@@ -815,7 +813,7 @@ device.prototype._add = function (device) {
   var keys = _.keys(_device);
   var values = _.values(_device);
 
-  return instance.communication.emitAsync('database:person:create',
+  return Bot.emitAsync('database:person:create',
     'INSERT INTO device (' + keys + ') VALUES (' + values.map(function () {
       return '?';
     }) + ');',
@@ -842,7 +840,7 @@ device.prototype._updateById = function (id, device) {
   var keys = _.keys(_device);
   var values = _.values(_device);
 
-  return instance.communication.emitAsync('database:person:update',
+  return Bot.emitAsync('database:person:update',
     'UPDATE device SET ' + keys.map(function (key) {
       return key + ' = ?';
     }) + ' WHERE id = \'' + id + '\';',
@@ -850,7 +848,7 @@ device.prototype._updateById = function (id, device) {
 };
 
 device.prototype._deleteById = function (id) {
-  return instance.communication.emitAsync('database:person:delete', 'DELETE FROM device WHERE id = ?;', [id]);
+  return Bot.emitAsync('database:person:delete', 'DELETE FROM device WHERE id = ?;', [ id ]);
 };
 
 device.prototype._updateMacAddressByAddress = function (address, mac_address) {
@@ -875,7 +873,7 @@ device.prototype._updateMacAddressByAddress = function (address, mac_address) {
   var keys = _.keys(_macAddress);
   var values = _.values(_macAddress);
 
-  return instance.communication.emitAsync('database:person:update',
+  return Bot.emitAsync('database:person:update',
     'UPDATE mac_address SET ' + keys.map(function (key) {
       return key + ' = ?';
     }) + ' WHERE address = \'' + address + '\';',
