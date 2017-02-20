@@ -31,7 +31,7 @@ class DHCP extends MonitorModule {
     })
 
     const options = { schedule: '1 minute' }
-    Bot.enqueue('monitor:dhcp:discover', null, options)
+    Bot.enqueueJob('monitor:dhcp:discover', null, options)
   }
 
   stop () {
