@@ -104,7 +104,7 @@ class Presence extends PerformanceModule {
     const options = { schedule: '6 hours' }
     Bot.enqueueJob('performance:presence:stats:update', null, options)
 
-    Bot.emitAsync('sync:outgoing:periodic:register', {
+    Bot.emit('sync:outgoing:periodic:register', {
       companyResource: 'employee_performances',
       event: 'sync:outgoing:performance:presence'
     })

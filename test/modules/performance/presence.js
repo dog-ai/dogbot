@@ -7,7 +7,7 @@ describe('Presence', () => {
   let Bot
 
   before(() => {
-    Bot = td.object([ 'enqueueJob', 'dequeueJob', 'on', 'removeListener' ])
+    Bot = td.object([ 'enqueueJob', 'dequeueJob', 'on', 'removeListener', 'emit' ])
   })
 
   afterEach(() => td.reset())
