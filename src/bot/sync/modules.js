@@ -235,7 +235,7 @@ class Modules {
     callback()
   }
 
-  _registerPeriodicOutgoingSynchronization (params, callback) {
+  _registerPeriodicOutgoingSynchronization (params, callback = () => {}) {
     this.outgoingSynchronizeEvents.push({
       event: params.event,
       companyResource: params.companyResource
