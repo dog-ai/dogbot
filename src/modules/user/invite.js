@@ -1,12 +1,12 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const Module = require('../module')
 
-const moment = require('moment')
+const Bot = require('../../bot')
 
-const Communication = require('../../utils/communication')
+const moment = require('moment')
 
 class Invite extends Module {
   constructor () {
@@ -18,7 +18,7 @@ class Invite extends Module {
       'user:invite': this._invite.bind(this)
     })
 
-    Communication.emit('sync:outgoing:quickshot:register', {
+    Bot.emit('sync:outgoing:quickshot:register', {
       companyResource: 'invites',
       registerEvents: [ 'user:invite:sent' ],
       outgoingFunction: this._onInviteSent.bind(this)
@@ -53,14 +53,14 @@ class Invite extends Module {
       ':url': [ invite.url ]
     }
 
-    Communication.emitAsync('email:send', email, templateId, substitutions)
+    Bot.emitAsync('email:send', email, templateId, substitutions)
       .then(() => {
         invite.sent_date = moment().format()
 
         callback()
       })
       .catch(callback)
-      .finally(() => Communication.emit('user:invite:sent', invite))
+      .finally(() => Bot.emit('user:invite:sent', invite))
   }
 
   _encodeEnvelop (envelope) {

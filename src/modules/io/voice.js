@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const IOModule = require('./io-module')
@@ -8,7 +8,9 @@ const Promise = require('bluebird')
 const TimeoutError = Promise.TimeoutError
 const locks = Promise.promisifyAll(require('locks'))
 
-const { Communication, Locale, Logger } = require('../../utils')
+const Bot = require('../../bot')
+
+const { Locale, Logger } = require('../../utils')
 
 const createReadStream = require('fs').createReadStream
 const path = require('path')
@@ -224,7 +226,7 @@ class Voice extends IOModule {
 
   _speak (text) {
     const googleTTS = (text) => {
-      return Communication.emitAsync('tts:stream', { text })
+      return Bot.emitAsync('tts:stream', { text })
         .then((stream) => execPlayCommand(stream, 'mp3'))
     }
 

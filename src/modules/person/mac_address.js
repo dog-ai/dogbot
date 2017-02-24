@@ -1,6 +1,8 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../bot')
 
 const { Logger } = require('../../utils'),
   _ = require('lodash'),
@@ -9,7 +11,6 @@ const { Logger } = require('../../utils'),
   Promise = require("bluebird");
 
 function mac_address() {
-  var communication = undefined;
 }
 
 mac_address.prototype.type = "PERSON";
@@ -22,9 +23,7 @@ mac_address.prototype.info = function () {
     this.type.toLowerCase() + " module_";
 };
 
-mac_address.prototype.load = function (communication) {
-  this.communication = communication;
-
+mac_address.prototype.load = function () {
   this.start();
 };
 
@@ -33,36 +32,37 @@ mac_address.prototype.unload = function () {
 };
 
 mac_address.prototype.start = function () {
-  this.communication.on('person:macAddress:clean', this._clean);
-  this.communication.on('monitor:arp:create', this._onArpCreateOrUpdate);
-  this.communication.on('monitor:arp:update', this._onArpCreateOrUpdate);
-  this.communication.on('monitor:arp:delete', this._onArpDelete);
-  this.communication.on('sync:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.on('sync:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.on('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
-  this.communication.on('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+  Bot.on('person:macAddress:clean', this._clean);
+  Bot.on('monitor:arp:create', this._onArpCreateOrUpdate);
+  Bot.on('monitor:arp:update', this._onArpCreateOrUpdate);
+  Bot.on('monitor:arp:delete', this._onArpDelete);
+  Bot.on('sync:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  Bot.on('sync:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  Bot.on('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
+  Bot.on('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
 
-  this.communication.emit('worker:job:enqueue', 'person:macAddress:clean', null, {schedule: '6 hours'});
+  const options = { schedule: '6 hours' }
+  Bot.enqueueJob('person:macAddress:clean', null, options)
 
-  this.communication.emitAsync('sync:incoming:register:setup', {
+  Bot.emitAsync('sync:incoming:register:setup', {
     companyResource: 'mac_addresses',
     onCompanyResourceAddedCallback: function (macAddress) {
-      instance.communication.emit('sync:incoming:person:macAddress:create', macAddress);
+      Bot.emit('sync:incoming:person:macAddress:create', macAddress);
     },
     onCompanyResourceChangedCallback: function (macAddress) {
-      instance.communication.emit('sync:incoming:person:macAddress:update', macAddress);
+      Bot.emit('sync:incoming:person:macAddress:update', macAddress);
     },
     onCompanyResourceRemovedCallback: function (macAddress) {
-      instance.communication.emit('sync:incoming:person:macAddress:delete', macAddress);
+      Bot.emit('sync:incoming:person:macAddress:delete', macAddress);
     }
   });
 
-  this.communication.emitAsync('sync:outgoing:periodic:register', {
+  Bot.emitAsync('sync:outgoing:periodic:register', {
     companyResource: 'mac_addresses',
     event: 'sync:outgoing:person:mac_address'
   });
 
-  this.communication.emit('sync:outgoing:quickshot:register', {
+  Bot.emit('sync:outgoing:quickshot:register', {
     companyResource: 'mac_addresses',
     registerEvents: ['person:device:discover:create'],
     outgoingFunction: this._onDeviceDiscoverCreate
@@ -70,14 +70,16 @@ mac_address.prototype.start = function () {
 };
 
 mac_address.prototype.stop = function () {
-  this.communication.removeListener('person:macAddress:clean', this._clean);
-  this.communication.removeListener('monitor:arp:create', this._onArpCreateOrUpdate);
-  this.communication.removeListener('monitor:arp:update', this._onArpCreateOrUpdate);
-  this.communication.removeListener('monitor:arp:delete', this._onArpDelete);
-  this.communication.removeListener('sync:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.removeListener('sync:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
-  this.communication.removeListener('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
-  this.communication.removeListener('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+  Bot.removeListener('person:macAddress:clean', this._clean);
+  Bot.removeListener('monitor:arp:create', this._onArpCreateOrUpdate);
+  Bot.removeListener('monitor:arp:update', this._onArpCreateOrUpdate);
+  Bot.removeListener('monitor:arp:delete', this._onArpDelete);
+  Bot.removeListener('sync:incoming:person:macAddress:create', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  Bot.removeListener('sync:incoming:person:macAddress:update', this._onCreateOrUpdateMacAddressIncomingSynchronization);
+  Bot.removeListener('sync:incoming:person:macAddress:delete', this._onDeleteMacAddressIncomingSynchronization);
+  Bot.removeListener('sync:outgoing:person:mac_address', this._onMacAddressOutgoingSynchronization);
+
+  Bot.dequeueJob('person:macAddress:clean')
 };
 
 mac_address.prototype._clean = function (params, callback) {
@@ -132,9 +134,9 @@ mac_address.prototype._onArpCreateOrUpdate = function (arp) {
         instance._updateByAddress(row.address, row)
           .then(function () {
             if (was_present) {
-              instance.communication.emit('person:mac_address:onlineAgain', row);
+              Bot.emit('person:mac_address:onlineAgain', row);
             } else {
-              instance.communication.emit('person:mac_address:online', row);
+              Bot.emit('person:mac_address:online', row);
             }
 
             // lookup vendor
@@ -182,7 +184,7 @@ mac_address.prototype._onArpCreateOrUpdate = function (arp) {
             Logger.error(error);
           } else {
             row.last_presence_date = now;
-            instance.communication.emit('person:mac_address:online', row);
+            Bot.emit('person:mac_address:online', row);
 
             // lookup vendor
             macvendor(row.address, function (error, vendor) {
@@ -227,7 +229,7 @@ mac_address.prototype._onArpDelete = function (arp) {
 
         instance._updateByAddress(row.address, row)
           .then(function () {
-            instance.communication.emit('person:mac_address:offline', row);
+            Bot.emit('person:mac_address:offline', row);
           })
           .catch(function (error) {
             Logger.error(error);
@@ -239,7 +241,7 @@ mac_address.prototype._onArpDelete = function (arp) {
 };
 
 mac_address.prototype._onCreateOrUpdateMacAddressIncomingSynchronization = function (mac_address) {
-  instance.communication.emit('database:person:retrieveAll', 'PRAGMA table_info(mac_address)', [], function (error, rows) {
+  Bot.emit('database:person:retrieveAll', 'PRAGMA table_info(mac_address)', [], function (error, rows) {
     if (error) {
       Logger.error(error);
     } else {
@@ -278,20 +280,20 @@ mac_address.prototype._onCreateOrUpdateMacAddressIncomingSynchronization = funct
 };
 
 mac_address.prototype._onDeleteMacAddressIncomingSynchronization = function (macAddress) {
-  instance.communication.emit('database:person:delete',
+  Bot.emit('database:person:delete',
     'SELECT * FROM mac_address WHERE id = ?',
     [macAddress.id], function (error, row) {
       if (error) {
         Logger.error(error);
       } else {
-        instance.communication.emit('database:person:delete',
+        Bot.emit('database:person:delete',
           'DELETE FROM mac_address WHERE id = ?',
           [macAddress.id], function (error) {
             if (error) {
               Logger.error(error);
             } else {
               if (row.is_present) {
-                instance.communication.emit('person:mac_address:offline', row);
+                Bot.emit('person:mac_address:offline', row);
               }
             }
           });
@@ -300,7 +302,7 @@ mac_address.prototype._onDeleteMacAddressIncomingSynchronization = function (mac
 };
 
 mac_address.prototype._onMacAddressOutgoingSynchronization = function (params, callback) {
-  instance.communication.emit('database:person:retrieveOneByOne',
+  Bot.emit('database:person:retrieveOneByOne',
     'SELECT * FROM mac_address WHERE is_synced = 0' +
     (params !== null ? (' AND id = \'' + params.id + '\'') : ''), [], function (error, row) {
       if (error) {
@@ -341,7 +343,7 @@ mac_address.prototype._onMacAddressOutgoingSynchronization = function (params, c
 };
 
 mac_address.prototype._findByAddress = function (mac_address, callback) {
-  this.communication.emit('database:person:retrieveOne',
+  Bot.emit('database:person:retrieveOne',
     "SELECT * FROM mac_address WHERE address = ?;", [mac_address], function (error, row) {
       if (row !== undefined) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -361,7 +363,7 @@ mac_address.prototype._findByAddress = function (mac_address, callback) {
 };
 
 mac_address.prototype._findAllByDeviceId = function (deviceId) {
-  return this.communication.emitAsync('database:person:retrieveAll',
+  return Bot.emitAsync('database:person:retrieveAll',
     "SELECT * FROM mac_address WHERE device_id = ?;",
     [deviceId]
   );
@@ -440,7 +442,7 @@ mac_address.prototype._add = function (mac_address, callback) {
   var keys = _.keys(mac_address);
   var values = _.values(mac_address);
 
-  this.communication.emit('database:person:create',
+  Bot.emit('database:person:create',
     'INSERT INTO mac_address (' + keys + ') VALUES (' + values.map(function () {
       return '?';
     }) + ');',
@@ -451,7 +453,7 @@ mac_address.prototype._add = function (mac_address, callback) {
 mac_address.prototype._findAllBeforeLastPresenceDateAndWithoutDevice = function (lastPresenceDate) {
   lastPresenceDate = lastPresenceDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-  return this.communication.emitAsync('database:person:retrieveAll',
+  return Bot.emitAsync('database:person:retrieveAll',
     "SELECT * FROM mac_address WHERE last_presence_date < Datetime(?) AND device_id IS NULL;",
     [lastPresenceDate]
   );
@@ -479,7 +481,7 @@ mac_address.prototype._updateByAddress = function (address, mac_address) {
   var keys = _.keys(_macAddress);
   var values = _.values(_macAddress);
 
-  return instance.communication.emitAsync('database:person:update',
+  return Bot.emitAsync('database:person:update',
     'UPDATE mac_address SET ' + keys.map(function (key) {
       return key + ' = ?';
     }) + ' WHERE address = \'' + address + '\';',
@@ -487,7 +489,7 @@ mac_address.prototype._updateByAddress = function (address, mac_address) {
 };
 
 mac_address.prototype._deleteById = function (id) {
-  return instance.communication.emitAsync('database:person:delete', 'DELETE FROM mac_address WHERE id = ?;', [id]);
+  return Bot.emitAsync('database:person:delete', 'DELETE FROM mac_address WHERE id = ?;', [ id ]);
 };
 
 var instance = new mac_address();

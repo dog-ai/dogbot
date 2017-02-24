@@ -1,11 +1,14 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const { Communication, Logger } = require('../../utils')
+const Worker = require('../worker')
+const Communication = require('../communication')
+
+const { Logger } = require('../../utils')
 
 const FirebaseQueue = require('firebase-queue')
 
@@ -35,7 +38,7 @@ function enqueueJob (event, params, progress, resolve, reject) {
   Communication.once(callbacks.resolve, onResolve)
   Communication.once(callbacks.reject, onReject)
 
-  Communication.emit('worker:job:enqueue', event, params, null, callbacks)
+  Worker.enqueueJob(event, params, null, callbacks)
 }
 
 function onCreate (task, progress, resolve, reject) {
@@ -48,7 +51,7 @@ function onCreate (task, progress, resolve, reject) {
   enqueueJob(task.event, task.data, progress, resolve, reject)
 }
 
-class Jobs {
+class Tasks {
   start (firebase, dogId, companyId) {
     this._firebase = firebase
 
@@ -69,11 +72,30 @@ class Jobs {
 
   stop () {
     return new Promise((resolve, reject) => {
+      if (!this._queue) {
+        return resolve()
+      }
+
       this._queue.shutdown()
         .then(resolve)
         .catch(reject)
     })
   }
+
+  enqueueTask (event, params) {
+    return new Promise((resolve, reject) => {
+      const task = { event, data: params, _state: 'spark' }
+
+      this._companyRef.child('tasks')
+        .push(task, (error) => {
+          if (error) {
+            return reject(error)
+          }
+
+          resolve()
+        })
+    })
+  }
 }
 
-module.exports = Jobs
+module.exports = new Tasks()
