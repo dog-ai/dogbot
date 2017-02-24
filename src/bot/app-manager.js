@@ -11,13 +11,13 @@ const { Logger } = require('../utils')
 
 const { AppNotAvailableError, AppAlreadyDisabledError } = require('./errors')
 
-const Databases = require('../databases')
-const Modules = require('../modules')
+const Databases = require('./database-manager')
+const Modules = require('./module-manager')
 
 const path = require('path')
 const fs = require('fs')
 
-const APP_DIR = path.join(__dirname, '/')
+const APP_DIR = path.join(__dirname, '/../apps/')
 
 class AppManager {
   constructor () {
