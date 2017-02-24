@@ -1,6 +1,8 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../../bot')
 
 const { Logger } = require('../../../utils'),
   _ = require('lodash'),
@@ -19,9 +21,7 @@ employee.prototype.info = function () {
     this.type.toLowerCase() + " module_";
 };
 
-employee.prototype.load = function (communication) {
-  instance.communication = communication;
-
+employee.prototype.load = function () {
   instance.start();
 };
 
@@ -30,38 +30,38 @@ employee.prototype.unload = function () {
 };
 
 employee.prototype.start = function () {
-  this.communication.on('person:device:online', this._handleDeviceOnline);
-  this.communication.on('person:device:onlineAgain', this._handleDeviceOnlineAgain);
-  this.communication.on('person:device:offline', this._handleDeviceOffline);
-  this.communication.on('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
-  this.communication.on('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
-  this.communication.on('person:slack:active', this._handleSlackActive);
-  this.communication.on('person:slack:away', this._handleSlackAway);
-  this.communication.on('sync:incoming:person:employee:create', this._onCreateOrUpdateEmployeeIncomingSynchronization);
-  this.communication.on('sync:incoming:person:employee:update', this._onCreateOrUpdateEmployeeIncomingSynchronization);
-  this.communication.on('sync:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
-  this.communication.on('sync:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
-  this.communication.on('person:employee:is_present', this._isPresent);
+  Bot.on('person:device:online', this._handleDeviceOnline);
+  Bot.on('person:device:onlineAgain', this._handleDeviceOnlineAgain);
+  Bot.on('person:device:offline', this._handleDeviceOffline);
+  Bot.on('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
+  Bot.on('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
+  Bot.on('person:slack:active', this._handleSlackActive);
+  Bot.on('person:slack:away', this._handleSlackAway);
+  Bot.on('sync:incoming:person:employee:create', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+  Bot.on('sync:incoming:person:employee:update', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+  Bot.on('sync:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
+  Bot.on('sync:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
+  Bot.on('person:employee:is_present', this._isPresent);
 
-  this.communication.emitAsync('sync:incoming:register:setup', {
+  Bot.emitAsync('sync:incoming:register:setup', {
     companyResource: 'employees',
     onCompanyResourceAddedCallback: function (employee) {
-      instance.communication.emit('sync:incoming:person:employee:create', employee);
+      Bot.emit('sync:incoming:person:employee:create', employee);
     },
     onCompanyResourceChangedCallback: function (employee) {
-      instance.communication.emit('sync:incoming:person:employee:update', employee);
+      Bot.emit('sync:incoming:person:employee:update', employee);
     },
     onCompanyResourceRemovedCallback: function (employee) {
-      instance.communication.emit('sync:incoming:person:employee:delete', employee);
+      Bot.emit('sync:incoming:person:employee:delete', employee);
     }
   });
 
-  this.communication.emitAsync('sync:outgoing:periodic:register', {
+  Bot.emitAsync('sync:outgoing:periodic:register', {
     companyResource: 'employees',
     event: 'sync:outgoing:person:employee'
   });
 
-  this.communication.emit('sync:outgoing:quickshot:register', {
+  Bot.emit('sync:outgoing:quickshot:register', {
     companyResource: 'employees',
     registerEvents: ['person:employee:update'],
     outgoingEvent: 'sync:outgoing:person:employee'
@@ -69,27 +69,27 @@ employee.prototype.start = function () {
 };
 
 employee.prototype.stop = function () {
-  this.communication.removeListener('person:device:online', this._handleDeviceOnline);
-  this.communication.removeListener('person:device:onlineAgain', this._handleDeviceOnlineAgain);
-  this.communication.removeListener('person:device:offline', this._handleDeviceOffline);
-  this.communication.removeListener('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
-  this.communication.removeListener('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
-  this.communication.removeListener('person:slack:active', this._handleSlackActive);
-  this.communication.removeListener('person:slack:away', this._handleSlackAway);
-  this.communication.removeListener('sync:incoming:person:employee:create', this._onCreateOrUpdateEmployeeIncomingSynchronization);
-  this.communication.removeListener('sync:incoming:person:employee:update', this._onCreateOrUpdateEmployeeIncomingSynchronization);
-  this.communication.removeListener('sync:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
-  this.communication.removeListener('sync:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
-  this.communication.removeListener('person:employee:is_present', this._isPresent);
+  Bot.removeListener('person:device:online', this._handleDeviceOnline);
+  Bot.removeListener('person:device:onlineAgain', this._handleDeviceOnlineAgain);
+  Bot.removeListener('person:device:offline', this._handleDeviceOffline);
+  Bot.removeListener('person:device:addedToEmployee', this._onDeviceAddedToEmployee);
+  Bot.removeListener('person:device:removedFromEmployee', this._onDeviceRemovedFromEmployee);
+  Bot.removeListener('person:slack:active', this._handleSlackActive);
+  Bot.removeListener('person:slack:away', this._handleSlackAway);
+  Bot.removeListener('sync:incoming:person:employee:create', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+  Bot.removeListener('sync:incoming:person:employee:update', this._onCreateOrUpdateEmployeeIncomingSynchronization);
+  Bot.removeListener('sync:incoming:person:employee:delete', this._onDeleteEmployeeIncomingSynchronization);
+  Bot.removeListener('sync:outgoing:person:employee', this._onEmployeeOutgoingSynchronization);
+  Bot.removeListener('person:employee:is_present', this._isPresent);
 
-  this.communication.removeAllListeners('monitor:arp:discover:finish');
+  Bot.removeAllListeners('monitor:arp:discover:finish');
 };
 
 employee.prototype._handleSlackAway = function (slack) {
   // Note: pay attention that name is not a SQL unique column key
   return instance._findByName(slack.name)
     .then(function (employee) {
-      instance.communication.emit('person:employee:offline', employee);
+      Bot.emit('person:employee:offline', employee);
     });
 };
 
@@ -100,10 +100,10 @@ employee.prototype._handleSlackActive = function (slack) {
       if (employee === undefined || employee === null) {
         return instance._addPresence(slack.name, slack.slack_id)
           .then(function (employee) {
-            self.communication.emit('person:employee:online', employee);
+            Bot.emit('person:employee:online', employee);
           });
       } else {
-        self.communication.emit('person:employee:online', employee);
+        Bot.emit('person:employee:online', employee);
       }
     });
 };
@@ -121,8 +121,8 @@ employee.prototype._handleDeviceOnline = function (device) {
 
           return instance._updateById(employee.id, employee)
             .then(function () {
-              instance.communication.emit('person:employee:nearby', employee);
-              instance.communication.emit('person:employee:update', employee);
+              Bot.emit('person:employee:nearby', employee);
+              Bot.emit('person:employee:update', employee);
             });
         }
       })
@@ -170,8 +170,8 @@ employee.prototype._handleDeviceOffline = function (device) {
 
                 return instance._updateById(employee.id, employee)
                   .then(function () {
-                    instance.communication.emit('person:employee:faraway', employee);
-                    instance.communication.emit('person:employee:update', employee);
+                    Bot.emit('person:employee:faraway', employee);
+                    Bot.emit('person:employee:update', employee);
                   });
               }
             });
@@ -185,7 +185,7 @@ employee.prototype._handleDeviceOffline = function (device) {
 
 employee.prototype._isPresent = function (employee, callback) {
   function handleArpDiscover() {
-    instance.communication.removeListener('monitor:arp:discover:finish', handleArpDiscover);
+    Bot.removeListener('monitor:arp:discover:finish', handleArpDiscover);
 
     instance._findDevicesByEmployeeId(employee.id)
       .then(function (devices) {
@@ -199,7 +199,7 @@ employee.prototype._isPresent = function (employee, callback) {
       });
   }
 
-  instance.communication.on('monitor:arp:discover:finish', handleArpDiscover);
+  Bot.on('monitor:arp:discover:finish', handleArpDiscover);
 };
 
 employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
@@ -210,8 +210,8 @@ employee.prototype._onDeviceAddedToEmployee = function (device, employee) {
         employee.last_presence_date = device.last_presence_date;
 
         return instance._updateById(employee.id, employee).then(function () {
-          instance.communication.emit('person:employee:nearby', employee);
-          instance.communication.emit('person:employee:update', employee);
+          Bot.emit('person:employee:nearby', employee);
+          Bot.emit('person:employee:update', employee);
         });
       }
     })
@@ -235,8 +235,8 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
               employee.last_presence_date = device.last_presence_date;
 
               return instance._updateById(employee.id, employee).then(function () {
-                instance.communication.emit('person:employee:faraway', employee);
-                instance.communication.emit('person:employee:update', employee);
+                Bot.emit('person:employee:faraway', employee);
+                Bot.emit('person:employee:update', employee);
               });
             }
           })
@@ -248,7 +248,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
 };
 
 employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
-  return instance.communication.emitAsync('database:person:retrieveAll', 'PRAGMA table_info(employee)', [])
+  return Bot.emitAsync('database:person:retrieveAll', 'PRAGMA table_info(employee)', [])
     .then(function (rows) {
       employee = _.pick(employee, _.pluck(rows, 'name'));
 
@@ -276,7 +276,7 @@ employee.prototype._onDeleteEmployeeIncomingSynchronization = function (employee
         return instance._deleteById(employee.id)
           .then(function () {
             if (employee.is_present) {
-              instance.communication.emit('person:employee:faraway', employee);
+              Bot.emit('person:employee:faraway', employee);
             }
           });
       }
@@ -317,7 +317,7 @@ employee.prototype._onEmployeeOutgoingSynchronization = function (params, callba
 };
 
 employee.prototype._findAllNotSynced = function (id) {
-  return instance.communication.emitAsync('database:person:retrieveAll', 'SELECT * FROM employee WHERE is_synced = 0' + (id ? (' AND id = \'' + id + '\'') : ''), [])
+  return Bot.emitAsync('database:person:retrieveAll', 'SELECT * FROM employee WHERE is_synced = 0' + (id ? (' AND id = \'' + id + '\'') : ''), [])
     .mapSeries(function (row) {
       if (row) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -336,7 +336,7 @@ employee.prototype._findAllNotSynced = function (id) {
 };
 
 employee.prototype._findDevicesByEmployeeId = function (id) {
-  return instance.communication.emitAsync('database:person:retrieveAll', "SELECT * FROM device WHERE employee_id = ?;", [id])
+  return Bot.emitAsync('database:person:retrieveAll', "SELECT * FROM device WHERE employee_id = ?;", [ id ])
     .then(function (rows) {
       if (rows !== undefined) {
         rows.forEach(function (row) {
@@ -356,7 +356,7 @@ employee.prototype._findDevicesByEmployeeId = function (id) {
 };
 
 employee.prototype._addPresence = function (name, slackId) {
-  return instance.communication.emitAsync('database:person:create',
+  return Bot.emitAsync('database:person:create',
     "INSERT INTO employee (name, slack_id) VALUES (?, ?);", [
       name,
       slackId
@@ -364,7 +364,7 @@ employee.prototype._addPresence = function (name, slackId) {
 };
 
 employee.prototype._findById = function (id) {
-  return instance.communication.emitAsync('database:person:retrieveOne', "SELECT * FROM employee WHERE id = ?;", [id])
+  return Bot.emitAsync('database:person:retrieveOne', "SELECT * FROM employee WHERE id = ?;", [ id ])
     .then(function (row) {
       if (row !== undefined) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -382,7 +382,7 @@ employee.prototype._findById = function (id) {
 };
 
 employee.prototype._findByName = function (name) {
-  return instance.communication.emitAsync('database:person:retrieveOne', "SELECT * FROM employee WHERE name LIKE ?;", [name])
+  return Bot.emitAsync('database:person:retrieveOne', "SELECT * FROM employee WHERE name LIKE ?;", [ name ])
     .then(function (row) {
       if (row !== undefined) {
         row.created_date = new Date(row.created_date.replace(' ', 'T'));
@@ -400,7 +400,7 @@ employee.prototype._findByName = function (name) {
 };
 
 employee.prototype._findAllOnlineDevicesByEmployeeId = function (id) {
-  return instance.communication.emitAsync('database:person:retrieveAll', 'SELECT * FROM device WHERE employee_id = ? AND is_present = 1;', [id])
+  return Bot.emitAsync('database:person:retrieveAll', 'SELECT * FROM device WHERE employee_id = ? AND is_present = 1;', [ id ])
     .then(function (rows) {
       if (rows !== undefined) {
         rows.forEach(function (row) {
@@ -441,7 +441,7 @@ employee.prototype._add = function (employee) {
   var keys = _.keys(_employee);
   var values = _.values(_employee);
 
-  return instance.communication.emitAsync('database:person:create',
+  return Bot.emitAsync('database:person:create',
     'INSERT INTO employee (' + keys + ') VALUES (' + values.map(function () {
       return '?';
     }) + ');',
@@ -470,7 +470,7 @@ employee.prototype._updateById = function (id, employee) {
   var keys = _.keys(_employee);
   var values = _.values(_employee);
 
-  return instance.communication.emitAsync('database:person:update',
+  return Bot.emitAsync('database:person:update',
     'UPDATE employee SET ' + keys.map(function (key) {
       return key + ' = ?';
     }) + ' WHERE id = \'' + id + '\';',
@@ -478,7 +478,7 @@ employee.prototype._updateById = function (id, employee) {
 };
 
 employee.prototype._deleteById = function (id) {
-  return instance.communication.emitAsync('database:person:delete', 'DELETE FROM employee WHERE id = ?;', [id]);
+  return Bot.emitAsync('database:person:delete', 'DELETE FROM employee WHERE id = ?;', [ id ]);
 };
 
 var instance = new employee();

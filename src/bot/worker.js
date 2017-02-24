@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const WORKER_DATABASE_TYPE = 'nosql'
@@ -13,59 +13,13 @@ const JobTypeTtlEnum = {
 
 const Promise = require('bluebird')
 
-const { Logger, Communication } = require('../utils')
+const Communication = require('./communication')
+
+const { Logger } = require('../utils')
 
 const Databases = require('../databases')
 
 const kue = require('kue-scheduler')
-
-function enqueueJob (event, params, options, callbacks) {
-  const _options = options || {}
-
-  let type
-  switch (event) {
-    case 'social:linkedin:company:import':
-    case 'person:device:discover':
-      type = JobTypeEnum.SLOW
-      break
-    case 'bot:heartbeat':
-      type = JobTypeEnum.FAST
-      break
-    default:
-      type = JobTypeEnum.NORMAL
-  }
-
-  const job = this.queue.create(type, { event: event, params: params, callbacks: callbacks })
-  job.ttl(JobTypeTtlEnum[ type ])
-
-  if (_options.retry) {
-    job.attempts(_options.retry)
-  }
-
-  if (_options.schedule) {
-    this.queue.every(_options.schedule, job)
-  } else {
-    try {
-      job.save((error) => {
-        if (error) {
-          throw error
-        }
-      })
-    } catch (ignored) {}
-  }
-}
-
-function dequeueJob (event) {
-  if (this.queue && this._schedules[ event ]) {
-    this.queue.remove(this._schedules[ event ], (error) => {
-      if (error) {
-        // throw error
-      } else {
-        delete this._schedules[ event ]
-      }
-    })
-  }
-}
 
 class Worker {
   constructor () {
@@ -150,9 +104,6 @@ class Worker {
             Logger.debug('Job ' + id + ' failed ' + attempts + ' times')
           })
           this.queue.on('error', () => {})
-
-          Communication.on('worker:job:enqueue', enqueueJob.bind(this))
-          Communication.on('worker:job:dequeue', dequeueJob.bind(this))
         })
         .then(() => resolve())
         .catch(reject)
@@ -161,9 +112,6 @@ class Worker {
 
   stop () {
     return new Promise((resolve, reject) => {
-      Communication.removeListener('worker:job:enqueue', enqueueJob.bind(this))
-      Communication.removeListener('worker:job:dequeue', dequeueJob.bind(this))
-
       if (this.queue) {
         try {
           this.queue.shutdown(100, (error) => {
@@ -184,9 +132,57 @@ class Worker {
       })
   }
 
+  enqueueJob (event, params, options, callbacks) {
+    const _options = options || {}
+
+    let type
+    switch (event) {
+      case 'social:linkedin:company:import':
+      case 'person:device:discover':
+        type = JobTypeEnum.SLOW
+        break
+      case 'bot:heartbeat':
+        type = JobTypeEnum.FAST
+        break
+      default:
+        type = JobTypeEnum.NORMAL
+    }
+
+    const job = this.queue.create(type, { event: event, params: params, callbacks: callbacks })
+    job.ttl(JobTypeTtlEnum[ type ])
+
+    if (_options.retry) {
+      job.attempts(_options.retry)
+    }
+
+    if (_options.schedule) {
+      this.queue.every(_options.schedule, job)
+    } else {
+      try {
+        job.save((error) => {
+          if (error) {
+            throw error
+          }
+        })
+      } catch (ignored) {}
+    }
+  }
+
+  dequeueJob (event) {
+    if (this.queue && this._schedules[ event ]) {
+      this.queue.remove(this._schedules[ event ], (error) => {
+        if (error) {
+          // throw error
+        } else {
+          delete this._schedules[ event ]
+        }
+      })
+    }
+  }
+
   healthCheck () {
     return Promise.resolve()
   }
 }
 
-module.exports = Worker
+module.exports = new Worker()

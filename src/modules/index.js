@@ -1,12 +1,11 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
 const Promise = require('bluebird')
 
 const { Logger } = require('../utils')
-const Communication = require('../utils/communication')
 
 const path = require('path')
 const fs = require('fs')
@@ -63,7 +62,7 @@ class Modules {
             module = require('./' + type.toLowerCase() + '/' + name)
           }
 
-          module.load(Communication, config)
+          module.load(config)
 
           this.loaded.push(module)
 
