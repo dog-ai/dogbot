@@ -1,6 +1,8 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../bot')
 
 var nosql = require('./'),
     util = require("util");
@@ -8,9 +10,7 @@ var nosql = require('./'),
 function performance() {
     nosql.call(this);
 
-    this.communication = undefined;
-
-    this._setFn = this._set.bind(this);
+  this._setFn = this._set.bind(this);
     this._getFn = this._get.bind(this);
     this._hsetFn = this._hset.bind(this);
     this._hgetFn = this._hget.bind(this);
@@ -22,26 +22,24 @@ util.inherits(performance, nosql);
 
 performance.prototype.name = "performance";
 
-performance.prototype.start = function (communication) {
-    this.communication = communication;
-
-    this.communication.on('database:nosql:' + this.name + ':set', this._setFn);
-    this.communication.on('database:nosql:' + this.name + ':get', this._getFn);
-    this.communication.on('database:nosql:' + this.name + ':hset', this._hsetFn);
-    this.communication.on('database:nosql:' + this.name + ':hget', this._hgetFn);
-    this.communication.on('database:nosql:' + this.name + ':hmset', this._hmsetFn);
-    this.communication.on('database:nosql:' + this.name + ':hgetall', this._hgetallFn);
+performance.prototype.start = function () {
+  Bot.on('database:nosql:' + this.name + ':set', this._setFn);
+  Bot.on('database:nosql:' + this.name + ':get', this._getFn);
+  Bot.on('database:nosql:' + this.name + ':hset', this._hsetFn);
+  Bot.on('database:nosql:' + this.name + ':hget', this._hgetFn);
+  Bot.on('database:nosql:' + this.name + ':hmset', this._hmsetFn);
+  Bot.on('database:nosql:' + this.name + ':hgetall', this._hgetallFn);
 
     return this._open(this.name);
 };
 
 performance.prototype.stop = function () {
-    this.communication.removeListener('database:nosql:' + this.name + ':set', this._setFn);
-    this.communication.removeListener('database:nosql:' + this.name + ':get', this._getFn);
-    this.communication.removeListener('database:nosql:' + this.name + ':hset', this._hsetFn);
-    this.communication.removeListener('database:nosql:' + this.name + ':hget', this._hgetFn);
-    this.communication.removeListener('database:nosql:' + this.name + ':hmset', this._hmsetFn);
-    this.communication.removeListener('database:nosql:' + this.name + ':hgetall', this._hgetallFn);
+  Bot.removeListener('database:nosql:' + this.name + ':set', this._setFn);
+  Bot.removeListener('database:nosql:' + this.name + ':get', this._getFn);
+  Bot.removeListener('database:nosql:' + this.name + ':hset', this._hsetFn);
+  Bot.removeListener('database:nosql:' + this.name + ':hget', this._hgetFn);
+  Bot.removeListener('database:nosql:' + this.name + ':hmset', this._hmsetFn);
+  Bot.removeListener('database:nosql:' + this.name + ':hgetall', this._hgetallFn);
 
     return this._close();
 };

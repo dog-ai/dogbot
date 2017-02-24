@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 var nosql = require('./'),
@@ -7,8 +7,6 @@ var nosql = require('./'),
 
 function worker() {
     nosql.call(this);
-
-    this.communication = undefined;
 }
 
 util.inherits(worker, nosql);

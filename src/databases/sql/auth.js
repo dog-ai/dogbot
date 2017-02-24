@@ -1,6 +1,8 @@
 /*
- * Copyright (C) 2015 dog.ai, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../bot')
 
 var sql = require('./'),
     util = require('util')
@@ -8,8 +10,6 @@ var sql = require('./'),
 
 function auth() {
     sql.call(this);
-
-    this.communication = {};
 
     this._runFn = this._run.bind(this);
     this._getFn = this._get.bind(this);
@@ -21,24 +21,20 @@ util.inherits(auth, sql);
 
 auth.prototype.name = 'auth';
 
-auth.prototype.start = function (communication) {
-    var self = this;
-
-    this.communication = communication;
-
-    this.communication.on('database:' + this.name + ':setup', this._runFn);
-    this.communication.on('database:' + this.name + ':create', this._runFn);
-    this.communication.on('database:' + this.name + ':retrieveOne', this._getFn);
-    this.communication.on('database:' + this.name + ':retrieveAll', this._allFn);
-    this.communication.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-    this.communication.on('database:' + this.name + ':update', this._runFn);
-    this.communication.on('database:' + this.name + ':delete', this._runFn);
+auth.prototype.start = function () {
+  Bot.on('database:' + this.name + ':setup', this._runFn);
+  Bot.on('database:' + this.name + ':create', this._runFn);
+  Bot.on('database:' + this.name + ':retrieveOne', this._getFn);
+  Bot.on('database:' + this.name + ':retrieveAll', this._allFn);
+  Bot.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+  Bot.on('database:' + this.name + ':update', this._runFn);
+  Bot.on('database:' + this.name + ':delete', this._runFn);
 
     return this._open(this.name)
         .then(function () {
-            return self.communication.emitAsync('database:auth:setup', 'DROP TABLE IF EXISTS google', [])
+          return Bot.emitAsync('database:auth:setup', 'DROP TABLE IF EXISTS google', [])
                 .then(function () {
-                    return self.communication.emitAsync('database:auth:setup',
+                  return Bot.emitAsync('database:auth:setup',
                         'CREATE TABLE IF NOT EXISTS google (' +
                         'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
                         'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -56,13 +52,13 @@ auth.prototype.start = function (communication) {
 };
 
 auth.prototype.stop = function () {
-    this.communication.removeListener('database:' + this.name + ':setup', this._runFn);
-    this.communication.removeListener('database:' + this.name + ':create', this._runFn);
-    this.communication.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
-    this.communication.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
-    this.communication.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-    this.communication.removeListener('database:' + this.name + ':update', this._runFn);
-    this.communication.removeListener('database:' + this.name + ':delete', this._runFn);
+  Bot.removeListener('database:' + this.name + ':setup', this._runFn);
+  Bot.removeListener('database:' + this.name + ':create', this._runFn);
+  Bot.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
+  Bot.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
+  Bot.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+  Bot.removeListener('database:' + this.name + ':update', this._runFn);
+  Bot.removeListener('database:' + this.name + ':delete', this._runFn);
 
     return this._close();
 };

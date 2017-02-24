@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local'
@@ -15,7 +15,7 @@ const moment = require('moment-timezone')
 
 const Firebase = require('firebase')
 
-const Jobs = require('./jobs')
+const Tasks = require('./tasks')
 const Modules = require('./modules')
 const Apps = require('./apps')
 
@@ -95,7 +95,6 @@ class Sync {
   constructor () {
     this._firebase = new Firebase(URL)
 
-    this._jobs = new Jobs()
     this._modules = new Modules()
     this._apps = new Apps()
   }
@@ -111,7 +110,7 @@ class Sync {
           resolve(this._dogId)
         })
         .then(() => this._modules.start(this._firebase, this._dogId, this._companyId))
-        .then(() => this._jobs.start(this._firebase, this._dogId, this._companyId))
+        .then(() => Tasks.start(this._firebase, this._dogId, this._companyId))
         .then(() => this._apps.start(this._firebase, this._dogId, this._companyId))
         .catch(reject)
     })
@@ -120,7 +119,7 @@ class Sync {
   stop () {
     return new Promise((resolve, reject) => {
       this._apps.stop()
-        .then(() => this._jobs.stop())
+        .then(() => Tasks.stop())
         .then(() => this._modules.stop())
         .then(unauthenthicate.bind(this))
         .then(() => {
@@ -132,9 +131,17 @@ class Sync {
     })
   }
 
+  getCompanyId () {
+    return this._companyId
+  }
+
+  enqueueTask (event, params) {
+    return Tasks.enqueueTask(event, params)
+  }
+
   healthCheck () {
     return Promise.resolve()
   }
 }
 
-module.exports = Sync
+module.exports = new Sync()

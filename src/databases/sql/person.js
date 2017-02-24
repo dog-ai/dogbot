@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
+
+const Bot = require('../../bot')
 
 var sql = require('./'),
   util = require('util');
 
 function person() {
   sql.call(this);
-
-  this.communication = undefined;
 
   this._runFn = this._run.bind(this);
   this._getFn = this._get.bind(this);
@@ -20,24 +20,22 @@ util.inherits(person, sql);
 
 person.prototype.name = 'person';
 
-person.prototype.start = function (communication) {
+person.prototype.start = function () {
   var self = this;
 
-  this.communication = communication;
-
-  this.communication.on('database:' + this.name + ':setup', this._runFn);
-  this.communication.on('database:' + this.name + ':create', this._runFn);
-  this.communication.on('database:' + this.name + ':retrieveOne', this._getFn);
-  this.communication.on('database:' + this.name + ':retrieveAll', this._allFn);
-  this.communication.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  this.communication.on('database:' + this.name + ':update', this._runFn);
-  this.communication.on('database:' + this.name + ':delete', this._runFn);
+  Bot.on('database:' + this.name + ':setup', this._runFn);
+  Bot.on('database:' + this.name + ':create', this._runFn);
+  Bot.on('database:' + this.name + ':retrieveOne', this._getFn);
+  Bot.on('database:' + this.name + ':retrieveAll', this._allFn);
+  Bot.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+  Bot.on('database:' + this.name + ':update', this._runFn);
+  Bot.on('database:' + this.name + ':delete', this._runFn);
 
   return this._open(this.name, true)
     .then(function () {
-      return self.communication.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS mac_address', [])
+      return Bot.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS mac_address', [])
         .then(function () {
-          return self.communication.emitAsync('database:person:setup',
+          return Bot.emitAsync('database:person:setup',
             'CREATE TABLE mac_address (' +
             'id TEXT DEFAULT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -55,9 +53,9 @@ person.prototype.start = function (communication) {
         })
     })
     .then(function () {
-      return self.communication.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS device', [])
+      return Bot.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS device', [])
         .then(function () {
-          return self.communication.emitAsync('database:person:setup',
+          return Bot.emitAsync('database:person:setup',
             'CREATE TABLE device (' +
             'id TEXT DEFAULT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -77,9 +75,9 @@ person.prototype.start = function (communication) {
         })
     })
     .then(function () {
-      return self.communication.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS employee', [])
+      return Bot.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS employee', [])
         .then(function () {
-          return self.communication.emitAsync('database:person:setup',
+          return Bot.emitAsync('database:person:setup',
             'CREATE TABLE employee (' +
             'id TEXT PRIMARY KEY NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -101,13 +99,13 @@ person.prototype.start = function (communication) {
 };
 
 person.prototype.stop = function () {
-  this.communication.removeListener('database:' + this.name + ':setup', this._runFn);
-  this.communication.removeListener('database:' + this.name + ':create', this._runFn);
-  this.communication.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
-  this.communication.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
-  this.communication.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  this.communication.removeListener('database:' + this.name + ':update', this._runFn);
-  this.communication.removeListener('database:' + this.name + ':delete', this._runFn);
+  Bot.removeListener('database:' + this.name + ':setup', this._runFn);
+  Bot.removeListener('database:' + this.name + ':create', this._runFn);
+  Bot.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
+  Bot.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
+  Bot.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
+  Bot.removeListener('database:' + this.name + ':update', this._runFn);
+  Bot.removeListener('database:' + this.name + ':delete', this._runFn);
 
   return this._close();
 };

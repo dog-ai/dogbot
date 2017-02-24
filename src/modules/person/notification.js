@@ -1,13 +1,14 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const PersonModule = require('./person-module')
 
+const Bot = require('../../bot')
+
 const moment = require('moment')
 
 const { Logger } = require('../../utils')
-const Communication = require('../../utils/communication')
 
 const _generatePushID = (function () {
   // Modeled after base64 web-safe chars, but ordered by ASCII.
@@ -68,7 +69,7 @@ class Notification extends PersonModule {
       'person:employee:faraway': this._onEmployeeFaraway.bind(this)
     })
 
-    Communication.emit('sync:outgoing:quickshot:register', {
+    Bot.emit('sync:outgoing:quickshot:register', {
       companyResource: 'notifications',
       registerEvents: [ 'person:device:discover:create' ],
       outgoingFunction: this._onDeviceDiscoverCreate.bind(this)

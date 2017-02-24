@@ -1,50 +1,112 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
-
-const Promise = require('bluebird')
-let Heartbeat
 
 describe('Heartbeat', () => {
   let subject
+  let Worker
   let Communication
 
-  beforeEach(() => {
-    Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
-    Heartbeat = require('../../src/bot/heartbeat')
-  })
-
-  afterEach(() => {
-    td.reset()
-  })
+  afterEach(() => td.reset())
 
   context('when already started', () => {
-    beforeEach(() => {
-      subject = new Heartbeat()
+    const interval = 1
+    const heartbeat = () => {}
+    const healthCheck = Promise.resolve
 
-      return subject.start(1, () => {}, Promise.resolve)
+    before(() => {
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
+
+      subject = require('../../src/bot/heartbeat')
+
+      return subject.start(interval, heartbeat, healthCheck)
     })
 
-    it('should fail to start again', () => {
-      (() => subject.start(1, () => {}, Promise.resolve))
-        .should.throw('already started')
+    after(() => {
+      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
+    })
+
+    it('should throw already started error', () => {
+      return subject.start(interval, heartbeat, healthCheck)
+        .catch((error) => {
+          error.message.should.be.equal('already started')
+        })
     })
   })
 
   context('when starting', () => {
+    const interval = 1
+    const heartbeat = () => {}
+    const healthCheck = Promise.resolve
+
     beforeEach(() => {
-      subject = new Heartbeat()
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
+
+      subject = require('../../src/bot/heartbeat')
     })
 
-    it('should fail with interval lower than or equal to zero', () => {
-      (() => subject.start(0, () => {}, Promise.resolve))
-        .should.throw('invalid interval')
+    afterEach(() => {
+      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
     })
 
     it('should return heartbeat interval', () => {
-      const result = subject.start(2, () => {}, Promise.resolve)
+      return subject.start(interval, heartbeat, healthCheck)
+        .then((result) => {
+          result.should.be.equal(interval / 2)
+        })
+    })
 
-      return result.should.be.equal(1)
+    it('should enqueue heartbeat job with schedule 0.5 seconds', () => {
+      subject.start(interval, heartbeat, healthCheck)
+
+      td.verify(Worker.enqueueJob('bot:heartbeat', null, { schedule: '0.5 seconds' }), { times: 1 })
+    })
+  })
+
+  context('when starting with an invalid interval', () => {
+    const interval = 0
+    const heartbeat = () => {}
+    const healthCheck = Promise.resolve
+
+    beforeEach(() => {
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
+
+      subject = require('../../src/bot/heartbeat')
+    })
+
+    afterEach(() => {
+      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
+    })
+
+    it('should throw invalid interval error', () => {
+      return subject.start(interval, heartbeat, healthCheck)
+        .catch((error) => {
+          error.message.should.be.equal('invalid interval')
+        })
+    })
+  })
+
+  context('when stopping', () => {
+    beforeEach(() => {
+      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
+
+      subject = require('../../src/bot/heartbeat')
+
+      subject.start(1, () => {}, Promise.resolve)
+    })
+
+    afterEach(() => {
+      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
+    })
+
+    it('should dequeue heartbeat job', () => {
+      subject.stop()
+
+      td.verify(Worker.dequeueJob('bot:heartbeat'), { times: 1 })
     })
   })
 })
