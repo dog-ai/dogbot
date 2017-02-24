@@ -250,7 +250,7 @@ employee.prototype._onDeviceRemovedFromEmployee = function (device, employee) {
 employee.prototype._onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
   return Bot.emitAsync('database:person:retrieveAll', 'PRAGMA table_info(employee)', [])
     .then(function (rows) {
-      employee = _.pick(employee, _.pluck(rows, 'name'));
+      employee = _.pick(employee, _.map(rows, 'name'));
 
       return instance._findById(employee.id).then(function (row) {
         if (row !== undefined) {

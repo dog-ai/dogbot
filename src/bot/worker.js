@@ -2,8 +2,17 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const WORKER_DATABASE_TYPE = 'nosql'
-const WORKER_DATABASE_NAME = 'worker'
+const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local'
+
+const Promise = require('bluebird')
+const join = require('path').join
+
+const REDIS_UNIX_SOCKET = ENVIRONMENT === 'local' ? join(__dirname, '/../../var/run/redis.sock') : '/var/run/redis.sock'
+
+const redis = require('redis')
+Promise.promisifyAll(redis.RedisClient.prototype)
+Promise.promisifyAll(redis.Multi.prototype)
+
 const JobTypeEnum = { FAST: 'FAST', NORMAL: 'NORMAL', SLOW: 'SLOW' }
 const JobTypeTtlEnum = {
   FAST: 10000, // 10 sec,
@@ -11,13 +20,9 @@ const JobTypeTtlEnum = {
   SLOW: 240000 // 4 min
 }
 
-const Promise = require('bluebird')
-
 const Communication = require('./communication')
 
 const { Logger } = require('../utils')
-
-const Databases = require('../databases')
 
 const kue = require('kue-scheduler')
 
@@ -27,87 +32,83 @@ class Worker {
   }
 
   start () {
-    return new Promise((resolve, reject) => {
-      if (!Databases) {
-        return reject(new Error('Unable to initialize worker because no database available'))
+    this.queue = kue.createQueue({
+      redis: {
+        createClientFactory: () => redis.createClient({ path: REDIS_UNIX_SOCKET })
+      }
+    })
+
+    const process = (job, callback) => {
+      const id = job.id
+      const event = job.data.event
+      const params = job.data.params
+      const callbacks = job.data.callbacks || {}
+      const retry = (job._max_attempts - (isNaN(job._attempts) ? 1 : job._attempts + 1)) > 0
+
+      Logger.debug('Job ' + id + ' started' + (params ? ' with params ' + JSON.stringify(params) : ''))
+
+      const success = (result) => {
+        callback(null, result)
+
+        if (callbacks.resolve) {
+          Communication.emitAsync(callbacks.resolve, result)
+        }
       }
 
-      return Databases.startDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
-        .then((database) => {
-          this.queue = kue.createQueue(database)
+      const failure = (error) => {
+        if (!retry) {
+          Logger.error(error)
+        }
 
-          const process = (job, callback) => {
-            const id = job.id
-            const event = job.data.event
-            const params = job.data.params
-            const callbacks = job.data.callbacks || {}
-            const retry = (job._max_attempts - (isNaN(job._attempts) ? 1 : job._attempts + 1)) > 0
+        callback(error)
 
-            Logger.debug('Job ' + id + ' started' + (params ? ' with params ' + JSON.stringify(params) : ''))
+        if (callbacks.reject) {
+          Communication.emitAsync(callbacks.reject, error)
+        }
+      }
 
-            const success = (result) => {
-              callback(null, result)
-
-              if (callbacks.resolve) {
-                Communication.emitAsync(callbacks.resolve, result)
-              }
-            }
-
-            const failure = (error) => {
-              if (!retry) {
-                Logger.error(error)
-              }
-
-              callback(error)
-
-              if (callbacks.reject) {
-                Communication.emitAsync(callbacks.reject, error)
-              }
-            }
-
-            Communication.emitAsync(event, params)
-              .then(success)
-              .catch((error) => {
-                failure(error, job)
-              })
-          }
-
-          this.queue.process(JobTypeEnum.FAST, process)
-          this.queue.process(JobTypeEnum.NORMAL, process)
-          this.queue.process(JobTypeEnum.SLOW, 2, process)
-
-          this.queue.on('job enqueue', (id) => {
-            kue.Job.get(id, (error, job) => {
-              if (error) {
-                Logger.error(error)
-
-                return
-              }
-
-              Logger.debug('Job ' + id + ' queued with ' + job.data.event +
-                (job.data.params ? ' and params ' + JSON.stringify(job.data.params) : ''))
-            })
-          })
-          this.queue.on('job complete', (id, result) => {
-            Logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''))
-
-            kue.Job.get(id, (error, job) => {
-              if (!error) {
-                job.remove()
-              }
-            })
-          })
-          this.queue.on('job failed', (id, error) => {
-            Logger.debug('Job ' + id + ' failed because of ' + error)
-          })
-          this.queue.on('job failed attempt', (id, error, attempts) => {
-            Logger.debug('Job ' + id + ' failed ' + attempts + ' times')
-          })
-          this.queue.on('error', () => {})
+      Communication.emitAsync(event, params)
+        .then(success)
+        .catch((error) => {
+          failure(error, job)
         })
-        .then(() => resolve())
-        .catch(reject)
+    }
+
+    this.queue.process(JobTypeEnum.FAST, process)
+    this.queue.process(JobTypeEnum.NORMAL, process)
+    this.queue.process(JobTypeEnum.SLOW, 2, process)
+
+    this.queue.on('job enqueue', (id) => {
+      kue.Job.get(id, (error, job) => {
+        if (error) {
+          Logger.error(error)
+
+          return
+        }
+
+        Logger.debug('Job ' + id + ' queued with ' + job.data.event +
+          (job.data.params ? ' and params ' + JSON.stringify(job.data.params) : ''))
+      })
     })
+    this.queue.on('job complete', (id, result) => {
+      Logger.debug('Job ' + id + ' completed' + (result ? ' with result ' + JSON.stringify(result) : ''))
+
+      kue.Job.get(id, (error, job) => {
+        if (!error) {
+          job.remove()
+        }
+      })
+    })
+    this.queue.on('job failed', (id, error) => {
+      Logger.debug('Job ' + id + ' failed because of ' + error)
+    })
+    this.queue.on('job failed attempt', (id, error, attempts) => {
+      Logger.debug('Job ' + id + ' failed ' + attempts + ' times')
+    })
+    this.queue.on('error', (error) => Logger.error(error))
+
+    return this.queue.client.keysAsync('*')
+      .mapSeries((key) => this.queue.client.delAsync(key))
   }
 
   stop () {
@@ -127,9 +128,6 @@ class Worker {
         resolve()
       }
     })
-      .then(() => {
-        return Databases.stopDatabase(WORKER_DATABASE_TYPE, WORKER_DATABASE_NAME)
-      })
   }
 
   enqueueJob (event, params, options, callbacks) {
