@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-module.exports = {
-  Sync: require('./sync')
-}
+module.exports = require('./sync')

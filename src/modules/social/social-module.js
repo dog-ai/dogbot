@@ -1,12 +1,12 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const Module = require('../module')
 
-const _ = require('lodash')
+const Bot = require('../../bot')
 
-const Communication = require('../../utils/communication')
+const _ = require('lodash')
 
 class SocialModule extends Module {
   constructor (name) {
@@ -16,7 +16,7 @@ class SocialModule extends Module {
   _findAllEmployeesBeforeLinkedInLastImportDate (linkedInLastImportDate) {
     var _linkedInLastImportDate = linkedInLastImportDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return Communication.emitAsync('database:person:retrieveAll',
+    return Bot.emitAsync('database:person:retrieveAll',
       'SELECT * FROM employee WHERE linkedin_last_import_date < Datetime(?) OR linkedin_last_import_date IS NULL', [ _linkedInLastImportDate ])
       .then((rows) => {
         if (rows !== undefined) {
@@ -37,7 +37,7 @@ class SocialModule extends Module {
   }
 
   _findEmployeeById (id) {
-    return Communication.emitAsync('database:person:retrieveOne', 'SELECT * FROM employee WHERE id = ?', [ id ])
+    return Bot.emitAsync('database:person:retrieveOne', 'SELECT * FROM employee WHERE id = ?', [ id ])
       .then((row) => {
         if (row !== undefined) {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
@@ -55,7 +55,7 @@ class SocialModule extends Module {
   }
 
   _findEmployeeByLinkedInProfileUrl (url) {
-    return Communication.emitAsync('database:person:retrieveOne', 'SELECT * FROM employee WHERE linkedin_profile_url = ?', [ url ])
+    return Bot.emitAsync('database:person:retrieveOne', 'SELECT * FROM employee WHERE linkedin_profile_url = ?', [ url ])
       .then((row) => {
         if (row !== undefined) {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
@@ -94,7 +94,7 @@ class SocialModule extends Module {
     var keys = _.keys(_employee)
     var values = _.values(_employee)
 
-    return Communication.emitAsync('database:person:create',
+    return Bot.emitAsync('database:person:create',
       'INSERT INTO employee (' + keys + ') VALUES (' + values.map(() => {
         return '?'
       }) + ')',
@@ -123,7 +123,7 @@ class SocialModule extends Module {
     var keys = _.keys(_employee)
     var values = _.values(_employee)
 
-    return Communication.emitAsync('database:person:update',
+    return Bot.emitAsync('database:person:update',
       'UPDATE employee SET ' + keys.map((key) => {
         return key + ' = ?'
       }) + ' WHERE id = \'' + id + '\';',

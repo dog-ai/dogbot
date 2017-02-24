@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-describe.skip('Bot', () => {
+describe.skip('Worker', () => {
   let subject
   let Bot
   let Logger

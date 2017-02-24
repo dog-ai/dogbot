@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const NLPModule = require('./nlp-module')
@@ -32,7 +32,7 @@ class Wit extends NLPModule {
     super('wit')
   }
 
-  load (communication, config) { // TODO: remove communication
+  load (config) {
     this._apiToken = config && config.wit && config.wit.api_token
 
     if (!this._apiToken) {

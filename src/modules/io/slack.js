@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const IOModule = require('./io-module')
@@ -41,7 +41,7 @@ class Slack extends IOModule {
     slackbot.on('rtm_open', () => {})
   }
 
-  load (communication, config) { // TODO: remove communication
+  load (config) {
     if (!config.api_token) {
       throw new Error('Missing required API token')
     }

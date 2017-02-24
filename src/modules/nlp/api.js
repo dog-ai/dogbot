@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const NLPModule = require('./nlp-module')
@@ -33,7 +33,7 @@ class Api extends NLPModule {
     super('api')
   }
 
-  load (communication, config) { // TODO: remove communication
+  load (config) { // TODO: remove communication
     this._apiToken = config && config.api && config.api.api_token
 
     if (!this._apiToken) {

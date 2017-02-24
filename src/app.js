@@ -1,18 +1,16 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const SECRET = process.env.DOGBOT_SECRET
 const WATCHDOG_USEC = process.env.WATCHDOG_USEC
 
 const { Logger } = require('./utils')
-const { Bot } = require('./bot')
-
-const bot = new Bot()
+const Bot = require('./bot')
 
 // shutdown gracefully
 const stopAndExit = () => {
-  bot.stop()
+  Bot.stop()
     .then(() => Logger.info('Stopped dogbot'))
     .finally(() => process.exit(0))
 }
@@ -31,7 +29,7 @@ process.on('SIGABRT', () => process.exit(1)) // force immediate exit, i.e. syste
 
 Logger.info('Starting dogbot')
 
-bot.start(SECRET)
+Bot.start(SECRET)
   .then(() => {
     if (process.platform === 'linux') {
       require('./utils/systemd').sdNotify(0, 'READY=1', (error) => {
@@ -50,7 +48,7 @@ bot.start(SECRET)
         }
       }
 
-      bot.heartbeat(WATCHDOG_USEC, heartbeat)
+      Bot.heartbeat(WATCHDOG_USEC, heartbeat)
         .then((interval) => {
           Logger.info(`Sending a heartbeat every ${interval} seconds`)
         })
