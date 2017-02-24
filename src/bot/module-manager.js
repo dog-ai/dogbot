@@ -94,9 +94,9 @@ class Modules {
         module.unload()
 
         try {
-          delete require.cache[ require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js') ]
+          delete require.cache[ require.resolve(this.modulesDir + module.type.toLowerCase() + '/' + module.name + '.js') ]
         } catch (error) {
-          delete require.cache[ require.resolve('./' + module.type.toLowerCase() + '/' + module.name) ]
+          delete require.cache[ require.resolve(this.modulesDir + module.type.toLowerCase() + '/' + module.name) ]
         }
 
         _.remove(this.loaded, (_module) => _module.name === module.name)
