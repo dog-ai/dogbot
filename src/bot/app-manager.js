@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const APP_BLACKLIST = process.env.DOGBOT_APP_BLACKLIST
@@ -11,13 +11,13 @@ const { Logger } = require('../utils')
 
 const { AppNotAvailableError, AppAlreadyDisabledError } = require('./errors')
 
-const Databases = require('../databases')
-const Modules = require('../modules')
+const Databases = require('./database-manager')
+const Modules = require('./module-manager')
 
 const path = require('path')
 const fs = require('fs')
 
-const APP_DIR = path.join(__dirname, '/')
+const APP_DIR = path.join(__dirname, '/../apps/')
 
 class AppManager {
   constructor () {
@@ -28,7 +28,7 @@ class AppManager {
     this.available = (fs.readdirSync(APP_DIR) || [])
       .map(file => file.replace('.js', ''))
       .filter(file => file !== 'app-manager' && file !== 'errors' && file !== 'app')
-      .filter(file => !_.contains(this.blacklist, file))
+      .filter(file => !_.includes(this.blacklist, file))
   }
 
   enableApp (id, config) {
@@ -38,7 +38,7 @@ class AppManager {
         .then(() => this.enableApp(id, config))
     }
 
-    if (!_.contains(this.available, id)) {
+    if (!_.includes(this.available, id)) {
       return Promise.reject(new AppNotAvailableError())
     }
 

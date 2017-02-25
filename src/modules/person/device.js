@@ -467,7 +467,7 @@ device.prototype._isPresent = function (device) {
       return instance._findMacAddressesByDeviceId(device.id)
         .then(function (mac_addresses) {
           if (mac_addresses !== undefined) {
-            var values = _.pluck(mac_addresses, 'address');
+            var values = _.map(mac_addresses, 'address');
 
             return Bot.emitAsync('database:monitor:retrieveAll',
                 'SELECT * FROM arp WHERE mac_address IN (' + values.map(function () {
@@ -491,7 +491,7 @@ device.prototype._isPresent = function (device) {
 device.prototype._onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
   return Bot.emitAsync('database:person:retrieveAll', 'PRAGMA table_info(device)', [])
     .then(function (rows) {
-      device = _.pick(device, _.pluck(rows, 'name'));
+      device = _.pick(device, _.map(rows, 'name'));
 
       return instance._findById(device.id)
         .then(function (row) {

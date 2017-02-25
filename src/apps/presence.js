@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const App = require('./app')
@@ -10,8 +10,7 @@ class Presence extends App {
       [
         { type: 'sql', name: 'monitor' },
         { type: 'sql', name: 'person' },
-        { type: 'sql', name: 'performance' },
-        { type: 'nosql', name: 'performance' }
+        { type: 'sql', name: 'performance' }
       ],
       [
         { type: 'monitor', name: 'arp' },

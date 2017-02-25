@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
@@ -7,7 +7,8 @@ const Promise = require('bluebird')
 
 const { Logger } = require('../../utils')
 
-const { AppManager, AppNotAvailableError, AppAlreadyDisabledError } = require('../../apps')
+const AppManager = require('../app-manager')
+const { AppNotAvailableError, AppAlreadyDisabledError } = require('../errors')
 
 function configure (apps) {
   return Promise.mapSeries(_.keys(apps), id => {

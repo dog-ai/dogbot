@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 let AppManager
@@ -11,13 +11,13 @@ describe('App Manager', () => {
     td.replace('../../src/databases', td.object())
     td.replace('../../src/modules', td.object())
     td.replace(require('../../src/utils'), 'Logger', td.object([ 'error', 'info' ]))
-    AppManager = require('../../src/apps').AppManager
+    AppManager = require('../../src/bot/app-manager')
   })
 
   afterEach(() => {
     td.reset()
 
-    delete require.cache[ require.resolve('../../src/apps') ]
+    delete require.cache[ require.resolve('../../src/bot/app-manager') ]
   })
 
   context('when app not available', () => {

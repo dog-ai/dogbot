@@ -247,7 +247,7 @@ mac_address.prototype._onCreateOrUpdateMacAddressIncomingSynchronization = funct
     } else {
 
       // filter only required mac_address properties
-      mac_address = _.pick(mac_address, _.pluck(rows, 'name'));
+      mac_address = _.pick(mac_address, _.map(rows, 'name'));
       mac_address.is_synced = true;
 
       instance._findByAddress(mac_address.address, function (error, row) {

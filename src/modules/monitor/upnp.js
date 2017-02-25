@@ -52,7 +52,7 @@ upnp.prototype._discover = function (params, callback) {
     return instance._execMiniSSDPd()
         .then(function (upnps) {
             var urls = _.chain(upnps)
-                .pluck('location')
+              .map('location')
                 .uniq()
                 .map(function (location) {
                     return require('url').parse(location);

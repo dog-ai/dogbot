@@ -5,8 +5,6 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Bot = require('../bot')
-
 const { Logger } = require('../utils')
 
 const path = require('path')
@@ -14,7 +12,7 @@ const fs = require('fs')
 
 class Databases {
   constructor () {
-    this.databasesDir = path.join(__dirname, '/')
+    this.databasesDir = path.join(__dirname, '/../databases/')
 
     this.started = []
     this.types = (fs.readdirSync(this.databasesDir) || []).filter((type) => {

@@ -12,7 +12,7 @@ const fs = require('fs')
 
 class Modules {
   constructor () {
-    this.modulesDir = path.join(__dirname, '/')
+    this.modulesDir = path.join(__dirname, '/../modules/')
 
     this.loaded = []
     this.available = []
@@ -57,9 +57,9 @@ class Modules {
         try {
           var module
           try {
-            module = require('./' + type.toLowerCase() + '/' + name + '.js')
+            module = require(this.modulesDir + type.toLowerCase() + '/' + name + '.js')
           } catch (error) {
-            module = require('./' + type.toLowerCase() + '/' + name)
+            module = require(this.modulesDir + type.toLowerCase() + '/' + name)
           }
 
           module.load(config)
@@ -94,9 +94,9 @@ class Modules {
         module.unload()
 
         try {
-          delete require.cache[ require.resolve('./' + module.type.toLowerCase() + '/' + module.name + '.js') ]
+          delete require.cache[ require.resolve(this.modulesDir + module.type.toLowerCase() + '/' + module.name + '.js') ]
         } catch (error) {
-          delete require.cache[ require.resolve('./' + module.type.toLowerCase() + '/' + module.name) ]
+          delete require.cache[ require.resolve(this.modulesDir + module.type.toLowerCase() + '/' + module.name) ]
         }
 
         _.remove(this.loaded, (_module) => _module.name === module.name)
