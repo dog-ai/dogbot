@@ -107,8 +107,7 @@ class Worker {
     })
     this.queue.on('error', (error) => Logger.error(error))
 
-    return this.queue.client.keysAsync('*')
-      .mapSeries((key) => this.queue.client.delAsync(key))
+    return this.queue.client.flushdbAsync()
   }
 
   stop () {
