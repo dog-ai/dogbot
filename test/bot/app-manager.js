@@ -30,7 +30,7 @@ describe('App Manager', () => {
 
       const result = subject.enableApp(id)
 
-      return result.should.eventually.be.fulfilled
+      return result.should.eventually.be.rejected
     })
   })
 
