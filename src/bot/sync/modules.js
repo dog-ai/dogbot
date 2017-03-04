@@ -288,6 +288,7 @@ class Modules {
 
         var dateFormatPattern = 'YYYY/MM/DD'
         var isStats = false
+        var datePath
 
         if (companyResourceObj.period) {
           switch (companyResourceObj.period) {
@@ -297,6 +298,7 @@ class Modules {
               Logger.debug('Outgoing employee performance month stats: %s', JSON.stringify(companyResourceObj))
 
               dateFormatPattern = 'YYYY/MM'
+              datePath = date.format(dateFormatPattern) + '/'
               break
             case 'year':
               date = moment(companyResourceObj.period_start_date)
@@ -304,14 +306,17 @@ class Modules {
               Logger.debug('Outgoing employee performance year stats: %s', JSON.stringify(companyResourceObj))
 
               dateFormatPattern = 'YYYY'
+              datePath = date.format(dateFormatPattern) + '/'
               break
             case 'all-time':
               Logger.debug('Outgoing employee performance all-time stats: %s', JSON.stringify(companyResourceObj))
 
               dateFormatPattern = null
+              datePath = date.format(dateFormatPattern) + '/'
               break
             default:
               date = moment(companyResourceObj.period_start_date)
+              datePath = date.format(dateFormatPattern) + '/'
 
               Logger.debug('Outgoing employee performance day stats: %s', JSON.stringify(companyResourceObj))
           }
@@ -319,6 +324,7 @@ class Modules {
           isStats = true
         } else {
           date = companyResourceObj.created_date
+          datePath = date.format(dateFormatPattern) + '/'
 
           val = _.omit(val, [ 'updated_date' ])
 
@@ -329,7 +335,7 @@ class Modules {
           this._companyId + '/' +
           companyResourceObj.employee_id + '/' +
           companyResourceObj.name + '/' +
-          (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
+          datePath +
           (isStats ? '_stats' : ''))
 
         if (ENVIRONMENT !== 'local') {
