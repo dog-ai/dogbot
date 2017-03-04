@@ -318,7 +318,7 @@ class Modules {
 
           isStats = true
         } else {
-          date = moment(companyResourceObj.created_date)
+          date = companyResourceObj.created_date
 
           val = _.omit(val, [ 'updated_date' ])
 
