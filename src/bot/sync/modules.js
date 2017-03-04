@@ -267,8 +267,6 @@ class Modules {
       })
     } else {
       var val = _.omit(companyResourceObj, [ 'id', 'is_synced' ])
-      val.created_date = moment(val.created_date).format()
-      val.updated_date = moment(val.updated_date).format()
       if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
         val.last_presence_date = moment(val.last_presence_date).format()
       }
@@ -288,7 +286,6 @@ class Modules {
 
         var dateFormatPattern = 'YYYY/MM/DD'
         var isStats = false
-        var datePath
 
         if (companyResourceObj.period) {
           switch (companyResourceObj.period) {
@@ -298,7 +295,6 @@ class Modules {
               Logger.debug('Outgoing employee performance month stats: %s', JSON.stringify(companyResourceObj))
 
               dateFormatPattern = 'YYYY/MM'
-              datePath = date.format(dateFormatPattern) + '/'
               break
             case 'year':
               date = moment(companyResourceObj.period_start_date)
@@ -306,25 +302,21 @@ class Modules {
               Logger.debug('Outgoing employee performance year stats: %s', JSON.stringify(companyResourceObj))
 
               dateFormatPattern = 'YYYY'
-              datePath = date.format(dateFormatPattern) + '/'
               break
             case 'all-time':
               Logger.debug('Outgoing employee performance all-time stats: %s', JSON.stringify(companyResourceObj))
 
               dateFormatPattern = null
-              datePath = date.format(dateFormatPattern) + '/'
               break
             default:
               date = moment(companyResourceObj.period_start_date)
-              datePath = date.format(dateFormatPattern) + '/'
 
               Logger.debug('Outgoing employee performance day stats: %s', JSON.stringify(companyResourceObj))
           }
 
           isStats = true
         } else {
-          date = companyResourceObj.created_date
-          datePath = moment(date).format(dateFormatPattern) + '/'
+          date = moment(companyResourceObj.created_date)
 
           val = _.omit(val, [ 'updated_date' ])
 
@@ -335,7 +327,7 @@ class Modules {
           this._companyId + '/' +
           companyResourceObj.employee_id + '/' +
           companyResourceObj.name + '/' +
-          datePath +
+          (dateFormatPattern != null ? date.format(dateFormatPattern) + '/' : '') +
           (isStats ? '_stats' : ''))
 
         if (ENVIRONMENT !== 'local') {
