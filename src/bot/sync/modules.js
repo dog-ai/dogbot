@@ -267,6 +267,8 @@ class Modules {
       })
     } else {
       var val = _.omit(companyResourceObj, [ 'id', 'is_synced' ])
+      val.created_date = val.created_date.getTime() / 1000
+      val.updated_date = val.updated_date.getTime() / 1000
       if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
         val.last_presence_date = moment(val.last_presence_date).format()
       }
