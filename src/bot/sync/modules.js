@@ -324,7 +324,7 @@ class Modules {
           isStats = true
         } else {
           date = companyResourceObj.created_date
-          datePath = date.format(dateFormatPattern) + '/'
+          datePath = moment(date).format(dateFormatPattern) + '/'
 
           val = _.omit(val, [ 'updated_date' ])
 
