@@ -29,7 +29,7 @@ class Modules {
 
         // start an outgoing periodic sync job every 10 minutes
         Communication.on('sync:outgoing:periodic', this._periodicOutgoingSynchronization.bind(this))
-        const options = { schedule: '1 minutes' }
+        const options = { schedule: '10 minutes' }
         Worker.enqueueJob('sync:outgoing:periodic', null, options)
 
         // listen for incoming sync callback registrations
