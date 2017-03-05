@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const Module = require('../module')
@@ -58,6 +58,7 @@ function token (text, key) {
     return a
   }
 
+  /* eslint-disable */
   var a = text
   var b = key
   var d = b.split('.')
@@ -80,6 +81,7 @@ function token (text, key) {
   a < 0 && (a = (a & 2147483647) + 2147483648)
   a = a % 1E6
   return a.toString() + '.' + (a ^ b)
+  /* eslint-enable */
 }
 
 class Google extends Module {
