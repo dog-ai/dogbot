@@ -177,11 +177,11 @@ class Modules {
             const convert = (resource) => {
               if (resource !== null) {
                 if (resource.created_date !== undefined && resource.created_date !== null) {
-                  resource.created_date = new Date(resource.created_date)
+                  resource.created_date = new Date(resource.created_date * 1000)
                 }
 
                 if (resource.updated_date !== undefined && resource.updated_date !== null) {
-                  resource.updated_date = new Date(resource.updated_date)
+                  resource.updated_date = new Date(resource.updated_date * 1000)
                 }
 
                 if (resource.last_presence_date !== undefined && resource.last_presence_date !== null) {
@@ -267,8 +267,14 @@ class Modules {
       })
     } else {
       var val = _.omit(companyResourceObj, [ 'id', 'is_synced' ])
-      val.created_date = moment(val.created_date).format()
-      val.updated_date = moment(val.updated_date).format()
+      if (val.created_date) {
+        val.created_date = val.created_date.getTime() / 1000
+      }
+
+      if (val.updated_date) {
+        val.updated_date = val.updated_date.getTime() / 1000
+      }
+
       if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
         val.last_presence_date = moment(val.last_presence_date).format()
       }

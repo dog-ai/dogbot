@@ -14,4 +14,3 @@ class Brain extends App {
 }
 
 module.exports = new Brain()
-

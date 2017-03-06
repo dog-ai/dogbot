@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const LOG_TYPE = process.env.DOGBOT_LOG_TYPE || 'console'
@@ -85,7 +85,7 @@ switch (ENVIRONMENT) {
 
     const RollbarLogger = function (options) {
       this.name = 'rollbar'
-      this.level = options && options.level || 'error'
+      this.level = options && (options.level || 'error')
       this.handleExceptions = true
       this.humanReadableUnhandledException = true
     }
@@ -121,4 +121,3 @@ module.exports.stream = {
     Logger.info(message)
   }
 }
-

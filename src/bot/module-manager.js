@@ -107,7 +107,7 @@ class Modules {
       } catch (error) {
         Logger.debug('Unable to unload ' + module.type.toLowerCase() + ' module ' + module.name + ' because ' + error.message)
 
-        reject('unable to unload ' + module.type.toLowerCase() + ' module ' + module.name)
+        reject(new Error('unable to unload ' + module.type.toLowerCase() + ' module ' + module.name))
       }
     })
   }

@@ -288,4 +288,3 @@ class Voice extends IOModule {
 }
 
 module.exports = new Voice()
-
