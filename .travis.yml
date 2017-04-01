@@ -23,10 +23,6 @@ notifications:
     on_pull_requests: false
 before_script:
   - npm prune
-before_install:
-  - 'npm config set //npm.exec.sh:_authToken \${NPM_TOKEN}'
-install:
-  - 'npm install --"@dog-ai:registry=https://npm.exec.sh"'
 after_success:
   - npm run coveralls
   - npm run semantic-release
