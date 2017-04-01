@@ -14,6 +14,7 @@
   },
   "homepage": "https://github.com/dog-ai/dogbot#readme",
   "dependencies": {
+    "@dog-ai/github-wrapper": "^1.1.0",
     "apiai": "^4.0.0",
     "async": "^2.1.5",
     "bluebird": "^3.4.7",
@@ -55,12 +56,13 @@
     "eslint": "^3.15.0",
     "eslint-config-standard": "^7.0.0",
     "eslint-plugin-mocha": "^4.8.0",
-    "eslint-plugin-standard": "^2.1.1",
     "eslint-plugin-promise": "3.5.0",
+    "eslint-plugin-standard": "^2.1.1",
     "istanbul": "^0.4.5",
+    "last-release-github": "^1.1.1",
     "mocha": "^3.2.0",
-    "semantic-release": "^6.3.2",
     "pre-git": "^3.13.0",
+    "semantic-release": "^6.3.2",
     "standard": "^9.0.0",
     "testdouble": "^1.11.1"
   },
@@ -68,6 +70,9 @@
     "pre-git": {
       "commit-msg": "conventional"
     }
+  },
+  "release": {
+    "getLastRelease": "last-release-github"
   },
   "scripts": {
     "clean": "rm -rf var coverage",
