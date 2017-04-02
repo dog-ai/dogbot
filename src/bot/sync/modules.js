@@ -81,7 +81,7 @@ class Modules {
       })
     }
 
-    var now = moment().format()
+    var now = moment.utc().format()
 
     if (ENVIRONMENT !== 'local') {
       this._dogRef.update({ last_seen_date: now, updated_date: now })
@@ -113,7 +113,7 @@ class Modules {
       registerParams.outgoingFunction(outgoingParams, quickshot)
     }
 
-    var now = moment().format()
+    var now = moment.utc().format()
 
     if (ENVIRONMENT !== 'local') {
       this._dogRef.update({ last_seen_date: now, updated_date: now })
@@ -127,7 +127,7 @@ class Modules {
   _registerIncomingSynchronization (params, callback) {
     if (this._companyRef) {
       if (params.companyResource === 'employee_performances') {
-        var date = moment()
+        var date = moment.utc()
         var dateFormatPattern
         switch (params.period) {
           case 'day':
@@ -276,10 +276,10 @@ class Modules {
       }
 
       if (val.last_presence_date !== undefined && val.last_presence_date !== null) {
-        val.last_presence_date = moment(val.last_presence_date).format()
+        val.last_presence_date = moment.utc(val.last_presence_date).format()
       }
       if (val.last_scan_date !== undefined && val.last_scan_date !== null) {
-        val.last_scan_date = moment(val.last_scan_date).format()
+        val.last_scan_date = moment.utc(val.last_scan_date).format()
       }
 
       if (companyResourceObj.is_manual) {
@@ -298,14 +298,14 @@ class Modules {
         if (companyResourceObj.period) {
           switch (companyResourceObj.period) {
             case 'month':
-              date = moment(companyResourceObj.period_start_date)
+              date = moment.utc(companyResourceObj.period_start_date)
 
               Logger.debug('Outgoing employee performance month stats: %s', JSON.stringify(companyResourceObj))
 
               dateFormatPattern = 'YYYY/MM'
               break
             case 'year':
-              date = moment(companyResourceObj.period_start_date)
+              date = moment.utc(companyResourceObj.period_start_date)
 
               Logger.debug('Outgoing employee performance year stats: %s', JSON.stringify(companyResourceObj))
 
@@ -317,14 +317,14 @@ class Modules {
               dateFormatPattern = null
               break
             default:
-              date = moment(companyResourceObj.period_start_date)
+              date = moment.utc(companyResourceObj.period_start_date)
 
               Logger.debug('Outgoing employee performance day stats: %s', JSON.stringify(companyResourceObj))
           }
 
           isStats = true
         } else {
-          date = moment(companyResourceObj.created_date)
+          date = moment.utc(companyResourceObj.created_date)
 
           val = _.omit(val, [ 'updated_date' ])
 
@@ -373,7 +373,7 @@ class Modules {
             case 'employees':
             case 'devices':
               if (companyResourceObj.last_presence_date) {
-                priority = -moment(companyResourceObj.last_presence_date).valueOf()
+                priority = -moment.utc(companyResourceObj.last_presence_date).valueOf()
 
                 // if the employee/device is not present lets make sure he drops 12 minutes
                 if (companyResourceObj.is_present !== undefined && !companyResourceObj.is_present) {
