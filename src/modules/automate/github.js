@@ -49,7 +49,7 @@ class GitHub extends AutomateModule {
       'automate:github:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
     })
 
-    Bot.enqueueJob('automate:github:greenkeeper:merge', null, { schedule: '1 minutes' })
+    Bot.enqueueJob('automate:github:greenkeeper:merge', null, { schedule: '30 minutes' })
   }
 
   stop () {
