@@ -14,7 +14,7 @@ const mergeGreenkeeperPullRequests = function (params, callback) {
   const owner = this.options.greenkeeper.merge_owner
 
   return this.wrapper.mergeGreenkeeperPullRequests(owner)
-    .catch((error) => Logger.warn(error))
+    .catch((error) => Logger.error(error))
     .finally(() => callback())
 }
 
@@ -49,7 +49,7 @@ class GitHub extends AutomateModule {
       'automate:github:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
     })
 
-    Bot.enqueueJob('automate:github:greenkeeper:merge', null, { schedule: '30 minutes' })
+    Bot.enqueueJob('automate:github:greenkeeper:merge', null, { schedule: '1 minutes' })
   }
 
   stop () {

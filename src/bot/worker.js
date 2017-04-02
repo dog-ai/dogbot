@@ -145,14 +145,14 @@ class Worker {
         type = JobTypeEnum.NORMAL
     }
 
-    const job = this.queue.create(type, { event: event, params: params, callbacks: callbacks })
-    job.ttl(JobTypeTtlEnum[ type ])
+    const job = this.queue
+      .create(type, { event: event, params: params, callbacks: callbacks })
+      .ttl(JobTypeTtlEnum[ type ])
+      .unique(event)
 
     if (_options.retry) {
       job.attempts(_options.retry)
     }
-
-    job.unique(event)
 
     if (_options.schedule) {
       this.queue.every(_options.schedule, job)
