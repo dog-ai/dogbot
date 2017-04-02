@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/dog-ai/dogbot#readme",
   "dependencies": {
-    "@dog-ai/github-wrapper": "1.1.3",
+    "@dog-ai/github-wrapper": "1.1.4",
     "apiai": "4.0.1",
     "async": "2.2.0",
     "bluebird": "3.5.0",
