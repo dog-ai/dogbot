@@ -16,7 +16,7 @@
   "dependencies": {
     "@dog-ai/github-wrapper": "1.1.4",
     "apiai": "4.0.1",
-    "async": "2.2.0",
+    "async": "2.3.0",
     "bluebird": "3.5.0",
     "bluebird-retry": "0.10.1",
     "botkit": "0.5.2",
