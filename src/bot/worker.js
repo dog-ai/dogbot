@@ -105,7 +105,7 @@ class Worker {
     this.queue.on('job failed attempt', (id, error, attempts) => {
       Logger.debug('Job ' + id + ' failed ' + attempts + ' times')
     })
-    this.queue.on('error', (error) => Logger.error(error))
+    this.queue.on('error', (error) => Logger.warn(error))
 
     return this.queue.client.flushdbAsync()
   }
@@ -151,6 +151,8 @@ class Worker {
     if (_options.retry) {
       job.attempts(_options.retry)
     }
+
+    job.unique(event)
 
     if (_options.schedule) {
       this.queue.every(_options.schedule, job)
