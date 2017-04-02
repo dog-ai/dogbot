@@ -15,7 +15,7 @@ const mergeGreenkeeperPullRequests = function (params, callback) {
 
   return this.wrapper.mergeGreenkeeperPullRequests(owner)
     .catch((error) => Logger.error(error))
-    .finally(() => callback())
+    .finally(callback)
 }
 
 class Greenkeeper extends AutomationModule {
@@ -53,7 +53,7 @@ class Greenkeeper extends AutomationModule {
       'automation:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
     })
 
-    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '1 minutes' })
+    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '30 minutes' })
   }
 
   stop () {
