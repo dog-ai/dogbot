@@ -2,14 +2,14 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local'
+const ENVIRONMENT = process.env.ENVIRONMENT || 'local'
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID
 const URL = `https://${PROJECT_ID}.firebaseio.com`
 
 const Promise = require('bluebird')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 const moment = require('moment-timezone')
 

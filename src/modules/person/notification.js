@@ -8,7 +8,7 @@ const Bot = require('../../bot')
 
 const moment = require('moment')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 const _generatePushID = (function () {
   // Modeled after base64 web-safe chars, but ordered by ASCII.

@@ -4,6 +4,5 @@
 
 module.exports = {
   Locale: require('./locale'),
-  Logger: require('./logger'),
   retry: require('./retry')
 }

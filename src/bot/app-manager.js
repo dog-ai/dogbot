@@ -7,7 +7,7 @@ const APP_BLACKLIST = process.env.DOGBOT_APP_BLACKLIST
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const { Logger } = require('../utils')
+const Logger = require('modern-logger')
 
 const { AppNotAvailableError, AppAlreadyDisabledError } = require('./errors')
 

@@ -7,7 +7,7 @@ const Promise = require('bluebird')
 
 const Bot = require('../../bot')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 const moment = require('moment')
 
@@ -124,7 +124,7 @@ device.prototype._discover = function (macAddress, callback) {
             if (result.dns.hostname && result.dns.hostname.length > 0) {
               _device.name = result.dns.hostname;
             }
-            
+
             if (result.dhcps && result.dhcps.length > 0 && result.dhcps[0].hostname) {
               _device.name = result.dhcps[0].hostname;
             }

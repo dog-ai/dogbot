@@ -8,9 +8,11 @@ const Promise = require('bluebird')
 const TimeoutError = Promise.TimeoutError
 const locks = Promise.promisifyAll(require('locks'))
 
+const Logger = require('modern-logger')
+
 const Bot = require('../../bot')
 
-const { Locale, Logger } = require('../../utils')
+const { Locale } = require('../../utils')
 
 const createReadStream = require('fs').createReadStream
 const path = require('path')

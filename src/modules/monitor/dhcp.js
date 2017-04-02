@@ -10,7 +10,7 @@ const Promise = require('bluebird')
 
 const Bot = require('../../bot')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 class DHCP extends MonitorModule {
   constructor () {

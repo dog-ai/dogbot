@@ -8,7 +8,7 @@ const Promise = require('bluebird')
 const Worker = require('../worker')
 const Communication = require('../communication')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 const FirebaseQueue = require('firebase-queue')
 

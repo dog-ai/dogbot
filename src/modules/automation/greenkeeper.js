@@ -6,7 +6,7 @@ const GitHubAutomationModule = require('./github-automation-module')
 
 const Bot = require('../../bot')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 const GitHubWrapper = require('@dog-ai/github-wrapper')
 

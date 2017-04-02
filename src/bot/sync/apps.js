@@ -5,7 +5,7 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 const AppManager = require('../app-manager')
 const { AppNotAvailableError, AppAlreadyDisabledError } = require('../errors')

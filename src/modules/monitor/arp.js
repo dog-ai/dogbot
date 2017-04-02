@@ -6,9 +6,11 @@ const MonitorModule = require('./monitor-module')
 
 const Promise = require('bluebird')
 
+const Logger = require('modern-logger')
+
 const Bot = require('../../bot')
 
-const { Logger, retry } = require('../../utils')
+const { retry } = require('../../utils')
 
 class ARP extends MonitorModule {
   constructor () {

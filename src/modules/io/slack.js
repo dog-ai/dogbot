@@ -6,7 +6,9 @@ const IOModule = require('./io-module')
 
 const Promise = require('bluebird')
 
-const { Logger, Locale } = require('../../utils')
+const Logger = require('modern-logger')
+
+const { Locale } = require('../../utils')
 
 const Botkit = require('botkit')
 const slackbot = Botkit.slackbot({ log: false })

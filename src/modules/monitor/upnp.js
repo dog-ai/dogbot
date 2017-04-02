@@ -4,7 +4,7 @@
 
 const Bot = require('../../bot')
 
-const { Logger } = require('../../utils'),
+const Logger = require('modern-logger'),
     _ = require('lodash'),
     Promise = require('bluebird');
 

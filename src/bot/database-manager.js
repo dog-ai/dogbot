@@ -5,7 +5,7 @@
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const { Logger } = require('../utils')
+const Logger = require('modern-logger')
 
 const path = require('path')
 const fs = require('fs')

@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const ENVIRONMENT = process.env.DOGBOT_ENVIRONMENT || 'local'
+const ENVIRONMENT = process.env.ENVIRONMENT || 'local'
 
 const _ = require('lodash')
 const Promise = require('bluebird')
@@ -12,7 +12,7 @@ const Communication = require('../communication')
 
 const moment = require('moment-timezone')
 
-const { Logger } = require('../../utils')
+const Logger = require('modern-logger')
 
 class Modules {
   start (firebase, dogId, companyId) {

@@ -4,7 +4,7 @@
 
 const Promise = require('bluebird')
 
-const { Logger } = require('../utils')
+const Logger = require('modern-logger')
 
 const Sync = require('./sync')
 const Worker = require('./worker')
