@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const LOG_TYPE = process.env.DOGBOT_LOG_TYPE || 'file'
+const LOG_TYPE = process.env.DOGBOT_LOG_TYPE || 'console'
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
 
 const SECRET = process.env.DOGBOT_SECRET
