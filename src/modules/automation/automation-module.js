@@ -4,10 +4,10 @@
 
 const Module = require('../module')
 
-class AutomateModule extends Module {
+class AutomationModule extends Module {
   constructor (name) {
-    super('automate', name)
+    super('automation', name)
   }
 }
 
-module.exports = AutomateModule
+module.exports = AutomationModule

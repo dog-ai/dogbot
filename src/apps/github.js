@@ -7,7 +7,7 @@ const App = require('./app')
 class GitHub extends App {
   constructor () {
     super('github', [], [
-      { type: 'automate', name: 'github', optional: true }
+      { type: 'automation', name: 'greenkeeper', optional: true }
     ])
   }
 }

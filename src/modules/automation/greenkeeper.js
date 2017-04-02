@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const AutomateModule = require('./automate-module')
+const AutomationModule = require('./automation-module')
 
 const Bot = require('../../bot')
 
@@ -18,9 +18,9 @@ const mergeGreenkeeperPullRequests = function (params, callback) {
     .finally(() => callback())
 }
 
-class GitHub extends AutomateModule {
+class Greenkeeper extends AutomationModule {
   constructor () {
-    super('github')
+    super('greenkeeper')
   }
 
   load (options = {}) {
@@ -28,6 +28,10 @@ class GitHub extends AutomateModule {
 
     if (!this.options.api_token || !this.options.greenkeeper || !this.options.greenkeeper.merge_owner) {
       throw new Error('api token not available')
+    }
+
+    if (!this.options.greenkeeper || !this.options.greenkeeper.merge_owner) {
+      throw new Error('greenkeeper is not configured')
     }
 
     const token = this.options.api_token
@@ -46,17 +50,17 @@ class GitHub extends AutomateModule {
 
   start () {
     super.start({
-      'automate:github:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
+      'automation:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
     })
 
-    Bot.enqueueJob('automate:github:greenkeeper:merge', null, { schedule: '30 minutes' })
+    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '1 minutes' })
   }
 
   stop () {
-    Bot.dequeueJob('automate:github:greenkeeper:merge')
+    Bot.dequeueJob('automation:greenkeeper:merge')
 
     super.stop()
   }
 }
 
-module.exports = new GitHub()
+module.exports = new Greenkeeper()
