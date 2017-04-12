@@ -16,7 +16,7 @@ let transports
 if (LOG_TYPE === 'file') {
   transports = { console: [], file: [] }
 
-  transports[ 'file' ].push({
+  transports['file'].push({
     name: 'log', // http://stackoverflow.com/a/17374968
     level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
     filename: join(__dirname, '../var/log/dogbot.log'),
@@ -27,7 +27,7 @@ if (LOG_TYPE === 'file') {
   })
 
   if (LOG_LEVEL === 'debug') {
-    transports[ 'file' ].push({
+    transports['file'].push({
       name: 'tmp', // http://stackoverflow.com/a/17374968
       filename: join(__dirname, '../var/tmp/dogbot.log'),
       colorize: false,
@@ -38,6 +38,9 @@ if (LOG_TYPE === 'file') {
   }
 }
 Logger.configure({ transports, enableEmoji: false })
+
+const Locale = require('native-speaker')
+Locale.configure({ localePath: join(__dirname, '../locale') })
 
 const Bot = require('./bot')
 

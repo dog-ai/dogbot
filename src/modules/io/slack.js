@@ -8,7 +8,7 @@ const Promise = require('bluebird')
 
 const Logger = require('modern-logger')
 
-const { Locale } = require('../../utils')
+const Locale = require('native-speaker')
 
 const Botkit = require('botkit')
 const slackbot = Botkit.slackbot({ log: false })

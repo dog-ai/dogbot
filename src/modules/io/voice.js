@@ -9,10 +9,9 @@ const TimeoutError = Promise.TimeoutError
 const locks = Promise.promisifyAll(require('locks'))
 
 const Logger = require('modern-logger')
+const Locale = require('native-speaker')
 
 const Bot = require('../../bot')
-
-const { Locale } = require('../../utils')
 
 const createReadStream = require('fs').createReadStream
 const path = require('path')

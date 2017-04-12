@@ -3,6 +3,5 @@
  */
 
 module.exports = {
-  Locale: require('./locale'),
   retry: require('./retry')
 }
