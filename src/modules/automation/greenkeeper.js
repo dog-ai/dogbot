@@ -53,7 +53,7 @@ class Greenkeeper extends AutomationModule {
       'automation:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
     })
 
-    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '1 minutes' })
+    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '30 minutes' })
   }
 
   stop () {
