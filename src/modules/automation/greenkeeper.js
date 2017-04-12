@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const GitHubAutomationModule = require('./github-automation-module')
+const AutomationModule = require('./automation-module')
 
 const Bot = require('../../bot')
 
@@ -18,13 +18,17 @@ const mergeGreenkeeperPullRequests = function (params, callback) {
     .finally(callback)
 }
 
-class Greenkeeper extends GitHubAutomationModule {
+class Greenkeeper extends AutomationModule {
   constructor () {
     super('greenkeeper')
   }
 
   load (options = {}) {
-    super.load(options)
+    this.options = options
+
+    if (!this.options.api_token) {
+      throw new Error('api token not available')
+    }
 
     if (!this.options.greenkeeper || !this.options.greenkeeper.merge_owner) {
       throw new Error('greenkeeper is not configured')
@@ -32,6 +36,8 @@ class Greenkeeper extends GitHubAutomationModule {
 
     const token = this.options.api_token
     this.wrapper = new GitHubWrapper({ auth: { type: 'token', token } })
+
+    super.load(options)
   }
 
   unload () {
@@ -47,7 +53,7 @@ class Greenkeeper extends GitHubAutomationModule {
       'automation:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
     })
 
-    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '30 minutes' })
+    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '1 minutes' })
   }
 
   stop () {
