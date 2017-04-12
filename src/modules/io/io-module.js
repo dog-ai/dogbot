@@ -8,7 +8,7 @@ const UnknownIntentError = require('../nlp/errors/unknown-intent-error')
 
 const Bot = require('../../bot')
 
-const Locale = require('../../utils/locale')
+const Locale = require('native-speaker')
 
 class IOModule extends Module {
   constructor (name) {
