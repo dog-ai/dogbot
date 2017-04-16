@@ -4,7 +4,6 @@
 
 const LOG_TYPE = process.env.DOGBOT_LOG_TYPE || 'console'
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
-
 const SECRET = process.env.DOGBOT_SECRET
 const WATCHDOG_USEC = process.env.WATCHDOG_USEC
 
@@ -16,7 +15,7 @@ let transports
 if (LOG_TYPE === 'file') {
   transports = { console: [], file: [] }
 
-  transports['file'].push({
+  transports[ 'file' ].push({
     name: 'log', // http://stackoverflow.com/a/17374968
     level: LOG_LEVEL === 'debug' ? 'info' : LOG_LEVEL,
     filename: join(__dirname, '../var/log/dogbot.log'),
@@ -27,7 +26,7 @@ if (LOG_TYPE === 'file') {
   })
 
   if (LOG_LEVEL === 'debug') {
-    transports['file'].push({
+    transports[ 'file' ].push({
       name: 'tmp', // http://stackoverflow.com/a/17374968
       filename: join(__dirname, '../var/tmp/dogbot.log'),
       colorize: false,
@@ -42,52 +41,47 @@ Logger.configure({ transports, enableEmoji: false })
 const Locale = require('native-speaker')
 Locale.configure({ localePath: join(__dirname, '../locale') })
 
+const SdNotifyWrapper = require('@dog-ai/sdnotify-wrapper')
+const notifyReady = () => {
+  if (process.platform === 'linux') {
+    return SdNotifyWrapper.notify(false, 'READY=1')
+      .catch((error) => Logger.error(error))
+  }
+}
+const notifyHeartbeat = (callback = () => {}) => {
+  if (process.platform === 'linux') {
+    SdNotifyWrapper.notify(false, 'WATCHDOG=1')
+      .catch((error) => Logger.error(error))
+      .finally(() => callback())
+  } else {
+    callback()
+  }
+}
+
 const Bot = require('./bot')
 
-// shutdown gracefully
-const stopAndExit = () => {
+const shutdown = () => {
   Bot.stop()
     .then(() => Logger.info('Stopped dogbot'))
     .finally(() => process.exit(0))
 }
+const logErrorAndShutdown = (error) => Logger.error(error, () => process.exit(1))
 
-// log error and exit immediately
-const logErrorAndExit = (error) => {
-  Logger.error(error, () => process.exit(1))
-}
-
-process.on('uncaughtException', logErrorAndExit)
-process.on('unhandledRejection', logErrorAndExit)
-process.on('SIGINT', stopAndExit)
-process.on('SIGTERM', stopAndExit)
-process.on('SIGHUP', stopAndExit)
+process.on('uncaughtException', logErrorAndShutdown)
+process.on('unhandledRejection', logErrorAndShutdown)
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
+process.on('SIGHUP', shutdown)
 process.on('SIGABRT', () => process.exit(1)) // force immediate exit, i.e. systemd watchdog?
 
 Logger.info('Starting dogbot')
 
 Bot.start(SECRET)
+  .then(() => notifyReady())
   .then(() => {
-    if (process.platform === 'linux') {
-      require('./utils/systemd').sdNotify(0, 'READY=1', (error) => {
-        if (error) {
-          Logger.error(error.message, error)
-        }
-      })
-    }
-
     if (WATCHDOG_USEC) {
-      const heartbeat = (callback = () => {}) => {
-        if (process.platform === 'linux') {
-          require('./utils/systemd').sdNotify(0, 'WATCHDOG=1', callback)
-        } else {
-          callback()
-        }
-      }
-
-      Bot.heartbeat(WATCHDOG_USEC, heartbeat)
-        .then((interval) => {
-          Logger.info(`Sending a heartbeat every ${interval} seconds`)
-        })
+      return Bot.heartbeat(WATCHDOG_USEC, notifyHeartbeat)
+        .then((interval) => Logger.info(`Sending a heartbeat every ${interval} seconds`))
     }
   })
-  .catch((error) => logErrorAndExit(error))
+  .catch((error) => logErrorAndShutdown(error))
