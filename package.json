@@ -41,7 +41,7 @@
     "node-wit": "2.0.0",
     "redis": "2.7.1",
     "request": "2.81.0",
-    "sendgrid": "5.0.0",
+    "sendgrid": "5.0.1",
     "snowboy": "1.1.0",
     "split": "1.0.0",
     "sqlite3": "3.1.8",
