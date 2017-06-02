@@ -63,7 +63,7 @@
     "pre-git": "3.14.0",
     "semantic-release": "6.3.2",
     "standard": "9.0.2",
-    "testdouble": "2.1.2"
+    "testdouble": "3.0.0"
   },
   "config": {
     "pre-git": {
