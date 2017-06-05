@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "babel-eslint": "7.2.1",
-    "chai": "3.5.0",
+    "chai": "4.0.2",
     "chai-as-promised": "6.0.0",
     "coveralls": "2.13.0",
     "eslint": "3.19.0",
