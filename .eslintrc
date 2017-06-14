@@ -1,22 +1,11 @@
 {
-  "extends": [
-    "standard"
-  ],
-  "parser": "babel-eslint",
-  "plugins": [
-    "mocha"
-  ],
-  "globals": {
-    "describe": true,
-    "it": true,
-    "expect": true,
-    "request": true,
-    "before": true,
-    "beforeEach": true,
-    "after": true,
-    "afterEach": true,
-    "mockery": true,
-    "sinon": true,
-    "td": true
+  "extends": "eslint-config-hfreire",
+  "rules": {
+   "node/no-deprecated-api": "off", 
+   "promise/catch-or-return": "off",
+   "unicorn/no-process-exit": "off",
+   "promise/no-callback-in-promise": "off",
+   "unicorn/no-abusive-eslint-disable": "off",
+   "unicorn/no-new-buffer": "off"
   }
 }
