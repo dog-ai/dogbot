@@ -51,7 +51,7 @@
     "chai": "3.5.0",
     "chai-as-promised": "6.0.0",
     "coveralls": "2.13.0",
-    "eslint": "3.19.0",
+    "eslint": "4.1.0",
     "eslint-config-hfreire": "1.0.6",
     "eslint-plugin-import": "2.3.0",
     "eslint-plugin-json": "1.2.0",
