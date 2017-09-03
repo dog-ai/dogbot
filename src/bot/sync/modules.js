@@ -267,11 +267,11 @@ class Modules {
       })
     } else {
       var val = _.omit(companyResourceObj, [ 'id', 'is_synced' ])
-      if (val.created_date) {
+      if (val.created_date && _.isDate(val.created_date)) {
         val.created_date = val.created_date.getTime() / 1000
       }
 
-      if (val.updated_date) {
+      if (val.updated_date && _.isDate(val.updated_date)) {
         val.updated_date = val.updated_date.getTime() / 1000
       }
 
