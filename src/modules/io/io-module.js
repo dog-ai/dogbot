@@ -6,7 +6,7 @@ const Module = require('../module')
 
 const UnknownIntentError = require('../nlp/errors/unknown-intent-error')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const Locale = require('native-speaker')
 
@@ -16,14 +16,14 @@ class IOModule extends Module {
   }
 
   _onVoiceInput (voice) {
-    return Bot.emitAsync('nlp:intent:speech', voice)
+    return Server.emitAsync('nlp:intent:speech', voice)
       .then(({ event, params }) => {
         if (params.text) {
           return params.text
         }
 
         if (event) {
-          return Bot.emitAsync(event, params)
+          return Server.emitAsync(event, params)
             .then((text) => text)
         }
       })
@@ -31,14 +31,14 @@ class IOModule extends Module {
   }
 
   _onTextInput (text) {
-    return Bot.emitAsync('nlp:intent:text', text)
+    return Server.emitAsync('nlp:intent:text', text)
       .then(({ event, params }) => {
         if (params.text) {
           return params.text
         }
 
         if (event) {
-          return Bot.emitAsync(event, params)
+          return Server.emitAsync(event, params)
             .then((text) => text)
         }
       })

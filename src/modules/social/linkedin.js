@@ -7,7 +7,7 @@ const SocialModule = require('./social-module')
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const moment = require('moment')
 
@@ -80,19 +80,19 @@ class LinkedIn extends SocialModule {
       'social:linkedin:company:import:auto': this._autoImportCompany.bind(this)
     })
 
-    Bot.emit('sync:outgoing:quickshot:register', {
+    Server.emit('sync:outgoing:quickshot:register', {
       companyResource: 'apps',
       registerEvents: [ 'social:linkedin:config:update' ],
       outgoingFunction: this._onConfigOutgoingSynchronization.bind(this)
     })
 
-    Bot.enqueueJob('social:linkedin:profile:import:auto', null, { schedule: '6 hours' })
-    Bot.enqueueJob('social:linkedin:company:import:auto', null, { schedule: '6 hours' })
+    Server.enqueueJob('social:linkedin:profile:import:auto', null, { schedule: '6 hours' })
+    Server.enqueueJob('social:linkedin:company:import:auto', null, { schedule: '6 hours' })
   }
 
   stop () {
-    Bot.dequeueJob('social:linkedin:profile:import:auto')
-    Bot.dequeueJob('social:linkedin:company:import:auto')
+    Server.dequeueJob('social:linkedin:profile:import:auto')
+    Server.dequeueJob('social:linkedin:company:import:auto')
 
     super.stop()
   }
@@ -141,7 +141,7 @@ class LinkedIn extends SocialModule {
 
                 return this._updateEmployeeById(employee.id, employee)
                   .then(() => {
-                    Bot.emit('person:employee:update', employee)
+                    Server.emit('person:employee:update', employee)
                   })
               }
             })
@@ -156,7 +156,7 @@ class LinkedIn extends SocialModule {
 
                 return this._updateEmployeeById(employee.id, employee)
                   .then(() => {
-                    Bot.emit('person:employee:update', employee)
+                    Server.emit('person:employee:update', employee)
                   })
               } else {
                 employee = {}
@@ -166,7 +166,7 @@ class LinkedIn extends SocialModule {
 
                 return this._addEmployee(employee)
                   .then(() => {
-                    Bot.emit('person:employee:update', employee)
+                    Server.emit('person:employee:update', employee)
                   })
               }
             })
@@ -187,7 +187,7 @@ class LinkedIn extends SocialModule {
     return this._findAllEmployeesBeforeLinkedInLastImportDate(linkedInLastImportDate)
       .mapSeries((employee) => {
         if (employee.linkedin_profile_url) {
-          Bot.enqueueJob('social:linkedin:profile:import', {
+          Server.enqueueJob('social:linkedin:profile:import', {
             employee_id: employee.id,
             employee_linkedin_profile_url: employee.linkedin_profile_url
           })
@@ -255,13 +255,13 @@ class LinkedIn extends SocialModule {
         })
           .then(() => {
             _.forEach(employeeUrls, (employeeUrl) => {
-              Bot.enqueueJob('social:linkedin:profile:import', { employee_linkedin_profile_url: employeeUrl })
+              Server.enqueueJob('social:linkedin:profile:import', { employee_linkedin_profile_url: employeeUrl })
             })
           })
           .then(() => {
             this.config.last_import_date = new Date()
 
-            Bot.emit('social:linkedin:config:update')
+            Server.emit('social:linkedin:config:update')
           })
           .then(() => {
             return callback(null, employeeUrls)
@@ -273,7 +273,7 @@ class LinkedIn extends SocialModule {
 
   _autoImportCompany (params, callback) {
     if (!this.config.last_import_date || moment(this.config.last_import_date).isBefore(moment().subtract(1, 'week'))) {
-      Bot.enqueueJob('social:linkedin:company:import')
+      Server.enqueueJob('social:linkedin:company:import')
     }
 
     callback()

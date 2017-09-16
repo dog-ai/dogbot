@@ -12,7 +12,7 @@ module.exports = {
     var _this = this
 
     _.forEach(events, function (fn, event) {
-      Bot.on(event, fn)
+      Server.on(event, fn)
       _.extend(_this.events, events)
     })
   },
@@ -21,7 +21,7 @@ module.exports = {
     var _this = this
 
     _.forEach(events, function (event) {
-      Bot.removeListener(event, _this.events[ event ])
+      Server.removeListener(event, _this.events[ event ])
       delete _this.events[ event ]
     })
   }

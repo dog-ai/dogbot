@@ -7,7 +7,7 @@ const MonitorModule = require('./monitor-module')
 const _ = require('lodash')
 const Promise = require('bluebird')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const { retry } = require('../../utils')
 
@@ -28,11 +28,11 @@ class IP extends MonitorModule {
     })
 
     const options = { schedule: '1 minute', priority: 'low' }
-    Bot.enqueueJob('monitor:ip:discover', null, options)
+    Server.enqueueJob('monitor:ip:discover', null, options)
   }
 
   stop () {
-    Bot.dequeueJob('monitor:ip:discover')
+    Server.dequeueJob('monitor:ip:discover')
 
     super.stop()
   }
@@ -64,7 +64,7 @@ class IP extends MonitorModule {
     var date = new Date(new Date().setSeconds(new Date().getSeconds() - 10))
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return Bot.emitAsync('database:monitor:retrieveOne',
+    return Server.emitAsync('database:monitor:retrieveOne',
       'SELECT * FROM ip WHERE ip_address = ? AND updated_date > Datetime(?)', [ service.ip_address, updatedDate ])
       .then((row) => {
         if (row === undefined) {
@@ -157,7 +157,7 @@ class IP extends MonitorModule {
     var now = new Date()
     return this._deleteAllIPBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
       (ip) => {
-        Bot.emit('monitor:ipAddress:delete', ip.ip_address)
+        Server.emit('monitor:ipAddress:delete', ip.ip_address)
       })
   }
 }

@@ -8,7 +8,7 @@ const DHCPRL_UNIX_SOCKET = '/var/run/dhcprl.sock'
 
 const Promise = require('bluebird')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const Logger = require('modern-logger')
 
@@ -31,11 +31,11 @@ class DHCP extends MonitorModule {
     })
 
     const options = { schedule: '1 minute' }
-    Bot.enqueueJob('monitor:dhcp:discover', null, options)
+    Server.enqueueJob('monitor:dhcp:discover', null, options)
   }
 
   stop () {
-    Bot.dequeueJob('monitor:dhcp:discover')
+    Server.dequeueJob('monitor:dhcp:discover')
 
     super.stop()
   }
@@ -108,7 +108,7 @@ class DHCP extends MonitorModule {
 
     return this._deleteAllDHCPBeforeDate(new Date(now.setHours(now.getHours() - 24)))
       .mapSeries((dhcp) => {
-        Bot.emit('monitor:dhcp:delete', dhcp)
+        Server.emit('monitor:dhcp:delete', dhcp)
       })
   }
 }

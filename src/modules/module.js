@@ -4,7 +4,7 @@
 
 const _ = require('lodash')
 
-const Bot = require('../bot')
+const Server = require('../server')
 
 class Module {
   constructor (type, name) {
@@ -40,7 +40,7 @@ class Module {
   }
 
   _startListening (events = {}) {
-    _.forEach(events, (fn, event) => Bot.on(event, fn))
+    _.forEach(events, (fn, event) => Server.on(event, fn))
   }
 
   _stopListening () {
@@ -49,7 +49,7 @@ class Module {
     }
 
     _.forEach(this.events, (fn, event) => {
-      Bot.removeListener(event, fn)
+      Server.removeListener(event, fn)
       delete this.events[ event ]
     })
   }

@@ -8,7 +8,7 @@ const Promise = require('bluebird')
 
 const Logger = require('modern-logger')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const { retry } = require('../../utils')
 
@@ -29,11 +29,11 @@ class ARP extends MonitorModule {
     })
 
     const options = { schedule: '1 minute', retry: 6 }
-    Bot.enqueueJob('monitor:arp:discover', null, options)
+    Server.enqueueJob('monitor:arp:discover', null, options)
   }
 
   stop () {
-    Bot.dequeueJob('monitor:arp:discover')
+    Server.dequeueJob('monitor:arp:discover')
 
     super.stop()
   }
@@ -42,12 +42,12 @@ class ARP extends MonitorModule {
     return this._findARPByIPAddress(ip.ip_address)
       .then((arp) => {
         if (!arp) {
-          Bot.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address)
+          Server.emit('worker:job:enqueue', 'monitor:arp:resolve', ip.ip_address)
         } else {
           arp.updated_date = new Date()
 
           return this._updateARPByIPAddressAndMACAddress(arp.ip_address, arp.mac_address, arp)
-            .then(() => Bot.emit('monitor:arp:update', arp))
+            .then(() => Server.emit('monitor:arp:update', arp))
         }
       })
   }
@@ -56,18 +56,18 @@ class ARP extends MonitorModule {
     return this._findARPByMACAddress(dhcp.mac_address)
       .then((arp) => {
         if (!arp) {
-          Bot.enqueueJob('monitor:arp:reverse', dhcp.mac_address)
+          Server.enqueueJob('monitor:arp:reverse', dhcp.mac_address)
         } else {
           arp.updated_date = new Date()
 
           return this._updateARPByIPAddressAndMACAddress(arp.ip_address, arp.mac_address, arp)
-            .then(() => Bot.emit('monitor:arp:update', arp))
+            .then(() => Server.emit('monitor:arp:update', arp))
         }
       })
   }
 
   _discover (params, callback) {
-    Bot.emit('monitor:arp:discover:begin')
+    Server.emit('monitor:arp:discover:begin')
 
     return retry(() => this._execArpScan(), {
       timeout: 50000,
@@ -82,7 +82,7 @@ class ARP extends MonitorModule {
       .then(this._clean.bind(this))
       .then(() => callback())
       .catch(callback)
-      .finally(() => Bot.emit('monitor:arp:discover:finish'))
+      .finally(() => Server.emit('monitor:arp:discover:finish'))
   }
 
   _reverse (macAddress, callback) {
@@ -125,7 +125,7 @@ class ARP extends MonitorModule {
     const now = new Date()
 
     return this._deleteAllARPBeforeDate(new Date(new Date().setMinutes(now.getMinutes() - 5)))
-      .mapSeries((arp) => Bot.emit('monitor:arp:delete', arp))
+      .mapSeries((arp) => Server.emit('monitor:arp:delete', arp))
   }
 
   _execArpScan () {

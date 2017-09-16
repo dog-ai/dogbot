@@ -17,7 +17,7 @@ const Modules = require('./module-manager')
 const path = require('path')
 const fs = require('fs')
 
-const APP_DIR = path.join(__dirname, '/../apps/')
+const APP_DIR = path.join(__dirname, '/../../share/apps')
 
 class AppManager {
   constructor () {
@@ -26,7 +26,7 @@ class AppManager {
     this.enabled = []
 
     this.available = (fs.readdirSync(APP_DIR) || [])
-      .map(file => file.replace('.js', ''))
+      .map(file => file.replace('.json', ''))
       .filter(file => file !== 'app-manager' && file !== 'errors' && file !== 'app')
       .filter(file => !_.includes(this.blacklist, file))
   }
@@ -42,7 +42,7 @@ class AppManager {
       return Promise.reject(new AppNotAvailableError())
     }
 
-    const app = require(APP_DIR + id)
+    const app = require(`${APP_DIR}/${id}.json`)
     let promises = []
 
     _.forEach(app.databases, (database) => {

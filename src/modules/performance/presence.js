@@ -6,7 +6,7 @@ const PerformanceModule = require('./performance-module')
 
 const _ = require('lodash')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const moment = require('moment')
 
@@ -18,13 +18,13 @@ const createPresence = (presence) => {
   const keys = _.keys(presence);
   const values = _.values(presence);
 
-  return Bot.emitAsync('database:performance:create',
+  return Server.emitAsync('database:performance:create',
     'INSERT INTO presence (' + keys + ') VALUES (' + values.map(() => '?') + ');', values)
     .catch((error) => {})
 }
 
 const findLatestPresenceByEmployeeId = (id) => {
-  return Bot.emitAsync('database:performance:retrieveOne',
+  return Server.emitAsync('database:performance:retrieveOne',
     'SELECT * from presence WHERE employee_id = ? ORDER BY created_date DESC;', [ id ])
     .then(function (row) {
       if (row) {
@@ -36,13 +36,13 @@ const findLatestPresenceByEmployeeId = (id) => {
 }
 
 const enqueueStatsUpdateTask = (params, callback) => {
-  const companyId = Bot.getCompanyId()
+  const companyId = Server.getCompanyId()
 
   if (!companyId) {
     callback()
   }
 
-  Bot.enqueueTask('performance:presence:stats:update', [ companyId ])
+  Server.enqueueTask('performance:presence:stats:update', [ companyId ])
     .then(() => callback())
     .catch((error) => callback(error))
 }
@@ -69,7 +69,7 @@ const addPresence = (employee) => {
 };
 
 const onOutgoingPresenceSynchronization = (params, callback) => {
-  Bot.emit('database:performance:retrieveOneByOne',
+  Server.emit('database:performance:retrieveOneByOne',
     'SELECT * FROM presence WHERE is_synced = 0', [], (error, row) => {
       if (!error) {
         if (row !== undefined) {
@@ -79,7 +79,7 @@ const onOutgoingPresenceSynchronization = (params, callback) => {
 
           callback(null, row, function (error) {
             if (!error) {
-              Bot.emit('database:performance:update',
+              Server.emit('database:performance:update',
                 'UPDATE presence SET is_synced = 1 WHERE id = ?', [ row.id ])
             }
           })
@@ -102,16 +102,16 @@ class Presence extends PerformanceModule {
     })
 
     const options = { schedule: '6 hours' }
-    Bot.enqueueJob('performance:presence:stats:update', null, options)
+    Server.enqueueJob('performance:presence:stats:update', null, options)
 
-    Bot.emit('sync:outgoing:periodic:register', {
+    Server.emit('sync:outgoing:periodic:register', {
       companyResource: 'employee_performances',
       event: 'sync:outgoing:performance:presence'
     })
   }
 
   stop () {
-    Bot.dequeueJob('performance:presence:stats:update')
+    Server.dequeueJob('performance:presence:stats:update')
 
     super.stop()
   }

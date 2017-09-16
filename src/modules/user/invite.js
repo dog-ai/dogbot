@@ -4,7 +4,7 @@
 
 const Module = require('../module')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const moment = require('moment')
 
@@ -18,7 +18,7 @@ class Invite extends Module {
       'user:invite': this._invite.bind(this)
     })
 
-    Bot.emit('sync:outgoing:quickshot:register', {
+    Server.emit('sync:outgoing:quickshot:register', {
       companyResource: 'invites',
       registerEvents: [ 'user:invite:sent' ],
       outgoingFunction: this._onInviteSent.bind(this)
@@ -53,14 +53,14 @@ class Invite extends Module {
       ':url': [ invite.url ]
     }
 
-    Bot.emitAsync('email:send', email, templateId, substitutions)
+    Server.emitAsync('email:send', email, templateId, substitutions)
       .then(() => {
         invite.sent_date = moment().format()
 
         callback()
       })
       .catch(callback)
-      .finally(() => Bot.emit('user:invite:sent', invite))
+      .finally(() => Server.emit('user:invite:sent', invite))
   }
 
   _encodeEnvelop (envelope) {

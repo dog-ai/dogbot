@@ -1,0 +1,10 @@
+{
+  "id": "slack",
+  "databases": [],
+  "modules": [
+    {
+      "type": "io",
+      "name": "slack"
+    }
+  ]
+}

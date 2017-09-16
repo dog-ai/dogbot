@@ -1,0 +1,11 @@
+{
+  "id": "github",
+  "databases": [],
+  "modules": [
+    {
+      "type": "automation",
+      "name": "greenkeeper",
+      "optional": true
+    }
+  ]
+}

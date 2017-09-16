@@ -58,10 +58,10 @@ const notifyHeartbeat = (callback = () => {}) => {
   }
 }
 
-const Bot = require('./bot')
+const Server = require('./server')
 
 const shutdown = () => {
-  Bot.stop()
+  Server.stop()
     .then(() => Logger.info('Stopped dogbot'))
     .finally(() => process.exit(0))
 }
@@ -76,11 +76,11 @@ process.on('SIGABRT', () => process.exit(1)) // force immediate exit, i.e. syste
 
 Logger.info('Starting dogbot')
 
-Bot.start(SECRET)
+Server.start(SECRET)
   .then(() => notifyReady())
   .then(() => {
     if (WATCHDOG_USEC) {
-      return Bot.heartbeat(WATCHDOG_USEC, notifyHeartbeat)
+      return Server.heartbeat(WATCHDOG_USEC, notifyHeartbeat)
         .then((interval) => Logger.info(`Sending a heartbeat every ${interval} seconds`))
     }
   })

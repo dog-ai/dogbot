@@ -7,7 +7,7 @@ const Promise = require('bluebird')
 
 const Module = require('../module')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 class MonitorModule extends Module {
   constructor (name) {
@@ -20,14 +20,14 @@ class MonitorModule extends Module {
         if (!row) {
           return this._createARP(arp.ip_address, arp.mac_address, arp)
             .then(() => {
-              Bot.emit('monitor:arp:create', arp)
+              Server.emit('monitor:arp:create', arp)
             })
         } else {
           row.updated_date = new Date()
 
           return this._updateARPByIPAddressAndMACAddress(row.ip_address, row.mac_address, row)
             .then(() => {
-              Bot.emit('monitor:arp:update', row)
+              Server.emit('monitor:arp:update', row)
             })
         }
       })
@@ -47,7 +47,7 @@ class MonitorModule extends Module {
     var keys = _.keys(_arp)
     var values = _.values(_arp)
 
-    return Bot.emitAsync('database:monitor:create',
+    return Server.emitAsync('database:monitor:create',
       'INSERT INTO arp (' + keys + ') VALUES (' + values.map(() => {
         return '?'
       }) + ')',
@@ -69,7 +69,7 @@ class MonitorModule extends Module {
     var keys = _.keys(_arp)
     var values = _.values(_arp)
 
-    return Bot.emitAsync('database:monitor:update',
+    return Server.emitAsync('database:monitor:update',
       'UPDATE arp SET ' + keys.map((key) => {
         return key + ' = ?'
       }) + ' WHERE ip_address = \'' + ipAddress + '\' AND mac_address = \'' + macAddress + '\'',
@@ -78,7 +78,7 @@ class MonitorModule extends Module {
   }
 
   _findARPByIPAddress (ipAddress) {
-    return Bot.emitAsync('database:monitor:retrieveOne', 'SELECT * FROM arp WHERE ip_address = ?', [ ipAddress ])
+    return Server.emitAsync('database:monitor:retrieveOne', 'SELECT * FROM arp WHERE ip_address = ?', [ ipAddress ])
       .then((row) => {
         if (row !== undefined) {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
@@ -89,7 +89,7 @@ class MonitorModule extends Module {
   }
 
   _findARPByMACAddress (macAddress) {
-    return Bot.emitAsync('database:monitor:retrieveOne', 'SELECT * FROM arp WHERE mac_address = ?', [ macAddress ])
+    return Server.emitAsync('database:monitor:retrieveOne', 'SELECT * FROM arp WHERE mac_address = ?', [ macAddress ])
       .then((row) => {
         if (row !== undefined) {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
@@ -102,13 +102,13 @@ class MonitorModule extends Module {
   _deleteAllARPBeforeDate (date) {
     var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return Bot.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM arp WHERE updated_date < Datetime(?)', [ updatedDate ])
+    return Server.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM arp WHERE updated_date < Datetime(?)', [ updatedDate ])
       .then((rows) => {
         return Promise.mapSeries(rows, (row) => {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
           row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
 
-          return Bot.emitAsync('database:monitor:delete', 'DELETE FROM arp WHERE id = ?', [ row.id ])
+          return Server.emitAsync('database:monitor:delete', 'DELETE FROM arp WHERE id = ?', [ row.id ])
         })
           .then(() => {
             return rows
@@ -122,13 +122,13 @@ class MonitorModule extends Module {
         if (row === undefined) {
           return this._createBonjour(bonjour)
             .then(() => {
-              return Bot.emitAsync('monitor:bonjour:create', bonjour)
+              return Server.emitAsync('monitor:bonjour:create', bonjour)
             })
         } else {
           bonjour.updated_date = new Date()
           return this._updateBonjourByTypeAndName(bonjour.type, bonjour.name, bonjour)
             .then(() => {
-              return Bot.emitAsync('monitor:bonjour:update', bonjour)
+              return Server.emitAsync('monitor:bonjour:update', bonjour)
             })
         }
       })
@@ -148,7 +148,7 @@ class MonitorModule extends Module {
     var keys = _.keys(_bonjour)
     var values = _.values(_bonjour)
 
-    return Bot.emitAsync('database:monitor:create',
+    return Server.emitAsync('database:monitor:create',
       'INSERT INTO bonjour (' + keys + ') VALUES (' + values.map(() => {
         return '?'
       }) + ')',
@@ -159,7 +159,7 @@ class MonitorModule extends Module {
   }
 
   _findBonjourByTypeAndName (type, name) {
-    return Bot.emitAsync('database:monitor:retrieveOne',
+    return Server.emitAsync('database:monitor:retrieveOne',
       'SELECT * FROM bonjour WHERE type = ? AND name = ?', [ type, name ])
       .then((row) => {
         if (row !== undefined) {
@@ -185,7 +185,7 @@ class MonitorModule extends Module {
     var values = _.values(_bonjour)
 
     // TODO: Fix this query by http://stackoverflow.com/questions/603572/how-to-properly-escape-a-single-quote-for-a-sqlite-database
-    return Bot.emitAsync('database:monitor:update',
+    return Server.emitAsync('database:monitor:update',
       'UPDATE bonjour SET ' + keys.map((key) => {
         return key + ' = ?'
       }) + ' WHERE type = \'' + type + '\' AND name = \'' + name + '\'',
@@ -195,13 +195,13 @@ class MonitorModule extends Module {
   _deleteAllBonjourBeforeDate (oldestDate) {
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return Bot.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM bonjour WHERE updated_date < Datetime(?)', [ updatedDate ])
+    return Server.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM bonjour WHERE updated_date < Datetime(?)', [ updatedDate ])
       .then((rows) => {
         return Promise.mapSeries(rows, (row) => {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
           row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
 
-          return Bot.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?', [ row.id ])
+          return Server.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?', [ row.id ])
         })
           .then(() => {
             return rows
@@ -215,14 +215,14 @@ class MonitorModule extends Module {
         if (row === undefined) {
           return this._createDHCP(dhcp)
             .then(() => {
-              Bot.emit('monitor:dhcp:create', dhcp)
+              Server.emit('monitor:dhcp:create', dhcp)
             })
         } else {
           dhcp.updated_date = new Date()
 
           return this._updateDHCPByMACAddressAndHostname(dhcp.mac_address, dhcp.hostname, dhcp)
             .then(() => {
-              Bot.emit('monitor:dhcp:update', dhcp)
+              Server.emit('monitor:dhcp:update', dhcp)
             })
         }
       })
@@ -242,7 +242,7 @@ class MonitorModule extends Module {
     var keys = _.keys(_dhcp)
     var values = _.values(_dhcp)
 
-    return Bot.emitAsync('database:monitor:create',
+    return Server.emitAsync('database:monitor:create',
       'INSERT INTO dhcp (' + keys + ') VALUES (' + values.map(() => {
         return '?'
       }) + ')',
@@ -250,7 +250,7 @@ class MonitorModule extends Module {
   }
 
   _findDHCPByMACAddressAndHostname (macAddress, hostname) {
-    return Bot.emitAsync('database:monitor:retrieveOne',
+    return Server.emitAsync('database:monitor:retrieveOne',
       'SELECT * FROM dhcp WHERE mac_address = ? AND hostname = ?', [ macAddress, hostname ])
       .then((row) => {
         if (row !== undefined) {
@@ -276,7 +276,7 @@ class MonitorModule extends Module {
     var values = _.values(_dhcp)
 
     // TODO: Fix this query by http://stackoverflow.com/questions/603572/how-to-properly-escape-a-single-quote-for-a-sqlite-database
-    return Bot.emitAsync('database:monitor:update',
+    return Server.emitAsync('database:monitor:update',
       'UPDATE dhcp SET ' + keys.map((key) => {
         return key + ' = ?'
       }) + ' WHERE mac_address = \'' + macAddress + '\' AND hostname = \'' + hostname + '\'',
@@ -286,13 +286,13 @@ class MonitorModule extends Module {
   _deleteAllDHCPBeforeDate (oldestDate) {
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return Bot.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM dhcp WHERE updated_date < Datetime(?)', [ updatedDate ])
+    return Server.emitAsync('database:monitor:retrieveAll', 'SELECT * FROM dhcp WHERE updated_date < Datetime(?)', [ updatedDate ])
       .then((rows) => {
         return Promise.mapSeries(rows, (row) => {
           row.created_date = new Date(row.created_date.replace(' ', 'T'))
           row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
 
-          return Bot.emitAsync('database:monitor:delete', 'DELETE FROM dhcp WHERE id = ?', [ row.id ])
+          return Server.emitAsync('database:monitor:delete', 'DELETE FROM dhcp WHERE id = ?', [ row.id ])
         })
           .then(() => {
             return rows
@@ -306,13 +306,13 @@ class MonitorModule extends Module {
         if (row === undefined) {
           return this._createIP(ip)
             .then(() => {
-              Bot.emit('monitor:ip:create', ip)
+              Server.emit('monitor:ip:create', ip)
             })
         } else {
           ip.updated_date = new Date()
           this._updateIPByIpAddress(ip.ip_address, ip)
             .then(() => {
-              return Bot.emitAsync('monitor:ip:update', ip)
+              return Server.emitAsync('monitor:ip:update', ip)
             })
         }
       })
@@ -334,7 +334,7 @@ class MonitorModule extends Module {
     var keys = _.keys(_ip)
     var values = _.values(_ip)
 
-    return Bot.emitAsync('database:monitor:create',
+    return Server.emitAsync('database:monitor:create',
       'INSERT INTO ip (' + keys + ') VALUES (' + values.map(() => {
         return '?'
       }) + ')',
@@ -358,7 +358,7 @@ class MonitorModule extends Module {
     var keys = _.keys(_ip)
     var values = _.values(_ip)
 
-    return Bot.emitAsync('database:monitor:update',
+    return Server.emitAsync('database:monitor:update',
       'UPDATE ip SET ' + keys.map((key) => {
         return key + ' = ?';
       }) + ' WHERE ip_address = \'' + ipAddress + '\';',
@@ -366,7 +366,7 @@ class MonitorModule extends Module {
   }
 
   _findIPByIpAddress (ipAddress) {
-    return Bot.emitAsync('database:monitor:retrieveOne',
+    return Server.emitAsync('database:monitor:retrieveOne',
       'SELECT * FROM ip WHERE ip_address = ?;', [ ipAddress ])
       .then((row) => {
         if (row !== undefined) {
@@ -380,11 +380,11 @@ class MonitorModule extends Module {
   _deleteAllIPBeforeDate (oldestDate, callback) {
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    return Bot.emitAsync('database:monitor:retrieveAll',
+    return Server.emitAsync('database:monitor:retrieveAll',
       'SELECT * FROM ip WHERE updated_date < Datetime(?)', [ updatedDate ])
       .then((rows) => {
         return Promise.each(rows, (row) => {
-          return Bot.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?;', [ row.id ])
+          return Server.emitAsync('database:monitor:delete', 'DELETE FROM bonjour WHERE id = ?;', [ row.id ])
             .then(() => {
               return callback(row)
             })

@@ -11,7 +11,7 @@ const locks = Promise.promisifyAll(require('locks'))
 const Logger = require('modern-logger')
 const Locale = require('native-speaker')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const createReadStream = require('fs').createReadStream
 const path = require('path')
@@ -227,7 +227,7 @@ class Voice extends IOModule {
 
   _speak (text) {
     const googleTTS = (text) => {
-      return Bot.emitAsync('tts:stream', { text })
+      return Server.emitAsync('tts:stream', { text })
         .then((stream) => execPlayCommand(stream, 'mp3'))
     }
 

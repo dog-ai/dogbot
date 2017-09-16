@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const Logger = require('modern-logger'),
     _ = require('lodash'),
@@ -36,16 +36,16 @@ upnp.prototype.unload = function () {
 };
 
 upnp.prototype.start = function () {
-  Bot.on('monitor:upnp:discover', this._discover);
+  Server.on('monitor:upnp:discover', this._discover)
 
   const options = { schedule: '1 minute' }
-  Bot.enqueueJob('monitor:upnp:discover', null)
+  Server.enqueueJob('monitor:upnp:discover', null)
 };
 
 upnp.prototype.stop = function () {
-  Bot.removeListener('monitor:upnp:discover', this._discover);
+  Server.removeListener('monitor:upnp:discover', this._discover)
 
-  Bot.dequeueJob('monitor:upnp:discover')
+  Server.dequeueJob('monitor:upnp:discover')
 };
 
 upnp.prototype._discover = function (params, callback) {
@@ -179,7 +179,7 @@ upnp.prototype._clean = function () {
     var now = new Date();
     return instance._deleteAllBeforeDate(new Date(now.setHours(now.getHours() - 24)),
         function (upnp) {
-          Bot.emit('monitor:upnp:delete', upnp.ip_address);
+          Server.emit('monitor:upnp:delete', upnp.ip_address)
         });
 };
 
@@ -189,13 +189,13 @@ upnp.prototype._createOrUpdate = function (upnp) {
             if (row === undefined) {
                 return instance._create(upnp)
                     .then(function () {
-                      return Bot.emitAsync('monitor:upnp:create', upnp);
+                      return Server.emitAsync('monitor:upnp:create', upnp)
                     });
             } else {
                 upnp.updated_date = new Date();
                 return instance._updateIpAddress(upnp.ip_address, upnp)
                     .then(function () {
-                      return Bot.emitAsync('monitor:upnp:update', upnp);
+                      return Server.emitAsync('monitor:upnp:update', upnp)
                     });
             }
         });
@@ -215,7 +215,7 @@ upnp.prototype._create = function (upnp) {
     var keys = _.keys(_upnp);
     var values = _.values(_upnp);
 
-  return Bot.emitAsync('database:monitor:create',
+  return Server.emitAsync('database:monitor:create',
         'INSERT INTO upnp (' + keys + ') VALUES (' + values.map(function () {
             return '?';
         }) + ');',
@@ -225,7 +225,7 @@ upnp.prototype._create = function (upnp) {
 };
 
 upnp.prototype._findByIpAddress = function (ipAddress) {
-  return Bot.emitAsync('database:monitor:retrieveOne',
+  return Server.emitAsync('database:monitor:retrieveOne',
         "SELECT * FROM upnp WHERE ip_address = ?;", [ipAddress])
         .then(function (row) {
             if (row !== undefined) {
@@ -250,7 +250,7 @@ upnp.prototype._updateIpAddress = function (ipAddress, upnp) {
     var keys = _.keys(_upnp);
     var values = _.values(_upnp);
 
-  return Bot.emitAsync('database:monitor:update',
+  return Server.emitAsync('database:monitor:update',
         'UPDATE upnp SET ' + keys.map(function (key) {
             return key + ' = ?';
         }) + ' WHERE ip_address = \'' + ipAddress + '\';',
@@ -260,11 +260,11 @@ upnp.prototype._updateIpAddress = function (ipAddress, upnp) {
 upnp.prototype._deleteAllBeforeDate = function (oldestDate, callback) {
     var updatedDate = oldestDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
 
-  return Bot.emitAsync('database:monitor:retrieveAll',
+  return Server.emitAsync('database:monitor:retrieveAll',
         "SELECT * FROM upnp WHERE updated_date < Datetime(?);", [updatedDate])
         .then(function (rows) {
             return Promise.each(rows, function (row) {
-              return Bot.emitAsync('database:monitor:delete', "DELETE FROM upnp WHERE id = ?;", [ row.id ])
+              return Server.emitAsync('database:monitor:delete', 'DELETE FROM upnp WHERE id = ?;', [ row.id ])
                     .then(function () {
                         return callback(row);
                     });

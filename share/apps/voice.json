@@ -1,0 +1,22 @@
+{
+  "id": "voice",
+  "databases": [],
+  "modules": [
+    {
+      "type": "io",
+      "name": "voice"
+    },
+    {
+      "type": "nlp",
+      "name": "api"
+    },
+    {
+      "type": "nlp",
+      "name": "wit"
+    },
+    {
+      "type": "tts",
+      "name": "google"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 
 const PersonModule = require('./person-module')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const moment = require('moment')
 
@@ -69,7 +69,7 @@ class Notification extends PersonModule {
       'person:employee:faraway': this._onEmployeeFaraway.bind(this)
     })
 
-    Bot.emit('sync:outgoing:quickshot:register', {
+    Server.emit('sync:outgoing:quickshot:register', {
       companyResource: 'notifications',
       registerEvents: [ 'person:device:discover:create' ],
       outgoingFunction: this._onDeviceDiscoverCreate.bind(this)

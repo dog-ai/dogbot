@@ -4,7 +4,7 @@
 
 const AutomationModule = require('./automation-module')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const Logger = require('modern-logger')
 
@@ -53,11 +53,11 @@ class Greenkeeper extends AutomationModule {
       'automation:greenkeeper:merge': mergeGreenkeeperPullRequests.bind(this)
     })
 
-    Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '30 minutes' })
+    Server.enqueueJob('automation:greenkeeper:merge', null, { schedule: '30 minutes' })
   }
 
   stop () {
-    Bot.dequeueJob('automation:greenkeeper:merge')
+    Server.dequeueJob('automation:greenkeeper:merge')
 
     super.stop()
   }

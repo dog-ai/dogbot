@@ -6,10 +6,7 @@ const Promise = require('bluebird')
 
 const Logger = require('modern-logger')
 
-const Sync = require('./sync')
-const Worker = require('./worker')
-const Heartbeat = require('./heartbeat')
-const Communication = require('./communication')
+const { Sync, Worker, Heartbeat, Communication } = require('./core')
 
 class Bot {
   start (secret) {

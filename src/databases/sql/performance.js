@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 var sql = require('./'),
     util = require('util');
@@ -20,17 +20,17 @@ util.inherits(performance, sql);
 performance.prototype.name = 'performance';
 
 performance.prototype.start = function () {
-  Bot.on('database:' + this.name + ':setup', this._runFn);
-  Bot.on('database:' + this.name + ':create', this._runFn);
-  Bot.on('database:' + this.name + ':retrieveOne', this._getFn);
-  Bot.on('database:' + this.name + ':retrieveAll', this._allFn);
-  Bot.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  Bot.on('database:' + this.name + ':update', this._runFn);
-  Bot.on('database:' + this.name + ':delete', this._runFn);
+  Server.on('database:' + this.name + ':setup', this._runFn)
+  Server.on('database:' + this.name + ':create', this._runFn)
+  Server.on('database:' + this.name + ':retrieveOne', this._getFn)
+  Server.on('database:' + this.name + ':retrieveAll', this._allFn)
+  Server.on('database:' + this.name + ':retrieveOneByOne', this._eachFn)
+  Server.on('database:' + this.name + ':update', this._runFn)
+  Server.on('database:' + this.name + ':delete', this._runFn)
 
     return this._open(this.name)
         .then(function () {
-          return Bot.emitAsync('database:performance:setup',
+          return Server.emitAsync('database:performance:setup',
                 'CREATE TABLE IF NOT EXISTS presence (' +
                 'id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, ' +
                 'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -45,13 +45,13 @@ performance.prototype.start = function () {
 };
 
 performance.prototype.stop = function () {
-  Bot.removeListener('database:' + this.name + ':setup', this._runFn);
-  Bot.removeListener('database:' + this.name + ':create', this._runFn);
-  Bot.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
-  Bot.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
-  Bot.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  Bot.removeListener('database:' + this.name + ':update', this._runFn);
-  Bot.removeListener('database:' + this.name + ':delete', this._runFn);
+  Server.removeListener('database:' + this.name + ':setup', this._runFn)
+  Server.removeListener('database:' + this.name + ':create', this._runFn)
+  Server.removeListener('database:' + this.name + ':retrieveOne', this._getFn)
+  Server.removeListener('database:' + this.name + ':retrieveAll', this._allFn)
+  Server.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn)
+  Server.removeListener('database:' + this.name + ':update', this._runFn)
+  Server.removeListener('database:' + this.name + ':delete', this._runFn)
 
     return this._close();
 };

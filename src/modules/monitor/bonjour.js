@@ -8,7 +8,7 @@ const Promise = require('bluebird')
 
 const Logger = require('modern-logger')
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 const { retry } = require('../../utils')
 
@@ -31,11 +31,11 @@ class Bonjour extends MonitorModule {
     })
 
     const options = { schedule: '1 minute' }
-    Bot.enqueueJob('monitor:bonjour:discover', null, options)
+    Server.enqueueJob('monitor:bonjour:discover', null, options)
   }
 
   stop () {
-    Bot.dequeueJob('monitor:bonjour:discover')
+    Server.dequeueJob('monitor:bonjour:discover')
 
     super.stop()
   }
@@ -138,7 +138,7 @@ class Bonjour extends MonitorModule {
 
     return this._deleteAllBonjourBeforeDate(new Date(now.setHours(now.getHours() - 24)))
       .mapSeries((bonjour) => {
-        Bot.emit('monitor:bonjour:delete', bonjour.ip_address)
+        Server.emit('monitor:bonjour:delete', bonjour.ip_address)
       })
   }
 }

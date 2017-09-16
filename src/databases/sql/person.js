@@ -2,7 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const Bot = require('../../bot')
+const Server = require('../../server')
 
 var sql = require('./'),
   util = require('util');
@@ -23,19 +23,19 @@ person.prototype.name = 'person';
 person.prototype.start = function () {
   var self = this;
 
-  Bot.on('database:' + this.name + ':setup', this._runFn);
-  Bot.on('database:' + this.name + ':create', this._runFn);
-  Bot.on('database:' + this.name + ':retrieveOne', this._getFn);
-  Bot.on('database:' + this.name + ':retrieveAll', this._allFn);
-  Bot.on('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  Bot.on('database:' + this.name + ':update', this._runFn);
-  Bot.on('database:' + this.name + ':delete', this._runFn);
+  Server.on('database:' + this.name + ':setup', this._runFn)
+  Server.on('database:' + this.name + ':create', this._runFn)
+  Server.on('database:' + this.name + ':retrieveOne', this._getFn)
+  Server.on('database:' + this.name + ':retrieveAll', this._allFn)
+  Server.on('database:' + this.name + ':retrieveOneByOne', this._eachFn)
+  Server.on('database:' + this.name + ':update', this._runFn)
+  Server.on('database:' + this.name + ':delete', this._runFn)
 
   return this._open(this.name, true)
     .then(function () {
-      return Bot.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS mac_address', [])
+      return Server.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS mac_address', [])
         .then(function () {
-          return Bot.emitAsync('database:person:setup',
+          return Server.emitAsync('database:person:setup',
             'CREATE TABLE mac_address (' +
             'id TEXT DEFAULT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -53,9 +53,9 @@ person.prototype.start = function () {
         })
     })
     .then(function () {
-      return Bot.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS device', [])
+      return Server.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS device', [])
         .then(function () {
-          return Bot.emitAsync('database:person:setup',
+          return Server.emitAsync('database:person:setup',
             'CREATE TABLE device (' +
             'id TEXT DEFAULT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -75,9 +75,9 @@ person.prototype.start = function () {
         })
     })
     .then(function () {
-      return Bot.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS employee', [])
+      return Server.emitAsync('database:person:setup', 'DROP TABLE IF EXISTS employee', [])
         .then(function () {
-          return Bot.emitAsync('database:person:setup',
+          return Server.emitAsync('database:person:setup',
             'CREATE TABLE employee (' +
             'id TEXT PRIMARY KEY NOT NULL, ' +
             'created_date DATETIME DEFAULT CURRENT_TIMESTAMP, ' +
@@ -99,13 +99,13 @@ person.prototype.start = function () {
 };
 
 person.prototype.stop = function () {
-  Bot.removeListener('database:' + this.name + ':setup', this._runFn);
-  Bot.removeListener('database:' + this.name + ':create', this._runFn);
-  Bot.removeListener('database:' + this.name + ':retrieveOne', this._getFn);
-  Bot.removeListener('database:' + this.name + ':retrieveAll', this._allFn);
-  Bot.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn);
-  Bot.removeListener('database:' + this.name + ':update', this._runFn);
-  Bot.removeListener('database:' + this.name + ':delete', this._runFn);
+  Server.removeListener('database:' + this.name + ':setup', this._runFn)
+  Server.removeListener('database:' + this.name + ':create', this._runFn)
+  Server.removeListener('database:' + this.name + ':retrieveOne', this._getFn)
+  Server.removeListener('database:' + this.name + ':retrieveAll', this._allFn)
+  Server.removeListener('database:' + this.name + ':retrieveOneByOne', this._eachFn)
+  Server.removeListener('database:' + this.name + ':update', this._runFn)
+  Server.removeListener('database:' + this.name + ':delete', this._runFn)
 
   return this._close();
 };

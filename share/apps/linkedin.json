@@ -1,0 +1,10 @@
+{
+  "id": "linkedin",
+  "databases": [],
+  "modules": [
+    {
+      "type": "social",
+      "name": "linkedin"
+    }
+  ]
+}
