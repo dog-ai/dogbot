@@ -9,6 +9,8 @@ const Promise = require('bluebird')
 
 const Server = require('../../server')
 
+const { Monitor } = require('../../databases')
+
 const { retry } = require('../../utils')
 
 const os = require('os')
