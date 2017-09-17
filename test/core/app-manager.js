@@ -11,13 +11,13 @@ describe('App Manager', () => {
     td.replace('../../src/databases', td.object())
     td.replace('../../src/modules', td.object())
     td.replace(require('../../src/utils'), 'Logger', td.object([ 'error', 'info' ]))
-    AppManager = require('../../src/bot/app-manager')
+    AppManager = require('../../src/core/app-manager')
   })
 
   afterEach(() => {
     td.reset()
 
-    delete require.cache[ require.resolve('../../src/bot/app-manager') ]
+    delete require.cache[ require.resolve('../../src/core/app-manager') ]
   })
 
   context('when app not available', () => {
@@ -34,20 +34,6 @@ describe('App Manager', () => {
     })
   })
 
-  context('when app available', () => {
-    beforeEach(() => {
-      subject = new AppManager()
-    })
-
-    it('should enable', () => {
-      const id = 'dummy'
-
-      const result = subject.enableApp(id)
-
-      return result.should.eventually.be.fulfilled
-    })
-  })
-
   context('when app already disabled', () => {
     const id = 'dummy'
 
@@ -59,28 +45,6 @@ describe('App Manager', () => {
       const result = subject.disableApp(id)
 
       return result.should.eventually.be.rejected
-    })
-  })
-
-  context('when app already enabled', () => {
-    const id = 'dummy'
-
-    beforeEach(() => {
-      subject = new AppManager
-
-      return subject.enableApp(id)
-    })
-
-    it('should disable', () => {
-      const result = subject.disableApp(id)
-
-      return result.should.eventually.be.fulfilled
-    })
-
-    it('should disable all apps', () => {
-      const result = subject.disableAllApps()
-
-      return result.should.eventually.be.fulfilled
     })
   })
 })

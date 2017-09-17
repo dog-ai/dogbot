@@ -5,14 +5,14 @@
 describe('Greenkeeper', () => {
   let subject
   let AutomationModule
-  let Bot
+  let Server
   let Logger
   let GitHubWrapper
 
   before(() => {
     AutomationModule = td.object()
 
-    Bot = td.object([ 'on', 'enqueueJob', 'dequeueJob', 'removeListener' ])
+    Server = td.object([ 'on', 'enqueueJob', 'dequeueJob', 'removeListener' ])
 
     Logger = td.object()
 
@@ -23,7 +23,7 @@ describe('Greenkeeper', () => {
 
   describe('when constructing', () => {
     beforeEach(() => {
-      td.replace('../../../src/bot', Bot)
+      td.replace('../../../src/server', Server)
 
       subject = require('../../../src/modules/automation/greenkeeper')
     })
@@ -42,7 +42,7 @@ describe('Greenkeeper', () => {
     beforeEach(() => {
       td.replace('../../../src/modules/automation/automation-module.js')
 
-      td.replace('../../../src/bot', Bot)
+      td.replace('../../../src/server', Server)
 
       td.replace('@dog-ai/github-wrapper', GitHubWrapper)
 
@@ -59,14 +59,14 @@ describe('Greenkeeper', () => {
     beforeEach(() => {
       td.replace('../../../src/modules/automation/automation-module.js')
 
-      td.replace('../../../src/bot', Bot)
+      td.replace('../../../src/server', Server)
 
       subject = require('../../../src/modules/automation/greenkeeper')
       subject.start()
     })
 
     it('should enqueue greenkeeper merge job every 30 minutes', () => {
-      td.verify(Bot.enqueueJob('automation:greenkeeper:merge', null, { schedule: '30 minutes' }), { times: 1 })
+      td.verify(Server.enqueueJob('automation:greenkeeper:merge', null, { schedule: '30 minutes' }), { times: 1 })
     })
   })
 
@@ -74,14 +74,14 @@ describe('Greenkeeper', () => {
     beforeEach(() => {
       td.replace('../../../src/modules/automation/automation-module.js')
 
-      td.replace('../../../src/bot', Bot)
+      td.replace('../../../src/server', Server)
 
       subject = require('../../../src/modules/automation/greenkeeper')
       subject.stop()
     })
 
     it('should dequeue greenkeeper merge job', () => {
-      td.verify(Bot.dequeueJob('automation:greenkeeper:merge'), { times: 1 })
+      td.verify(Server.dequeueJob('automation:greenkeeper:merge'), { times: 1 })
     })
   })
 
@@ -97,8 +97,8 @@ describe('Greenkeeper', () => {
     beforeEach(() => {
       td.replace('../../../src/modules/automation/automation-module.js')
 
-      td.replace('../../../src/bot', Bot)
-      td.when(Bot.on('automation:greenkeeper:merge'), { ignoreExtraArgs: true })
+      td.replace('../../../src/server', Server)
+      td.when(Server.on('automation:greenkeeper:merge'), { ignoreExtraArgs: true })
         .thenDo((event, fn) => {
           eventFn = fn
         })

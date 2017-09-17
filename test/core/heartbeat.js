@@ -15,16 +15,16 @@ describe('Heartbeat', () => {
     const healthCheck = Promise.resolve
 
     before(() => {
-      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/core/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
-      subject = require('../../src/bot/heartbeat')
+      subject = require('../../src/core/heartbeat')
 
       return subject.start(interval, heartbeat, healthCheck)
     })
 
     after(() => {
-      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
+      delete require.cache[ require.resolve('../../src/core/heartbeat') ]
     })
 
     it('should throw already started error', () => {
@@ -41,14 +41,14 @@ describe('Heartbeat', () => {
     const healthCheck = Promise.resolve
 
     beforeEach(() => {
-      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/core/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
-      subject = require('../../src/bot/heartbeat')
+      subject = require('../../src/core/heartbeat')
     })
 
     afterEach(() => {
-      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
+      delete require.cache[ require.resolve('../../src/core/heartbeat') ]
     })
 
     it('should return heartbeat interval', () => {
@@ -71,14 +71,14 @@ describe('Heartbeat', () => {
     const healthCheck = Promise.resolve
 
     beforeEach(() => {
-      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/core/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
-      subject = require('../../src/bot/heartbeat')
+      subject = require('../../src/core/heartbeat')
     })
 
     afterEach(() => {
-      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
+      delete require.cache[ require.resolve('../../src/core/heartbeat') ]
     })
 
     it('should throw invalid interval error', () => {
@@ -91,16 +91,16 @@ describe('Heartbeat', () => {
 
   context('when stopping', () => {
     beforeEach(() => {
-      Worker = td.replace('../../src/bot/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
+      Worker = td.replace('../../src/core/worker', td.object([ 'enqueueJob', 'dequeueJob' ]))
       Communication = td.replace(require('../../src/utils'), 'Communication', td.object([ 'on', 'emit' ]))
 
-      subject = require('../../src/bot/heartbeat')
+      subject = require('../../src/core/heartbeat')
 
       subject.start(1, () => {}, Promise.resolve)
     })
 
     afterEach(() => {
-      delete require.cache[ require.resolve('../../src/bot/heartbeat') ]
+      delete require.cache[ require.resolve('../../src/core/heartbeat') ]
     })
 
     it('should dequeue heartbeat job', () => {

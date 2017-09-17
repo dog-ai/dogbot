@@ -4,17 +4,17 @@
 
 describe('Presence', () => {
   let subject
-  let Bot
+  let Server
 
   before(() => {
-    Bot = td.object([ 'enqueueJob', 'dequeueJob', 'on', 'removeListener', 'emit' ])
+    Server = td.object([ 'enqueueJob', 'dequeueJob', 'on', 'removeListener', 'emit' ])
   })
 
   afterEach(() => td.reset())
 
   context('when starting', () => {
     beforeEach(() => {
-      td.replace('../../../src/bot', Bot)
+      td.replace('../../../src/server', Server)
 
       subject = require('../../../src/modules/performance/presence')
     })
@@ -26,13 +26,13 @@ describe('Presence', () => {
     it('should enqueue a performance presence stats update job for every 6 hours', () => {
       subject.start()
 
-      td.verify(Bot.enqueueJob('performance:presence:stats:update', null, { schedule: '6 hours' }), { times: 1 })
+      td.verify(Server.enqueueJob('performance:presence:stats:update', null, { schedule: '6 hours' }), { times: 1 })
     })
   })
 
   context('when stopping', () => {
     beforeEach(() => {
-      td.replace('../../../src/bot', Bot)
+      td.replace('../../../src/server', Server)
 
       subject = require('../../../src/modules/performance/presence')
 
@@ -46,7 +46,7 @@ describe('Presence', () => {
     it('should dequeue performance presence stats update job', () => {
       subject.stop()
 
-      td.verify(Bot.dequeueJob('performance:presence:stats:update'), { times: 1 })
+      td.verify(Server.dequeueJob('performance:presence:stats:update'), { times: 1 })
     })
   })
 })

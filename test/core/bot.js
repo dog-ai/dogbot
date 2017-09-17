@@ -4,7 +4,7 @@
 
 describe.skip('Worker', () => {
   let subject
-  let Bot
+  let Server
   let Logger
   let sync
   let worker
@@ -16,11 +16,11 @@ describe.skip('Worker', () => {
     heartbeat = td.object()
 
     Logger = td.replace(require('../../src/utils'), 'Logger', td.object([ 'error', 'info' ]))
-    td.replace(require('../../src/bot/sync'), 'Sync', function () { return sync })
-    td.replace('../../src/bot/worker', function () { return worker })
-    td.replace('../../src/bot/heartbeat', function () { return heartbeat })
+    td.replace(require('../../src/core/sync'), 'Sync', function () { return sync })
+    td.replace('../../src/core/worker', function () { return worker })
+    td.replace('../../src/core/heartbeat', function () { return heartbeat })
 
-    Bot = require('../../src/bot').Bot
+    Server = require('../../src/server').Server
   })
 
   afterEach(() => {
@@ -31,7 +31,7 @@ describe.skip('Worker', () => {
     let secret = 'my-secret'
 
     beforeEach(() => {
-      subject = new Bot()
+      subject = new Server()
     })
 
     it('should start sync with secret', () => {
@@ -58,7 +58,7 @@ describe.skip('Worker', () => {
     let secret
 
     beforeEach(() => {
-      subject = new Bot()
+      subject = new Server()
     })
 
     it('should fail with invalid secret', () => {
@@ -73,7 +73,7 @@ describe.skip('Worker', () => {
       td.when(worker.start()).thenResolve()
 
       const secret = 'my-secret'
-      subject = new Bot()
+      subject = new Server()
       subject.start(secret)
     })
 
