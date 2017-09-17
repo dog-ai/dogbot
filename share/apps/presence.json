@@ -2,14 +2,12 @@
   "id": "presence",
   "databases": [
     {
-      "type": "sql",
       "name": "monitor"
     },
     {
       "name": "person"
     },
     {
-      "type": "sql",
       "name": "performance"
     }
   ],

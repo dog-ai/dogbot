@@ -4,15 +4,61 @@
 
 const MonitorModule = require('./monitor-module')
 
-const DHCPRL_UNIX_SOCKET = '/var/run/dhcprl.sock'
+const DHCPRL_UNIX_SOCKET = process.env.DHCPRL_UNIX_SOCKET || '/var/run/dhcprl.sock'
 
 const Promise = require('bluebird')
 
 const Server = require('../../server')
 
-const Logger = require('modern-logger')
+const { retry } = require('../../utils')
 
-class DHCP extends MonitorModule {
+const connect = function () {
+  return new Promise((resolve, reject) => {
+    var timeout
+    var dhcps = []
+
+    var socket = require('net').createConnection(DHCPRL_UNIX_SOCKET)
+
+    socket.on('connect', () => {
+      var buffer = new Buffer([ 0x00 ])
+      socket.write(buffer)
+
+      timeout = setTimeout(() => {
+        socket.destroy()
+      }, 100)
+    })
+
+    socket.pipe(require('split')()).on('data', (line) => {
+      clearTimeout(timeout)
+
+      if (line && line.length > 0) {
+        var values = line.split(';')
+
+        var dhcp = {
+          mac_address: values[ 1 ],
+          hostname: values[ 2 ]
+        }
+
+        dhcps.push(dhcp)
+      }
+
+      socket.destroy()
+    })
+
+    socket.on('error', (data) => {
+      reject(new Error(data))
+    })
+    socket.on('timeout', (data) => {
+      reject(new Error(data))
+    })
+
+    socket.on('close', () => {
+      resolve(dhcps)
+    })
+  })
+}
+
+class Dhcp extends MonitorModule {
   constructor () {
     super('dhcp')
   }
@@ -27,11 +73,10 @@ class DHCP extends MonitorModule {
 
   start () {
     super.start({
-      'monitor:dhcp:discover': this._discover.bind(this)
+      'monitor:dhcp:discover': this.discover.bind(this)
     })
 
-    const options = { schedule: '1 minute' }
-    Server.enqueueJob('monitor:dhcp:discover', null, options)
+    Server.enqueueJob('monitor:dhcp:discover', null, { schedule: '1 minute' })
   }
 
   stop () {
@@ -40,77 +85,16 @@ class DHCP extends MonitorModule {
     super.stop()
   }
 
-  _discover (params, callback) {
-    return this._connectDHCPRL()
-      .mapSeries((dhcp) => {
-        return this._createOrUpdateDHCP(dhcp)
-          .catch((error) => {
-            Logger.warn(error.message + ' with dhcp as ' + JSON.stringify(dhcp), error)
-          })
-      })
-      .then(this._clean.bind(this))
-      .then(() => {
-        callback()
-      })
-      .catch((error) => {
-        callback(error)
-      })
-  }
-
-  _connectDHCPRL () {
-    return new Promise((resolve, reject) => {
-      var timeout
-      var dhcps = []
-
-      var socket = require('net').createConnection(DHCPRL_UNIX_SOCKET)
-
-      socket.on('connect', () => {
-        var buffer = new Buffer([ 0x00 ])
-        socket.write(buffer)
-
-        timeout = setTimeout(() => {
-          socket.destroy()
-        }, 100)
-      })
-
-      socket.pipe(require('split')()).on('data', (line) => {
-        clearTimeout(timeout)
-
-        if (line && line.length > 0) {
-          var values = line.split(';')
-
-          var dhcp = {
-            mac_address: values[ 1 ],
-            hostname: values[ 2 ]
-          }
-
-          dhcps.push(dhcp)
-        }
-
-        socket.destroy()
-      })
-
-      socket.on('error', (data) => {
-        reject(new Error(data))
-      })
-      socket.on('timeout', (data) => {
-        reject(new Error(data))
-      })
-
-      socket.on('close', () => {
-        resolve(dhcps)
-      })
-    })
-  }
-
-  _clean () {
-    var now = new Date()
-
-    return this._deleteAllDHCPBeforeDate(new Date(now.setHours(now.getHours() - 24)))
-      .mapSeries((dhcp) => {
-        Server.emit('monitor:dhcp:delete', dhcp)
-      })
+  discover (params, callback) {
+    return super.discover(() => retry(() => connect(), {
+      timeout: 50000,
+      max_tries: -1,
+      interval: 1000,
+      backoff: 2
+    }), [ 'mac_address', 'hostname' ], new Date(new Date().setMinutes(new Date().getHours() - 24)))
+      .then(() => callback())
+      .catch((error) => callback(error))
   }
 }
 
-module.exports = new DHCP()
+module.exports = new Dhcp()

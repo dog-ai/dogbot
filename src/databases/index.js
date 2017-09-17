@@ -3,5 +3,7 @@
  */
 
 module.exports = {
-  Person: require('./person')
+  Person: require('./person'),
+  Performance: require('./performance'),
+  Monitor: require('./monitor')
 }

@@ -1,14 +1,5 @@
 {
   "id": "brain",
   "databases": [],
-  "modules": [
-    {
-      "type": "email",
-      "name": "sendgrid"
-    },
-    {
-      "type": "user",
-      "name": "invite"
-    }
-  ]
+  "modules": []
 }

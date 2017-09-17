@@ -13,22 +13,113 @@ const { retry } = require('../../utils')
 
 const os = require('os')
 
-class IP extends MonitorModule {
+const onServiceDiscoveryCreateOrUpdate = function (service, callback) {
+  return Monitor.ip.findOne({
+    where: {
+      ip_address: service.ip_address,
+      updated_date: { $gte: new Date(new Date().setSeconds(new Date().getSeconds() - 10)) }
+    }
+  })
+    .then((ip) => {
+      if (!ip) {
+        const _ip = { ip_address: service.ip_address }
+
+        return Monitor.ip.create(_ip)
+          .then(() => Server.emit('monitor:ip:create', _ip))
+      }
+
+      return ip.save()
+        .then(() => Server.emit('monitor:ip:update', ip.get({ plain: true })))
+    })
+    .then(() => callback())
+    .catch((error) => callback(error))
+}
+
+const execFping = function () {
+  return new Promise((resolve, reject) => {
+    var ips = []
+
+    var networkInterfaces = os.networkInterfaces()
+    var addresses = networkInterfaces[ 'wlan0' ] || networkInterfaces[ 'en0' ]
+
+    if (addresses === undefined || addresses === null) {
+      reject(new Error('Network issues'))
+    }
+
+    var address = _.find(addresses, { family: 'IPv4', internal: false })
+
+    if (address === undefined) {
+      reject(new Error('Network issues'))
+    }
+
+    var subnet = require('ip').subnet(address.address, address.netmask)
+
+    var process = require('child_process')
+      .spawn('fping', [
+        '-a', // Show targets that are alive
+        '-r 1', // Number of retries (default 3)
+        '-i 10', // Interval between sending ping packets (in millisec) (default 25)
+        '-t 500', // Individual target initial timeout (in millisec) (default 500)
+        '-q',
+        '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
+      ])
+
+    process.stdout.setEncoding('utf8')
+
+    process.stdout.pipe(require('split')()).on('data', (line) => {
+      if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(line)) {
+        return
+      }
+
+      if (line.indexOf(address.address) === 0) {
+        return
+      }
+
+      var ip = {
+        ip_address: line
+      }
+
+      ips.push(ip)
+    })
+
+    process.stderr.pipe(require('split')()).on('data', (line) => {
+      if (line === undefined ||
+        line.length === 0 ||
+        line.indexOf('ICMP Host') !== -1 ||
+        line.indexOf('duplicate') !== -1 ||
+        line.indexOf('ICMP Redirect') !== -1 ||
+        line.indexOf('ICMP Time Exceeded ') !== -1) {
+        return
+      }
+
+      reject(new Error(line))
+    })
+
+    process.on('error', (error) => {
+      reject(error)
+    })
+
+    process.on('close', () => {
+      resolve(ips)
+    })
+  })
+}
+
+class Ip extends MonitorModule {
   constructor () {
     super('ip')
   }
 
   start () {
     super.start({
-      'monitor:ip:discover': this._discover.bind(this),
-      'monitor:bonjour:create': this._onServiceDiscoveryCreateOrUpdate.bind(this),
-      'monitor:bonjour:update': this._onServiceDiscoveryCreateOrUpdate.bind(this),
-      'monitor:upnp:create': this._onServiceDiscoveryCreateOrUpdate.bind(this),
-      'monitor:upnp:update': this._onServiceDiscoveryCreateOrUpdate.bind(this)
+      'monitor:ip:discover': this.discover.bind(this),
+      'monitor:bonjour:create': onServiceDiscoveryCreateOrUpdate.bind(this),
+      'monitor:bonjour:update': onServiceDiscoveryCreateOrUpdate.bind(this),
+      'monitor:upnp:create': onServiceDiscoveryCreateOrUpdate.bind(this),
+      'monitor:upnp:update': onServiceDiscoveryCreateOrUpdate.bind(this)
     })
 
-    const options = { schedule: '1 minute', priority: 'low' }
-    Server.enqueueJob('monitor:ip:discover', null, options)
+    Server.enqueueJob('monitor:ip:discover', null, { schedule: '1 minute', priority: 'low' })
   }
 
   stop () {
@@ -37,130 +128,17 @@ class IP extends MonitorModule {
     super.stop()
   }
 
-  _discover (params, callback) {
-    return retry(() => this._execFping(), {
+  discover (params, callback) {
+    return super.discover(() => retry(() => execFping(), {
       timeout: 50000,
       max_tries: -1,
       interval: 1000,
       backoff: 2
-    })
-      .then((ips) => {
-        return Promise.mapSeries(ips, (ip) => {
-          return this._createOrUpdateIP(ip)
-        })
-          .then(() => {
-            return this._clean()
-          })
-      })
-      .then(() => {
-        callback()
-      })
-      .catch((error) => {
-        callback(error)
-      })
-  }
-
-  _onServiceDiscoveryCreateOrUpdate (service, callback) {
-    var date = new Date(new Date().setSeconds(new Date().getSeconds() - 10))
-    var updatedDate = date.toISOString().replace(/T/, ' ').replace(/\..+/, '')
-
-    return Server.emitAsync('database:monitor:retrieveOne',
-      'SELECT * FROM ip WHERE ip_address = ? AND updated_date > Datetime(?)', [ service.ip_address, updatedDate ])
-      .then((row) => {
-        if (row === undefined) {
-          var ip = {
-            ip_address: service.ip_address
-          }
-
-          return this._createOrUpdateIP(ip)
-        }
-      })
-      .then(() => {
-        callback()
-      })
-      .catch((error) => {
-        callback(error)
-      })
-  }
-
-  _execFping () {
-    return new Promise((resolve, reject) => {
-      var ips = []
-
-      var networkInterfaces = os.networkInterfaces()
-      var addresses = networkInterfaces[ 'wlan0' ] || networkInterfaces[ 'en0' ]
-
-      if (addresses === undefined || addresses === null) {
-        reject(new Error('Network issues'))
-      }
-
-      var address = _.find(addresses, { family: 'IPv4', internal: false })
-
-      if (address === undefined) {
-        reject(new Error('Network issues'))
-      }
-
-      var subnet = require('ip').subnet(address.address, address.netmask)
-
-      var process = require('child_process')
-        .spawn('fping', [
-          '-a', // Show targets that are alive
-          '-r 1', // Number of retries (default 3)
-          '-i 10', // Interval between sending ping packets (in millisec) (default 25)
-          '-t 500', // Individual target initial timeout (in millisec) (default 500)
-          '-q',
-          '-g', subnet.networkAddress + '/' + subnet.subnetMaskLength
-        ])
-
-      process.stdout.setEncoding('utf8')
-
-      process.stdout.pipe(require('split')()).on('data', (line) => {
-        if (!/^(([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$/.test(line)) {
-          return
-        }
-
-        if (line.indexOf(address.address) === 0) {
-          return
-        }
-
-        var ip = {
-          ip_address: line
-        }
-
-        ips.push(ip)
-      })
-
-      process.stderr.pipe(require('split')()).on('data', (line) => {
-        if (line === undefined ||
-          line.length === 0 ||
-          line.indexOf('ICMP Host') !== -1 ||
-          line.indexOf('duplicate') !== -1 ||
-          line.indexOf('ICMP Redirect') !== -1 ||
-          line.indexOf('ICMP Time Exceeded ') !== -1) {
-          return
-        }
-
-        reject(new Error(line))
-      })
-
-      process.on('error', (error) => {
-        reject(error)
-      })
-
-      process.on('close', () => {
-        resolve(ips)
-      })
-    })
-  }
-
-  _clean () {
-    var now = new Date()
-    return this._deleteAllIPBeforeDate(new Date(now.setMinutes(now.getMinutes() - 10)),
-      (ip) => {
-        Server.emit('monitor:ipAddress:delete', ip.ip_address)
-      })
+    }), [ 'ip_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 10)))
+      .then(() => callback())
+      .catch((error) => callback(error))
   }
 }
 
-module.exports = new IP()
+module.exports = new Ip()
 

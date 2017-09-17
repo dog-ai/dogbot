@@ -9,7 +9,7 @@ const Promise = require('bluebird')
 
 const Server = require('../../server')
 
-const { Person } = require('../../databases')
+const { Person, Monitor } = require('../../databases')
 
 const Logger = require('modern-logger')
 
@@ -25,9 +25,9 @@ const discover = (macAddress, callback) => {
     .then(function (device) {
       if (device === undefined || !device.is_manual) {
 
-        return findIpAdressByMacAddress(macAddress.address)
+        return Monitor.arp.findOne({ where: { mac_address: macAddress.address } })
           .then(function (row) {
-            if (row === undefined || row === null) {
+            if (!row) {
               throw new Error('Unknown IP address for MAC address: ' + macAddress.address)
             }
 
@@ -35,9 +35,9 @@ const discover = (macAddress, callback) => {
               mdns: execDig(row.ip_address),
               nmap: execNmap(row.ip_address),
               dns: execHost(row.ip_address),
-              bonjours: findAllBonjoursByIpAddress(row.ip_address),
-              upnps: findAllUPnPsByIpAddress(row.ip_address),
-              dhcps: findAllDHCPsByMACAddress(macAddress.address)
+              bonjours: Monitor.bonjour.findAll({ where: { ip_address: row.ip_address } }),
+              upnps: Monitor.upnp.findAll({ where: { ip_address: row.ip_address } }),
+              dhcps: Monitor.bonjour.findAll({ where: { mac_address: macAddress.address } })
             })
           })
           .then(function (result) {
@@ -422,9 +422,9 @@ const onMacAddressOffline = (macAddress) => {
     return Person.macAddresses.findAll({ where: { device_id: macAddress.device_id } })
       .then((macAddresses) => {
         if (macAddresses) {
-          const _macAddresses = _.filter(macAddresses, _.matches({ 'is_present': 1 }))
+          const _macAddresses = _.filter(macAddresses, _.matches({ is_present: true }))
 
-          if (_.isEmpty(_macAddresses) === 0) {
+          if (_.isEmpty(_macAddresses)) {
             return Person.devices.findById(macAddress.device_id)
               .then((device) => {
                 if (device) {
@@ -432,7 +432,7 @@ const onMacAddressOffline = (macAddress) => {
                   device.last_presence_date = macAddress.last_presence_date
                   device.is_synced = false
 
-                  return Person.devices.save()
+                  return device.save()
                     .then(() => Server.emit('person:device:offline', device.get({ plain: true })))
                 }
               })
@@ -441,56 +441,6 @@ const onMacAddressOffline = (macAddress) => {
       })
       .catch((error) => Logger.error(error))
   }
-}
-
-const findAllBonjoursByIpAddress = (ipAddress) => {
-  return Server.emitAsync('database:monitor:retrieveAll',
-    'SELECT * FROM bonjour WHERE ip_address = ?', [ ipAddress ])
-    .then(function (rows) {
-      if (rows !== undefined) {
-        _.forEach(rows, function (row) {
-          row.created_date = new Date(row.created_date.replace(' ', 'T'))
-          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
-        })
-      }
-
-      return rows
-    })
-}
-
-const findAllUPnPsByIpAddress = (ipAddress) => {
-  return Server.emitAsync('database:monitor:retrieveAll',
-    'SELECT * FROM upnp WHERE ip_address = ?', [ ipAddress ])
-    .then(function (rows) {
-      if (rows !== undefined) {
-        _.forEach(rows, function (row) {
-          row.created_date = new Date(row.created_date.replace(' ', 'T'))
-          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
-        })
-      }
-
-      return rows
-    })
-}
-
-const findAllDHCPsByMACAddress = (macAddress) => {
-  return Server.emitAsync('database:monitor:retrieveAll',
-    'SELECT * FROM dhcp WHERE mac_address = ?', [ macAddress ])
-    .then(function (rows) {
-      if (rows !== undefined) {
-        _.forEach(rows, function (row) {
-          row.created_date = new Date(row.created_date.replace(' ', 'T'))
-          row.updated_date = new Date(row.updated_date.replace(' ', 'T'))
-        })
-      }
-
-      return rows
-    })
-}
-
-const findIpAdressByMacAddress = (macAddress) => {
-  return Server.emitAsync('database:monitor:retrieveOne',
-    'SELECT ip_address FROM arp WHERE mac_address = ?', [ macAddress ])
 }
 
 class Device extends PersonModule {

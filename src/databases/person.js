@@ -65,10 +65,10 @@ const moment = require('moment')
 const { join } = require('path')
 
 const onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
-  return this._models.employee.findById(employee.id)
+  return this._models[ 'employee' ].findById(employee.id)
     .then((_employee) => {
       if (!_employee) {
-        return this._models.employee.create(employee)
+        return this._models[ 'employee' ].create(employee)
       }
 
       if (moment(employee.updated_date).isAfter(_employee.updated_date)) {
@@ -81,7 +81,7 @@ const onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
 }
 
 const onDeleteEmployeeIncomingSynchronization = function (employee) {
-  return this._models.employee.findById(employee.id)
+  return this._models[ 'employee' ].findById(employee.id)
     .then((employee) => {
       if (employee) {
         return employee.destroy()
@@ -98,9 +98,9 @@ const onDeleteEmployeeIncomingSynchronization = function (employee) {
 const onEmployeeOutgoingSynchronization = function (params, callback) {
   const employeeId = _.get(params, 'id')
 
-  return this._models.employee.findAll({ where: { id: employeeId, is_synced: false } })
+  return this._models[ 'employee' ].findAll({ where: { id: employeeId, is_synced: false } })
     .mapSeries((employee) => {
-      return this._models.device.findAll({ where: { employee_id: employee.id } })
+      return this._models[ 'device' ].findAll({ where: { employee_id: employee.id } })
         .then((devices) => {
           employee.devices = {}
 
@@ -108,7 +108,7 @@ const onEmployeeOutgoingSynchronization = function (params, callback) {
             employee.devices[ device.id ] = true
           })
 
-          callback(null, employee, (error) => {
+          callback(null, employee.get({ plain: true }), (error) => {
             if (error) {
               return Logger.error(error)
             }
@@ -125,7 +125,7 @@ const onEmployeeOutgoingSynchronization = function (params, callback) {
 }
 
 const onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
-  return this._models.device.findById(device.id)
+  return this._models[ 'device' ].findById(device.id)
     .then((row) => {
       if (row) {
 
@@ -152,7 +152,7 @@ const onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
             })
         }
       } else {
-        return this._models.device.create(device)
+        return this._models[ 'device' ].create(device)
           .then((device) => {
             if (device.is_present) {
               return isPresent(device)
@@ -174,7 +174,7 @@ const onCreateOrUpdateDeviceIncomingSynchronization = function (device) {
 }
 
 const onDeleteDeviceIncomingSynchronization = function (device) {
-  return this._models.device.findById(device.id)
+  return this._models[ 'device' ].findById(device.id)
     .then((device) => {
       if (device) {
         return device.destroy()
@@ -193,16 +193,10 @@ const onDeleteDeviceIncomingSynchronization = function (device) {
 const onDeviceOutgoingSynchronization = function (params, callback) {
   const deviceId = _.get(params, 'id')
 
-  this._models.device.find({ where: { id: deviceId, is_synced: false } })
+  this._models[ 'device' ].find({ where: { id: deviceId, is_synced: false } })
     .then((device) => {
       if (device) {
-        device.created_date = new Date(device.created_date.replace(' ', 'T'))
-        device.updated_date = new Date(device.updated_date.replace(' ', 'T'))
-        device.last_presence_date = new Date(device.last_presence_date.replace(' ', 'T'))
-        device.is_present = row.is_present === 1
-        device.is_manual = row.is_manual === 1
-
-        return Person.macAddresses.findAll({ where: { device_id: device.id } })
+        return this._models[ 'mac_address' ].findAll({ where: { device_id: device.id } })
           .then((macAddresses) => {
             device.mac_addresses = {}
 
@@ -210,7 +204,7 @@ const onDeviceOutgoingSynchronization = function (params, callback) {
               device.mac_addresses[ macAddress.id ] = true
             })
 
-            callback(null, row, function (error) {
+            callback(null, device.get({ plain: true }), (error) => {
               if (error) {
                 Logger.error(error)
               } else {
