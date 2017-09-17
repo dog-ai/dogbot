@@ -8,7 +8,7 @@ const Logger = require('modern-logger')
 
 const { Sync, Worker, Heartbeat, Communication } = require('./core')
 
-class Bot {
+class Server {
   start (secret) {
     if (!secret) {
       return Promise.reject(new Error('invalid secret'))
@@ -77,4 +77,4 @@ class Bot {
   }
 }
 
-module.exports = new Bot()
+module.exports = new Server()

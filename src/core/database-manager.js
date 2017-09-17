@@ -12,7 +12,7 @@ const fs = require('fs')
 
 class Databases {
   constructor () {
-    this.databasesDir = path.join(__dirname, '/../databases/')
+    this.databasesDir = path.join(__dirname, '/../databases')
 
     this.started = []
     this.types = (fs.readdirSync(this.databasesDir) || []).filter((type) => {
@@ -42,24 +42,27 @@ class Databases {
 
   _start (type, name) {
     return new Promise((resolve, reject) => {
-      const file = `${name}.js`
+      let file = `${name}.js`
+      if (type) {
+        file = `${type}/${file}`
+      }
 
       try {
-        const database = require(this.databasesDir + type.toLowerCase() + '/' + file)
+        const database = require(this.databasesDir + '/' + file)
 
         return database.start()
           .then((result) => {
             this.started.push(database)
 
-            Logger.debug('Started ' + type.toLowerCase() + ' database: ' + database.name)
+            Logger.debug('Started database: ' + database.name)
 
             resolve(result)
           })
           .catch((error) => reject(error))
       } catch (error) {
-        Logger.error('Unable to start ' + type.toLowerCase() + ' database ' + file + ' because ' + error.message)
+        Logger.error('Unable to start database ' + file + ' because ' + error.message)
 
-        reject(new Error('unable to start ' + type.toLowerCase() + ' database ' + file))
+        reject(new Error('unable to start database ' + file))
       }
     })
   }
