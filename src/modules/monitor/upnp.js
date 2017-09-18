@@ -111,8 +111,8 @@ const execMiniSSDPd = function () {
                 device_model_description: description.root.device[ 0 ].modelDescription !== undefined ? description.root.device[ 0 ].modelDescription[ 0 ] : undefined
               }
             })
-            .then((upnps) => resolve(upnps))
         })
+        .then((upnps) => resolve(upnps))
         .catch((error) => reject(error))
     })
   })
@@ -146,12 +146,8 @@ class Upnp extends MonitorModule {
   }
 
   discover (params, callback) {
-    return super.discover(() => retry(() => execMiniSSDPd(), {
-      timeout: 50000,
-      max_tries: -1,
-      interval: 1000,
-      backoff: 2
-    }), [ 'ip_address' ], new Date(new Date().setMinutes(new Date().getHours() - 24)))
+    return retry(() => execMiniSSDPd(), { timeout: 50000, max_tries: -1, interval: 1000, backoff: 2 })
+      .then((upnps) => super.discover(upnps, [ 'ip_address' ], new Date(new Date().setMinutes(new Date().getHours() - 24))))
       .then(() => callback())
       .catch((error) => callback(error))
   }

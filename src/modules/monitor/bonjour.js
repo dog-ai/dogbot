@@ -111,12 +111,8 @@ class Bonjour extends MonitorModule {
   }
 
   discover (params, callback) {
-    return super.discover(() => retry(() => execAvahiBrowse(), {
-      timeout: 50000,
-      max_tries: -1,
-      interval: 1000,
-      backoff: 2
-    }), [ 'type', 'name' ], new Date(new Date().setMinutes(new Date().getHours() - 24)))
+    return retry(() => execAvahiBrowse(), { timeout: 50000, max_tries: -1, interval: 1000, backoff: 2 })
+      .then((bonjours) => super.discover(bonjours, [ 'type', 'name' ], new Date(new Date().setMinutes(new Date().getHours() - 24))))
       .then(() => callback())
       .catch((error) => callback(error))
   }

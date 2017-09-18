@@ -18,29 +18,34 @@ class MonitorModule extends Module {
     super('monitor', name)
   }
 
-  discover (command, where, date) {
-    if (!_.isFunction(command) || !_.isArray(where) || !_.isDate(date)) {
+  discover (data, where, date) {
+    return this.createOrUpdate(data, where)
+      .then(() => this.deleteOlder(date))
+  }
+
+  createOrUpdate (data, where) {
+    if (!_.isArray(data) || !_.isArray(where)) {
       return Promise.reject(new Error('invalid arguments'))
     }
 
-    return command()
-      .mapSeries((data) => {
-        return Databases[ _.capitalize(this.type) ][ this.name ].find({ where: _.pick(data, where) })
-          .then((row) => {
-            if (!row) {
-              return Databases[ _.capitalize(this.type) ][ this.name ].create(data)
-                .then(() => Server.emit(`${this.type}:${this.name}:create`, data))
-            }
+    return Promise.mapSeries(data, (data) => {
+      return Databases[ _.capitalize(this.type) ][ this.name ].findOne({ where: _.pick(data, where) })
+        .then((row) => {
+          if (!row) {
+            return Databases[ _.capitalize(this.type) ][ this.name ].create(data)
+              .then(() => Server.emit(`${this.type}:${this.name}:create`, data))
+          }
 
-            return row.save()
-              .then(() => Server.emit(`${this.type}:${this.name}:update`, row.get({ plain: true })))
-          })
-          .catch((error) => Logger.warn(error))
-      })
-      .then(() => this.clean(date))
+          row.changed('updated_date', true)
+
+          return row.save()
+            .then(() => Server.emit(`${this.type}:${this.name}:update`, row.get({ plain: true })))
+        })
+        .catch((error) => Logger.warn(error))
+    })
   }
 
-  clean (date) {
+  deleteOlder (date) {
     if (!_.isDate(date)) {
       return Promise.reject(new Error('invalid arguments'))
     }

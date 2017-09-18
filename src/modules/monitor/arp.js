@@ -12,88 +12,6 @@ const { Monitor } = require('../../databases')
 
 const { retry } = require('../../utils')
 
-const onIPCreateOrUpdate = function (ip) {
-  return Monitor.arp.find({ where: { ip_address: ip.ip_address } })
-    .then((arp) => {
-      if (!arp) {
-        Server.enqueueJob('monitor:arp:resolve', ip.ip_address)
-
-        return
-      }
-
-      return arp.save()
-        .then(() => Server.emit('monitor:arp:update', arp.get({ plain: true })))
-    })
-}
-
-const onDHCPCreateOrUpdate = function (dhcp) {
-  return Monitor.arp.find({ where: { mac_address: dhcp.mac_address } })
-    .then((arp) => {
-      if (!arp) {
-        Server.enqueueJob('monitor:arp:reverse', dhcp.mac_address)
-
-        return
-      }
-
-      return arp.save()
-        .then(() => Server.emit('monitor:arp:update', arp.get({ plain: true })))
-    })
-}
-
-const reverse = function (macAddress, callback) {
-  return retry(() => execReverseArp(macAddress), { max_tries: 3, interval: 1000 })
-    .then((ipAddress) => {
-      if (!ipAddress) {
-        return
-      }
-
-      const arp = {
-        ip_address: ipAddress,
-        mac_address: macAddress
-      }
-
-      return Monitor.arp.find({ where: { ip_address: arp.ip_address, mac_address: arp.mac_address } })
-        .then((_arp) => {
-          if (!_arp) {
-            return Monitor.arp.create(arp)
-              .then(() => Server.emit('monitor:arp:create', arp))
-          }
-
-          return _arp.save()
-            .then(() => Server.emit('monitor:arp:update', _arp.get({ plain: true })))
-        })
-    })
-    .then(() => callback())
-    .catch(() => callback(error))
-}
-
-const resolve = function (ipAddress, callback) {
-  return retry(() => execArp(ipAddress), { max_tries: 3, interval: 1000 })
-    .then((macAddress) => {
-      if (!macAddress) {
-        return
-      }
-
-      const arp = {
-        ip_address: ipAddress,
-        mac_address: macAddress
-      }
-
-      return Monitor.arp.find({ where: { ip_address: arp.ip_address, mac_address: arp.mac_address } })
-        .then((_arp) => {
-          if (!_arp) {
-            return Monitor.arp.create(arp)
-              .then(() => Server.emit('monitor:arp:create', arp))
-          }
-
-          return _arp.save()
-            .then(() => Server.emit('monitor:arp:update', _arp.get({ plain: true })))
-        })
-    })
-    .then(() => callback())
-    .catch((error) => callback(error))
-}
-
 const execArpScan = function () {
   return new Promise((resolve, reject) => {
     const result = []
@@ -165,6 +83,10 @@ const execReverseArp = function (macAddress) {
 
     _process.on('error', reject)
     _process.on('close', () => {
+      if (!result) {
+        return reject(new Error('unable to reverse'))
+      }
+
       resolve(result)
     })
   })
@@ -234,12 +156,12 @@ class Arp extends MonitorModule {
   start () {
     super.start({
       'monitor:arp:discover': this.discover.bind(this),
-      'monitor:arp:resolve': resolve.bind(this),
-      'monitor:arp:reverse': reverse.bind(this),
-      'monitor:ip:create': onIPCreateOrUpdate.bind(this),
-      'monitor:ip:update': onIPCreateOrUpdate.bind(this),
-      'monitor:dhcp:create': onDHCPCreateOrUpdate.bind(this),
-      'monitor:dhcp:update': onDHCPCreateOrUpdate.bind(this)
+      'monitor:arp:resolve': this.resolve.bind(this),
+      'monitor:arp:reverse': this.reverse.bind(this),
+      'monitor:ip:create': this.createOrUpdateFromIp.bind(this),
+      'monitor:ip:update': this.createOrUpdateFromIp.bind(this),
+      'monitor:dhcp:create': this.createOrUpdateFromDhcp.bind(this),
+      'monitor:dhcp:update': this.createOrUpdateFromDhcp.bind(this)
     })
 
     Server.enqueueJob('monitor:arp:discover', null, { schedule: '1 minute', retry: 6 })
@@ -256,15 +178,63 @@ class Arp extends MonitorModule {
   discover (params, callback) {
     Server.emit('monitor:arp:discover:begin')
 
-    return super.discover(() => retry(() => execArpScan(), {
-      timeout: 50000,
-      max_tries: -1,
-      interval: 1000,
-      backoff: 2
-    }), [ 'ip_address', 'mac_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 5)))
+    return retry(() => execArpScan(), { timeout: 50000, max_tries: -1, interval: 1000, backoff: 2 })
+      .then((arps) => super.discover(arps, [ 'ip_address', 'mac_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 5))))
       .then(() => callback())
       .catch((error) => callback(error))
       .finally(() => Server.emit('monitor:arp:discover:finish'))
+  }
+
+  resolve (ipAddress, callback) {
+    return retry(() => execArp(ipAddress), { max_tries: 3, interval: 1000 })
+      .then((macAddress) => super.discover([ {
+        ip_address: ipAddress,
+        mac_address: macAddress
+      } ], [ 'ip_address', 'mac_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 5))))
+      .then(() => callback())
+      .catch(() => callback(error))
+  }
+
+  reverse (macAddress, callback) {
+    return retry(() => execReverseArp(macAddress), { max_tries: 3, interval: 1000 })
+      .then((ipAddress) => super.discover([ {
+        ip_address: ipAddress,
+        mac_address: macAddress
+      } ], [ 'ip_address', 'mac_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 5))))
+      .then(() => callback())
+      .catch(() => callback(error))
+  }
+
+  createOrUpdateFromIp (ip) {
+    return Monitor.arp.findOne({ where: { ip_address: ip.ip_address } })
+      .then((arp) => {
+        if (!arp) {
+          Server.enqueueJob('monitor:arp:resolve', ip.ip_address)
+
+          return
+        }
+
+        arp.changed('updated_date', true)
+
+        return arp.save()
+          .then(() => Server.emit('monitor:arp:update', arp.get({ plain: true })))
+      })
+  }
+
+  createOrUpdateFromDhcp (dhcp) {
+    return Monitor.arp.findOne({ where: { mac_address: dhcp.mac_address } })
+      .then((arp) => {
+        if (!arp) {
+          Server.enqueueJob('monitor:arp:reverse', dhcp.mac_address)
+
+          return
+        }
+
+        arp.changed('updated_date', true)
+
+        return arp.save()
+          .then(() => Server.emit('monitor:arp:update', arp.get({ plain: true })))
+      })
   }
 }
 

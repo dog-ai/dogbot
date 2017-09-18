@@ -86,12 +86,8 @@ class Dhcp extends MonitorModule {
   }
 
   discover (params, callback) {
-    return super.discover(() => retry(() => connect(), {
-      timeout: 50000,
-      max_tries: -1,
-      interval: 1000,
-      backoff: 2
-    }), [ 'mac_address', 'hostname' ], new Date(new Date().setMinutes(new Date().getHours() - 24)))
+    return retry(() => connect(), { timeout: 50000, max_tries: -1, interval: 1000, backoff: 2 })
+      .then((dhcps) => super.discover(dhcps, [ 'mac_address', 'hostname' ], new Date(new Date().setMinutes(new Date().getHours() - 24))))
       .then(() => callback())
       .catch((error) => callback(error))
   }

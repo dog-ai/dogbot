@@ -9,33 +9,9 @@ const Promise = require('bluebird')
 
 const Server = require('../../server')
 
-const { Monitor } = require('../../databases')
-
 const { retry } = require('../../utils')
 
 const os = require('os')
-
-const onServiceDiscoveryCreateOrUpdate = function (service, callback) {
-  return Monitor.ip.findOne({
-    where: {
-      ip_address: service.ip_address,
-      updated_date: { $gte: new Date(new Date().setSeconds(new Date().getSeconds() - 10)) }
-    }
-  })
-    .then((ip) => {
-      if (!ip) {
-        const _ip = { ip_address: service.ip_address }
-
-        return Monitor.ip.create(_ip)
-          .then(() => Server.emit('monitor:ip:create', _ip))
-      }
-
-      return ip.save()
-        .then(() => Server.emit('monitor:ip:update', ip.get({ plain: true })))
-    })
-    .then(() => callback())
-    .catch((error) => callback(error))
-}
 
 const execFping = function () {
   return new Promise((resolve, reject) => {
@@ -115,10 +91,10 @@ class Ip extends MonitorModule {
   start () {
     super.start({
       'monitor:ip:discover': this.discover.bind(this),
-      'monitor:bonjour:create': onServiceDiscoveryCreateOrUpdate.bind(this),
-      'monitor:bonjour:update': onServiceDiscoveryCreateOrUpdate.bind(this),
-      'monitor:upnp:create': onServiceDiscoveryCreateOrUpdate.bind(this),
-      'monitor:upnp:update': onServiceDiscoveryCreateOrUpdate.bind(this)
+      'monitor:bonjour:create': this.createOrUpdateFromServiceDiscovery.bind(this),
+      'monitor:bonjour:update': this.createOrUpdateFromServiceDiscovery.bind(this),
+      'monitor:upnp:create': this.createOrUpdateFromServiceDiscovery.bind(this),
+      'monitor:upnp:update': this.createOrUpdateFromServiceDiscovery.bind(this)
     })
 
     Server.enqueueJob('monitor:ip:discover', null, { schedule: '1 minute', priority: 'low' })
@@ -131,14 +107,14 @@ class Ip extends MonitorModule {
   }
 
   discover (params, callback) {
-    return super.discover(() => retry(() => execFping(), {
-      timeout: 50000,
-      max_tries: -1,
-      interval: 1000,
-      backoff: 2
-    }), [ 'ip_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 10)))
+    return retry(() => execFping(), { timeout: 50000, max_tries: -1, interval: 1000, backoff: 2 })
+      .then((ips) => super.discover(ips, [ 'ip_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 10))))
       .then(() => callback())
       .catch((error) => callback(error))
+  }
+
+  createOrUpdateFromServiceDiscovery (service) {
+    return super.createOrUpdate([ service ], [ 'ip_address' ])
   }
 }
 
