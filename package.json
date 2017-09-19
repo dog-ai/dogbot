@@ -33,7 +33,7 @@
     "moment-timezone": "0.5.11",
     "native-speaker": "1.0.0",
     "redis": "2.7.1",
-    "request": "2.81.0",
+    "request": "2.82.0",
     "sequelize": "4.8.4",
     "split": "1.0.0",
     "sqlite3": "3.1.8",
