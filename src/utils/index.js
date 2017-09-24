@@ -3,5 +3,6 @@
  */
 
 module.exports = {
-  retry: require('./retry')
+  retry: require('./retry'),
+  ArpScan: require('./arp-scan')
 }

@@ -10,47 +10,7 @@ const Server = require('../../server')
 
 const { Monitor } = require('../../databases')
 
-const { retry } = require('../../utils')
-
-const execArpScan = function () {
-  return new Promise((resolve, reject) => {
-    const result = []
-
-    const _interface = process.platform === 'linux' ? 'wlan0' : 'en0'
-
-    const spawn = require('child_process').spawn
-    const _process = spawn('arp-scan', [
-      '--interface=' + _interface,
-      '--localnet',
-      '--numeric', // IP addresses only, no hostnames.
-      '--quiet',
-      '--ignoredups', // Don't display duplicate packets.
-      '--timeout=1000', // Set initial per host timeout to ms.
-      '--retry=4',
-      '--plain' // Display plain output showing only responding hosts.
-    ])
-
-    _process.stdout.setEncoding('utf8')
-    _process.stdout.pipe(require('split')()).on('data', (line) => {
-      const values = line.split('\t')
-
-      const arp = {
-        ip_address: values[ 0 ],
-        mac_address: values[ 1 ]
-      }
-
-      if (arp.ip_address && arp.ip_address.length > 0 &&
-        arp.mac_address && arp.mac_address.length > 0) {
-        result.push(arp)
-      }
-    })
-
-    _process.stderr.on('data', (data) => reject(new Error(data)))
-
-    _process.on('error', reject)
-    _process.on('close', () => resolve(result))
-  })
-}
+const { ArpScan } = require('../../utils')
 
 const execReverseArp = function (macAddress) {
   return new Promise((resolve, reject) => {
@@ -178,7 +138,7 @@ class Arp extends MonitorModule {
   discover (params, callback) {
     Server.emit('monitor:arp:discover:begin')
 
-    return retry(() => execArpScan(), { timeout: 50000, max_tries: -1, interval: 1000, backoff: 2 })
+    return ArpScan.run()
       .then((arps) => super.discover(arps, [ 'ip_address', 'mac_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 5))))
       .then(() => callback())
       .catch((error) => callback(error))
