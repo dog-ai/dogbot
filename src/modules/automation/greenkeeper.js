@@ -35,7 +35,7 @@ class Greenkeeper extends AutomationModule {
     }
 
     const token = this.options.api_token
-    this.wrapper = new GitHubWrapper({ auth: { type: 'token', token } })
+    this.wrapper = new GitHubWrapper({ github: { type: 'token', token } })
 
     super.load(options)
   }
