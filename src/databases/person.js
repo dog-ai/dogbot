@@ -64,6 +64,36 @@ const moment = require('moment')
 
 const { join } = require('path')
 
+const isPresent = (device) => {
+  return new Promise(function (resolve, reject) {
+
+    function handleArpDiscover () {
+      Server.removeListener('monitor:arp:discover:finish', handleArpDiscover)
+
+      return Person.macAddresses.findAll({ where: { device_id: device.id } })
+        .then(function (mac_addresses) {
+          if (mac_addresses !== undefined) {
+            var values = _.map(mac_addresses, 'address')
+
+            return Server.emitAsync('database:monitor:retrieveAll',
+              'SELECT * FROM arp WHERE mac_address IN (' + values.map(function () {
+                return '?'
+              }) + ')',
+              values)
+              .then(function (rows) {
+                resolve(rows !== undefined && rows !== null && rows.length > 0)
+              })
+          }
+        })
+        .catch(function (error) {
+          reject(error)
+        })
+    }
+
+    Server.on('monitor:arp:discover:finish', handleArpDiscover)
+  })
+}
+
 const onCreateOrUpdateEmployeeIncomingSynchronization = function (employee) {
   return this._models[ 'employee' ].findById(employee.id)
     .then((_employee) => {
