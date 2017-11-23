@@ -164,7 +164,7 @@ class Arp extends MonitorModule {
         mac_address: macAddress
       } ], [ 'ip_address', 'mac_address' ], new Date(new Date().setMinutes(new Date().getMinutes() - 5))))
       .then(() => callback())
-      .catch(() => callback(error))
+      .catch((error) => callback(error))
   }
 
   createOrUpdateFromIp (ip) {
