@@ -8,6 +8,8 @@ const Promise = require('bluebird')
 
 const Server = require('../../server')
 
+const { retry } = require('../../utils')
+
 const { Monitor } = require('../../databases')
 
 const { ArpScan } = require('../../utils')
