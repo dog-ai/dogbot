@@ -30,7 +30,7 @@
     "macvendor": "0.1.1",
     "modern-logger": "1.3.1",
     "moment": "2.18.1",
-    "moment-timezone": "0.5.11",
+    "moment-timezone": "0.5.20",
     "native-speaker": "1.0.0",
     "redis": "2.7.1",
     "request": "2.81.0",
