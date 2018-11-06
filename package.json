@@ -16,7 +16,7 @@
   "dependencies": {
     "@dog-ai/github-wrapper": "1.1.7",
     "@dog-ai/sdnotify-wrapper": "1.0.0",
-    "bluebird": "3.5.0",
+    "bluebird": "3.5.3",
     "bluebird-retry": "0.10.1",
     "botkit": "0.5.2",
     "firebase": "2.4.2",
