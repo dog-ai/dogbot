@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/dog-ai/dogbot#readme",
   "dependencies": {
-    "@dog-ai/github-wrapper": "1.1.7",
+    "@dog-ai/github-wrapper": "2.0.16",
     "@dog-ai/sdnotify-wrapper": "1.0.0",
     "bluebird": "3.5.1",
     "bluebird-retry": "0.10.1",
