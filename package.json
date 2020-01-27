@@ -56,7 +56,7 @@
     "last-release-github": "1.1.1",
     "mocha": "7.0.1",
     "pre-git": "3.14.0",
-    "semantic-release": "6.3.2",
+    "semantic-release": "16.0.4",
     "testdouble": "2.1.2"
   },
   "config": {
